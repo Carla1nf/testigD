@@ -1,3 +1,14 @@
+# Debita V2 Frontend (NextJS)
+
+We tried to convert the old site to TypeScript and bring it up to speed but failed on a few counts.
+The old CRA app (deprectaed) proved tricky to integrate with modern tooling. To this end, we have started fresh with these goals
+
+- Reuse the CSS Modules from the V1 website
+- Convert the wider layout to tailwind for better responsive control (any components that need it can be converted) in time, we will be fully Tailwind
+- TypeScript support. Infer-types first the ndefine where needed.
+
+### Default install docs
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
