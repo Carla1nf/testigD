@@ -7,6 +7,16 @@ The old CRA app (deprectaed) proved tricky to integrate with modern tooling. To 
 - Convert the wider layout to tailwind for better responsive control (any components that need it can be converted) in time, we will be fully Tailwind
 - TypeScript support. Infer-types first the ndefine where needed.
 
+## CSS Modules
+
+[CSS Modules](https://nextjs.org/docs/app/building-your-application/styling/css-modules) are built in and easy to use in NextJS, check the docs for how to use them.
+
+### MUI & NextJS
+
+[MUI app directory](https://mui.com/material-ui/guides/next-js-app-router/) support comes baked in, so we can continue to use MUI for some aspects, but I would eventually want to remove it. To use MUI we need to make sure that all compoennts that touch it use the `"use client"` directive which may cause problematic.
+
+For now, we go with it and see what issues we run into.
+
 ### Default install docs
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
