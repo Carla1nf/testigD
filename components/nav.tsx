@@ -8,7 +8,6 @@ const Nav = () => {
         <Link href="/" className="ml-8 w-36">
           <Image src="/files/navbar/debita.svg" height={50} width={90} alt="Dēbita" />
         </Link>
-
         <Link className="w-28 text-center text-[14.5px] text-[#B6979C]" href="/dashboard">
           Dashboard
         </Link>
