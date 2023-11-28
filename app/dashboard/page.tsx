@@ -1,11 +1,10 @@
 import Nav from "@/components/nav";
-import styles from "./styles.module.css";
 
-export default function Home() {
+export default function Dashboard() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <Nav />
-      <section className={styles.dashboard}>Home</section>
+      <h1 className="">Dashboard</h1>
     </main>
   );
 }
