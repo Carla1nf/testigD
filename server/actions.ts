@@ -11,7 +11,12 @@ export async function getDebitaData() {
   try {
     const data = await getData();
     return data;
-  } catch (error) {
-    return { error };
+  } catch (error: any) {
+    return {
+      lend: [],
+      borrow: [],
+      totalLiquidityLent: 0,
+      error: error.message,
+    };
   }
 }

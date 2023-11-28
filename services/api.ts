@@ -76,18 +76,17 @@ export const getData = async () => {
       "https://v4wfbcl0v9.execute-api.us-east-1.amazonaws.com/Deploy/getData"
     );
     const parsedResponse = GetDataSchema.parse(response.data);
-
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
-
-    return transformGetDataResponse(parsedResponse);
+    const debitaData = transformGetDataResponse(parsedResponse);
+    return debitaData;
   } catch (error) {
     console.error("Api→getData", error);
+    return {
+      lend: [],
+      borrow: [],
+      totalLiquidityLent: 0,
+    };
   }
-  return {
-    lend: [],
-    borrow: [],
-    totalLiquidityLent: 0,
-  };
 };
 
 const transformGetDataResponse = (response: GetData): GetDataResponse => {
