@@ -16,7 +16,7 @@ import { Inter as FontSans } from "next/font/google"
  * from the old website, it looks like only Inter & Raleway were actually used via the "font-family" css property
  */
 
-export const fontSans = FontSans({
+const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 })
