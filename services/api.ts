@@ -49,10 +49,19 @@ const CollateralOfferCreatedSchema = z.object({
   lendingAmount: z.number(),
 });
 
-export type GetData = z.infer<typeof GetDataSchema>;
-export type GetDataElement = z.infer<typeof GetDataElementSchema>;
-export type GetDataNestedArray = z.infer<typeof GetDataNestedArraySchema>;
+type GetData = z.infer<typeof GetDataSchema>;
+type GetDataElement = z.infer<typeof GetDataElementSchema>;
+type GetDataNestedArray = z.infer<typeof GetDataNestedArraySchema>;
+
 export type OfferType = "Lend" | "Borrow";
+
+const GetDataResponse = z.object({
+  lend: z.array(LenderOfferCreatedSchema),
+  borrow: z.array(CollateralOfferCreatedSchema),
+  totalLiquidityLent: z.number(),
+});
+
+export type GetDataResponse = z.infer<typeof GetDataResponse>;
 
 /**
  * Other Events:
@@ -69,29 +78,8 @@ export const getData = async () => {
     const parsedResponse = GetDataSchema.parse(response.data);
 
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
-    const transformedResponse = {
-      lend: parsedResponse[0].map((event) => {
-        return LenderOfferCreatedSchema.parse({
-          id: event[0],
-          owner: event[3],
-          lendingToken: event[4],
-          apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457
-          lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
-        });
-      }),
-      borrow: parsedResponse[1].map((event) => {
-        return CollateralOfferCreatedSchema.parse({
-          id: event[0],
-          owner: event[3],
-          lendingToken: event[4],
-          apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457
-          lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
-        });
-      }),
-      totalLiquidityLent: parsedResponse[2],
-    };
 
-    return transformedResponse;
+    return transformGetDataResponse(parsedResponse);
   } catch (error) {
     console.error("Api→getData", error);
   }
@@ -99,6 +87,30 @@ export const getData = async () => {
     lend: [],
     borrow: [],
     totalLiquidityLent: 0,
+  };
+};
+
+const transformGetDataResponse = (response: GetData): GetDataResponse => {
+  return {
+    lend: response[0].map((event) => {
+      return LenderOfferCreatedSchema.parse({
+        id: event[0],
+        owner: event[3],
+        lendingToken: event[4],
+        apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457
+        lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
+      });
+    }),
+    borrow: response[1].map((event) => {
+      return CollateralOfferCreatedSchema.parse({
+        id: event[0],
+        owner: event[3],
+        lendingToken: event[4],
+        apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457
+        lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
+      });
+    }),
+    totalLiquidityLent: response[2],
   };
 };
 
