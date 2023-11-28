@@ -69,7 +69,7 @@ export type GetDataResponse = z.infer<typeof GetDataResponse>;
  * event LenderOfferDeleted(uint256 indexed id, address indexed _owner);
  * event LoanAccepted(uint256 newId, address indexed lendingToken, address[] indexed collateralTokens);
  */
-export const getData = async () => {
+const getData = async () => {
   try {
     // todo: move URL into a config file in prep for xchain app
     const response = await axios.get(
@@ -77,8 +77,7 @@ export const getData = async () => {
     );
     const parsedResponse = GetDataSchema.parse(response.data);
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
-    const debitaData = transformGetDataResponse(parsedResponse);
-    return debitaData;
+    return parsedResponse;
   } catch (error) {
     console.error("Api→getData", error);
     return {
@@ -87,6 +86,12 @@ export const getData = async () => {
       totalLiquidityLent: 0,
     };
   }
+};
+
+export const getDebitaData = async () => {
+  const data = (await getData()) as GetData;
+  const debitaData = transformGetDataResponse(data);
+  return debitaData;
 };
 
 const transformGetDataResponse = (response: GetData): GetDataResponse => {

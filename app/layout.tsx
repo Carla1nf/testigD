@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Providers from "@/utils/providers";
+
 import "./globals.css";
-import Providers from "@/utils/Providers";
 
 /**
  * These are the google fonts imported in the V1 website. find out if they are still used and import as necessary
