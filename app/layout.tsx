@@ -7,6 +7,8 @@ import "./globals.css";
  *
  * href="https://fonts.googleapis.com/css2?family=Anton&family=DynaPuff&family=Inter:wght@300;400;600&display=swap"
  * https://fonts.googleapis.com/css2?family=Lato&family=Raleway:wght@100;300;600;800&display=swap
+ *
+ * from the old website, it looks like only Inter & Raleway were actually used via the "font-family" css property
  */
 const inter = Inter({ subsets: ["latin"] });
 

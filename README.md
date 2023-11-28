@@ -7,6 +7,11 @@ The old CRA app (deprectaed) proved tricky to integrate with modern tooling. To 
 - Convert the wider layout to tailwind for better responsive control (any components that need it can be converted) in time, we will be fully Tailwind
 - TypeScript support. Infer-types first the ndefine where needed.
 
+## Todo list
+
+- [ ] Fonts
+- [ ] Google tag manager
+
 ## CSS Modules
 
 [CSS Modules](https://nextjs.org/docs/app/building-your-application/styling/css-modules) are built in and easy to use in NextJS, check the docs for how to use them.
