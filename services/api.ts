@@ -114,7 +114,7 @@ const transformGetDataResponse = (response: GetData): GetDataResponse => {
         lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
       });
     }),
-    totalLiquidityLent: response[2],
+    totalLiquidityLent: response[2] / 100,
   };
 };
 

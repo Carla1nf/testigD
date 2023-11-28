@@ -1,24 +1,17 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getDebitaData } from "@/services/api";
+import { useDebitaDataQuery } from "@/services/queries";
+import { dollars } from "@/utils/display";
 
 export default function TotalLiquidityLent() {
-  const { data, error } = useQuery({
-    queryKey: ["debitaData"],
-    queryFn: getDebitaData,
-  });
+  const { data, isSuccess } = useDebitaDataQuery();
 
-  if (error) {
-    return null;
-  }
+  const totalLiquidityLent = isSuccess ? data.totalLiquidityLent : 0;
 
-  if (data) {
-    return (
-      <div>
-        <h1>Total Liquidity Lent</h1>
-        <p>{data.totalLiquidityLent}</p>
-      </div>
-    );
-  }
+  return (
+    <div className="flex flex-col gap-4 items-center">
+      <p className="text-6xl">{dollars({ value: totalLiquidityLent })}</p>
+      <p className="text-sm">of Liquidity lent on Dēbita ecosystem.</p>
+    </div>
+  );
 }
