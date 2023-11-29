@@ -1,8 +1,9 @@
 import BetaWarning from "@/components/beta-warning"
+import Nav from "@/components/nav"
+import Providers from "@/components/providers"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import "@/styles/globals.css"
-import Providers from "@/components/providers"
 import "@rainbow-me/rainbowkit/styles.css"
 import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
@@ -34,8 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <BetaWarning />
-          <Providers>{children}</Providers>
+          <Providers>
+            <>
+              <BetaWarning />
+              <Nav />
+              <main className="flex min-h-screen flex-col items-center justify-between p-24">{children}</main>
+            </>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
