@@ -1,25 +1,21 @@
 "use client"
 
 import { ResumeDash } from "@/components/ux/resume-dash"
-import { useInternalToken } from "@/hooks/useInternalToken"
+import TokenImage from "@/components/ux/token-image"
 import { filterByOwner } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
-import { findInternalTokenBySymbol } from "@/utils/tokens"
-import Image from "next/image"
 import { useAccount } from "wagmi"
 
 export default function Dashboard() {
   const { data, isSuccess } = useDebitaDataQuery()
   const { address } = useAccount()
-  const ftm = useInternalToken("fantom", "FTM")
-
   const userOffersLending: any[] = isSuccess ? filterByOwner(data?.lend, address) : []
   const userOffersCollateral: any[] = isSuccess ? filterByOwner(data?.borrow, address) : []
 
   return (
     <>
       <div className="flex items-center text-2xl font-bold gap-2 mb-8">
-        <Image src={ftm?.icon ?? ""} width={36} height={36} alt="Fantom network" />
+        <TokenImage width={36} height={36} symbol={"FTM"} chainSlug={"fantom"} />
         Fantom Network
       </div>
       <div className="flex flex-col-2 gap-8">
