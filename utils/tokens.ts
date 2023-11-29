@@ -14,8 +14,6 @@ export type Token = {
 
 type Tokens = Record<string, Token[]>
 
-"", "", "", "", "", "", "", "", "", "fSonic LP"
-
 export const INTERNAL_TOKENS: Tokens = {
   fantom: [
     {
