@@ -30,7 +30,7 @@ const { chains, publicClient } = configureChains(
   ]
 )
 
-const projectId = "YOUR_PROJECT_ID"
+const projectId = "1869011dda3cd86f0b46c01beef1afe0"
 const connectors = connectorsForWallets([
   {
     groupName: "Recommended",

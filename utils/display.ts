@@ -28,7 +28,7 @@ export function toDays(unixTimestamp: number) {
 
   const days = Math.floor(daysInSeconds / MILLISECONDS_PER_DAY)
 
-  console.log("toDays", unixTimestamp, now, daysInSeconds, days)
+  // console.log("toDays", { unixTimestamp, now, daysInSeconds, MILLISECONDS_PER_DAY, days })
   return days < 0 ? 0 : days
 }
 
@@ -36,7 +36,7 @@ export function toHours(unixTimestamp: number) {
   const now = new Date().getTime()
   const daysInSeconds = unixTimestamp * 1000 - now
   let hours = Math.floor((daysInSeconds % MILLISECONDS_PER_DAY) / MILLISECONDS_PER_HOUR)
-  console.log("toDays", unixTimestamp, now, daysInSeconds, hours)
+  // console.log("toDays", unixTimestamp, now, daysInSeconds, hours)
 
   return hours < 0 ? 0 : hours
 }

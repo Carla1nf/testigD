@@ -1,15 +1,16 @@
 "use client"
 
 import { DashboardAccessAlarm, DashboardAccountBalance, DashboardEqualizer, DashboardSavings } from "@/components/icons"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useNextPayment } from "@/context/next-payment-context"
-import { OWNERSHIP_ADDRESS } from "@/utils/contracts"
-import { toDays, toHours } from "@/utils/display"
-import { ReactNode } from "react"
-import { useAccount, useContractRead } from "wagmi"
-import ownershipsAbi from "../../abis/ownerships.json"
+import { useOwnershipBalance } from "@/hooks/useOwnsershipBalance"
 import { GetDataResponse } from "@/services/api"
+import { toDays, toHours } from "@/utils/display"
+import dynamic from "next/dynamic"
+import { useAccount } from "wagmi"
+
 // import { ChainData, Circle, CirclesContainer, Container, Logo, NumberData } from "./Styles"
+
+const DashboardItem = dynamic(() => import("./dashboard-item"), { ssr: false })
 
 export function ResumeDash({
   lending,
@@ -20,18 +21,12 @@ export function ResumeDash({
 }) {
   const deadline = useNextPayment()
   const { address } = useAccount()
-
-  const { data: dataBalance } = useContractRead({
-    address: OWNERSHIP_ADDRESS,
-    abi: ownershipsAbi,
-    functionName: "balanceOf",
-    args: [address ?? ""],
-  })
+  const { ownershipBalance } = useOwnershipBalance(address)
 
   return (
     <div className="grid grid-cols-2 gap-4 w-3/4">
       <DashboardItem
-        value={Number(dataBalance ?? 0)}
+        value={ownershipBalance}
         title={"Historical loans"}
         Icon={<DashboardEqualizer className="w-[120px] h-[120px] mt-[3px] fill-[#A6A766]" />}
       />
@@ -55,18 +50,6 @@ export function ResumeDash({
         title={"Your next payment"}
         Icon={<DashboardAccessAlarm className="w-[120px] h-[120px] mt-[3px] fill-[#66A76C]" />}
       />
-    </div>
-  )
-}
-
-const DashboardItem = ({ value, title, Icon }: { value: ReactNode; title: string; Icon: ReactNode }) => {
-  return (
-    <div key={title} className="relative overflow-hidden dashboard-item-gradient p-3 rounded-lg">
-      <div className="text-sm font-bold mb-1">{title}</div>
-      <div className="text-2xl font-bold text-[#A957A4]">
-        {value === undefined ? <Skeleton className="h-4 h-[80px] w-[200px]" /> : value}
-        <div style={{ position: "absolute", color: "white", right: "10px", top: "5px", opacity: "1" }}>{Icon}</div>
-      </div>
     </div>
   )
 }
