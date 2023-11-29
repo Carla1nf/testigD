@@ -80,3 +80,7 @@
   background: linear-gradient(90deg, rgba(215, 80, 113, 0.67) -4.81%, rgba(112, 91, 220, 0.51) 95.43%);
   color: #fff;
 }
+
+.debita-gradient {
+  background: linear-gradient(90deg, rgba(215, 80, 113, 0.67) -4.81%, rgba(112, 91, 220, 0.51) 95.43%);
+}

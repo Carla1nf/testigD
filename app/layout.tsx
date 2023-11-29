@@ -1,10 +1,10 @@
-import Providers from "@/utils/providers"
-import type { Metadata } from "next"
-
 import BetaWarning from "@/components/beta-warning"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import "@/styles/globals.css"
+import Providers from "@/utils/providers"
+import "@rainbow-me/rainbowkit/styles.css"
+import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
 
 /**
