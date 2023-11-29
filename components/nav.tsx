@@ -1,7 +1,7 @@
+import { ExternalLink } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import Connect from "./connect"
-import { ExternalLink } from "lucide-react"
 
 const Nav = () => {
   return (
