@@ -37,8 +37,8 @@ export const INTERNAL_TOKENS: Tokens = {
       icon: "/files/tokens/fantom/axlUSDC.svg",
     },
     {
-      name: "BEETS",
-      symbol: "BEETS",
+      name: "EQUAL",
+      symbol: "EQUAL",
       decimals: 18,
       address: "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6",
       chainId: fantom.id,
@@ -47,8 +47,8 @@ export const INTERNAL_TOKENS: Tokens = {
       icon: "/files/tokens/fantom/equal.svg",
     },
     {
-      name: "EQUAL",
-      symbol: "EQUAL",
+      name: "BEETS",
+      symbol: "BEETS",
       decimals: 18,
       address: "0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e",
       chainId: fantom.id,
