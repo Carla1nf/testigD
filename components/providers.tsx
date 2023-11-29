@@ -16,6 +16,7 @@ import {
   rainbowWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets"
+import { DeadlineNext } from "@/context/next-payment-context"
 
 const { chains, publicClient } = configureChains(
   [fantom],
@@ -56,7 +57,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains} theme={darkTheme()}>
         <QueryClientProvider client={queryClient}>
-          {children}
+          <DeadlineNext>{children}</DeadlineNext>
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </RainbowKitProvider>
