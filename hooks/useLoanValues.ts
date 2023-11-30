@@ -2,9 +2,9 @@ import { DEBITA_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { fromDecimals, tokenDecimals, tokenName } from "@/lib/erc20"
 import { useQuery } from "@tanstack/react-query"
-import { readContract } from "wagmi/actions"
 import { getAddress } from "viem"
 import { Address } from "wagmi"
+import { readContract } from "wagmi/actions"
 import debitaAbi from "../abis/debita.json"
 import ownershipsAbi from "../abis/ownerships.json"
 
@@ -40,20 +40,21 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
     queryKey: ["read-loan-values", address, index],
     queryFn: async () => {
       // todo: Optimisation - we can read previous values here and ONLY get new values that could change, i.e. the loan data? the claimable debt?
+      // See https://tanstack.com/query/latest/docs/react/reference/QueryCache
 
-      const ownerNftTokenId = await readContract({
+      const ownerNftTokenId = (await readContract({
         address: OWNERSHIP_ADDRESS,
         abi: ownershipsAbi,
         functionName: "tokenOfOwnerByIndex",
         args: [address, index],
-      })
+      })) as number
 
-      const loanId = await readContract({
+      const loanId = (await readContract({
         address: DEBITA_ADDRESS,
         abi: debitaAbi,
         functionName: "loansByNFt",
         args: [ownerNftTokenId ?? ""],
-      })
+      })) as number
 
       const loanData = (await readContract({
         address: DEBITA_ADDRESS,
@@ -64,27 +65,29 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
 
       // todo: parse the loanData through zod
 
-      const claimableDebt = await readContract({
+      const claimableDebt = (await readContract({
         address: DEBITA_ADDRESS,
         abi: debitaAbi,
         functionName: "claimeableDebt",
         args: [loanData?.LenderOwnerId ?? ""],
-      })
+      })) as number
 
       // Process collateral into meaningful knowledge
-      const collaterals = loanData.collaterals.map(async (collateral: Address, index: number) => {
-        const safeAddress = getAddress(collateral)
-        const amount = loanData?.collateralAmount[index] ?? 0
-        const decimals = await tokenDecimals({ address: safeAddress })
-        const value = fromDecimals(amount, decimals)
-        return {
-          name: await tokenName({ address: safeAddress }),
-          address: safeAddress,
-          amount,
-          decimals,
-          value,
-        }
-      })
+      const collaterals = await Promise.all(
+        loanData.collaterals.map(async (collateral: Address, index: number) => {
+          const safeAddress = getAddress(collateral)
+          const amount = loanData?.collateralAmount[index] ?? 0
+          const decimals = await tokenDecimals({ address: safeAddress })
+          const value = fromDecimals(amount, decimals)
+          return {
+            name: await tokenName({ address: safeAddress }),
+            address: safeAddress,
+            amount,
+            decimals,
+            value,
+          }
+        })
+      )
 
       // Lets build the loan object as we want to see it
       const decimals = await tokenDecimals({ address: loanData?.LenderToken })
@@ -92,6 +95,7 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
       const value = fromDecimals(amount, decimals)
       const { cooldown, deadline, deadlineNext, executed, paymentAmount, paymentCount, paymentsPaid, timelap } =
         loanData
+
       const loan: Loan = {
         id: index,
         collaterals,
@@ -123,7 +127,7 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
 
       return result
     },
-    refetchInterval: MILLISECONDS_PER_MINUTE, // every minute
+    refetchInterval: MILLISECONDS_PER_MINUTE * 30, // every 30 minutes
   })
 
   return useLoanValuesQuery
