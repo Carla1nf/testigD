@@ -17,10 +17,12 @@ export function dollars({ value, includeSymbol = true, decimals = 2 }: DollarsOp
   return formatter.format(value)
 }
 
-const SECONDS_PER_HOUR = 60 * 60
+const SECONDS_PER_MINUTE = 60
+const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 const SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
 const MILLISECONDS_PER_DAY = 1000 * SECONDS_PER_DAY
 const MILLISECONDS_PER_HOUR = 1000 * SECONDS_PER_HOUR
+export const MILLISECONDS_PER_MINUTE = 1000 * SECONDS_PER_MINUTE
 
 export function toDays(unixTimestamp: number) {
   const now = new Date().getTime()

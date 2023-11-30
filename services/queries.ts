@@ -1,7 +1,7 @@
-"use client";
+"use client"
 
-import { getDebitaData } from "@/services/api";
-import { useQuery } from "@tanstack/react-query";
+import { getDebitaData } from "@/services/api"
+import { useQuery } from "@tanstack/react-query"
 
 /**
  * This is a cached fucntion that can be called from any component that needs access to the main data
@@ -13,5 +13,5 @@ export const useDebitaDataQuery = () => {
     queryKey: ["debitaData"],
     queryFn: getDebitaData,
     refetchInterval: 60 * 1000,
-  });
-};
+  })
+}

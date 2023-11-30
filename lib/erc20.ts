@@ -1,9 +1,10 @@
 import { formatUnits, getAddress } from "viem"
-import { useContractRead } from "wagmi"
+
 import erc20Abi from "../abis/erc20.json"
 import { findInternalTokenByAddress } from "./tokens"
+import { readContract } from "wagmi/actions"
 
-export const tokenName = ({
+export const tokenName = async ({
   address,
   forceChainLookup = false,
 }: {
@@ -26,7 +27,7 @@ export const tokenName = ({
   }
 
   // Yes! we read the symbol, not the name for unknown tokens!
-  const { data: tokenName } = useContractRead({
+  const tokenName = await readContract({
     address: safeAddress,
     abi: erc20Abi,
     functionName: "symbol",
@@ -35,7 +36,7 @@ export const tokenName = ({
   return (tokenName as string) ?? ""
 }
 
-export const tokenDecimals = ({
+export const tokenDecimals = async ({
   address,
   forceChainLookup = false,
 }: {
@@ -59,7 +60,7 @@ export const tokenDecimals = ({
   }
 
   // Yes! we read the symbol, not the name for unknown tokens!
-  const { data: tokenDecimals } = useContractRead({
+  const tokenDecimals = readContract({
     address: safeAddress,
     abi: erc20Abi,
     functionName: "decimals",
