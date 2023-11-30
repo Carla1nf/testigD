@@ -19,7 +19,7 @@ export const INTERNAL_TOKENS: Tokens = {
     {
       name: "FTM",
       symbol: "FTM",
-      decimals: 0,
+      decimals: 18,
       address: ZERO_ADDRESS,
       chainId: fantom.id,
       isNative: true,
@@ -111,4 +111,8 @@ export const INTERNAL_TOKENS: Tokens = {
 
 export const findInternalTokenBySymbol = (chainSlug: string, symbol: string): Token | undefined => {
   return INTERNAL_TOKENS[chainSlug].find((token) => token.symbol === symbol)
+}
+
+export const findInternalTokenByAddress = (chainSlug: string, address: string): Token | undefined => {
+  return INTERNAL_TOKENS[chainSlug].find((token) => token.address === address)
 }
