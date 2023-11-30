@@ -1,28 +1,23 @@
 import { DEBITA_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
-import { fromDecimals, tokenDecimals, tokenName } from "@/lib/erc20"
+import { fromDecimals, tokenDecimals, tokenName, tokenSymbol } from "@/lib/erc20"
 import { useQuery } from "@tanstack/react-query"
 import { getAddress } from "viem"
 import { Address } from "wagmi"
 import { readContract } from "wagmi/actions"
 import debitaAbi from "../abis/debita.json"
 import ownershipsAbi from "../abis/ownerships.json"
+import { Token, findTokenByAddress } from "@/lib/tokens"
+import pick from "lodash.pick"
 
-type Token = {
-  name: string
-  address?: Address
+export type TokenValue = Token & {
   amount: number
-  decimals: number
-  value?: number
-}
-
-type Collateral = {
-  token: Token
+  value: number
 }
 
 type Loan = {
   id: number
-  collaterals?: Collateral[]
+  collaterals?: TokenValue[]
   cooldown: bigint
   deadline: bigint
   deadlineNext: bigint
@@ -32,7 +27,7 @@ type Loan = {
   paymentCount: bigint
   paymentsPaid: bigint
   timelap: bigint
-  token: Token
+  token: TokenValue
 }
 
 export const useLoanValues = (address: `0x${string}` | undefined, index: number) => {
@@ -77,11 +72,23 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
         loanData.collaterals.map(async (collateral: Address, index: number) => {
           const safeAddress = getAddress(collateral)
           const amount = loanData?.collateralAmount[index] ?? 0
+          const found = findTokenByAddress("fantom", safeAddress)
+          if (found) {
+            const value = fromDecimals(amount, found.decimals)
+            return {
+              ...pick(found, ["name", "symbol", "address", "chainId", "decimals", "icon"]),
+              value,
+            }
+          }
+
+          // this is not a known token, lets get the data required from RPC calls (todo: cache this into extenral tokens cache)
           const decimals = await tokenDecimals({ address: safeAddress })
           const value = fromDecimals(amount, decimals)
           return {
             name: await tokenName({ address: safeAddress }),
+            symbol: await tokenSymbol({ address: safeAddress }),
             address: safeAddress,
+            chainId: 250, // hard coded fantom
             amount,
             decimals,
             value,
@@ -90,9 +97,34 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
       )
 
       // Lets build the loan object as we want to see it
-      const decimals = await tokenDecimals({ address: loanData?.LenderToken })
+      let loanToken = undefined
+      const safeAddress = getAddress(loanData?.LenderToken ?? "")
+      const found = findTokenByAddress("fantom", safeAddress)
       const amount = loanData?.LenderAmount
-      const value = fromDecimals(amount, decimals)
+      if (found) {
+        const value = fromDecimals(amount, found.decimals)
+        loanToken = {
+          ...pick(found, ["name", "address", "symbol", "chainId", "decimals", "icon", "isNative", "isLp"]), // it might not be safe to pass the whole object
+          value,
+          amount,
+        }
+      } else {
+        const decimals = await tokenDecimals({ address: loanData?.LenderToken })
+        const value = fromDecimals(amount, decimals)
+        loanToken = {
+          name: await tokenName({ address: loanData?.LenderToken ?? "" }),
+          symbol: await tokenName({ address: loanData?.LenderToken ?? "" }),
+          address: loanData?.LenderToken,
+          chainId: 250, // hard coded fantom
+          amount: Number(amount),
+          decimals,
+          value,
+          isNative: false,
+          isLp: false, // todo: this is not correct, we need to check if the token is an LP token
+          icon: "",
+        }
+      }
+
       const { cooldown, deadline, deadlineNext, executed, paymentAmount, paymentCount, paymentsPaid, timelap } =
         loanData
 
@@ -108,13 +140,7 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
         paymentCount,
         paymentsPaid,
         timelap,
-        token: {
-          name: await tokenName({ address: loanData?.LenderToken ?? "" }),
-          address: loanData?.LenderToken,
-          amount,
-          decimals,
-          value,
-        },
+        token: loanToken,
       }
 
       const result = {

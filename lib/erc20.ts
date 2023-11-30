@@ -4,62 +4,46 @@ import erc20Abi from "../abis/erc20.json"
 import { findInternalTokenByAddress } from "./tokens"
 import { readContract } from "wagmi/actions"
 
-export const tokenName = async ({
-  address,
-  forceChainLookup = false,
-}: {
-  address: `0x${string}`
-  forceChainLookup?: boolean
-}) => {
+/**
+ * We read the symbol as name
+ * @param param0
+ * @returns
+ */
+export const tokenName = async ({ address }: { address: `0x${string}` }) => tokenSymbol({ address })
+
+// we already read the symbol as the name
+export const tokenSymbol = async ({ address }: { address: `0x${string}` }) => {
   if (!address) {
     return ""
   }
+  const safeAddress = getAddress(address)
 
-  const safeAddress = getAddress(address) // make sure it is checksummed first
-
-  // is this a known token?
-  if (forceChainLookup === false) {
-    // todo: xchain - we hard code to 'fantom' for now, this will be dynamic in the future
-    const found = findInternalTokenByAddress("fantom", safeAddress)
-    if (found) {
-      return found.name
-    }
+  // todo: xchain - we hard code to 'fantom' for now, this will be dynamic in the future
+  const found = findInternalTokenByAddress("fantom", safeAddress)
+  if (found) {
+    return found.name
   }
 
-  // Yes! we read the symbol, not the name for unknown tokens!
-  const tokenName = await readContract({
+  const symbol = await readContract({
     address: safeAddress,
     abi: erc20Abi,
     functionName: "symbol",
   })
 
-  return (tokenName as string) ?? ""
+  return (symbol as string) ?? ""
 }
 
-export const tokenDecimals = async ({
-  address,
-  forceChainLookup = false,
-}: {
-  address: `0x${string}`
-  forceChainLookup?: boolean
-}) => {
+export const tokenDecimals = async ({ address }: { address: `0x${string}` }) => {
   if (!address) {
     return 0
   }
-
   const safeAddress = getAddress(address) // make sure it is checksummed first
-
-  // is this a known token?
-  if (forceChainLookup === false) {
-    // todo: xchain - we hard code to 'fantom' for now, this will be dynamic in the future
-    const found = findInternalTokenByAddress("fantom", safeAddress)
-
-    if (found) {
-      return Number(found.decimals)
-    }
+  // todo: xchain - we hard code to 'fantom' for now, this will be dynamic in the future
+  const found = findInternalTokenByAddress("fantom", safeAddress)
+  if (found) {
+    return Number(found.decimals)
   }
 
-  // Yes! we read the symbol, not the name for unknown tokens!
   const tokenDecimals = readContract({
     address: safeAddress,
     abi: erc20Abi,

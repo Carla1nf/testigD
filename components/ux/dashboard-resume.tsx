@@ -4,9 +4,9 @@ import { DashboardAccessAlarm, DashboardAccountBalance, DashboardEqualizer, Dash
 import { useNextPayment } from "@/context/next-payment-context"
 import { useOwnershipBalance } from "@/hooks/useOwnsershipBalance"
 import { GetDataResponse } from "@/services/api"
-import { toDays, toHours } from "@/lib/display"
 import dynamic from "next/dynamic"
 import { useAccount } from "wagmi"
+import DaysHours from "./deadline-datetime"
 
 // import { ChainData, Circle, CirclesContainer, Container, Logo, NumberData } from "./Styles"
 
@@ -43,8 +43,7 @@ export function DashboardResume({
       <DashboardResumeItem
         value={
           <div className="mt-1 text-2xl">
-            {toDays(Number(deadline))} <span className="text-xs">DAYS</span> {toHours(Number(deadline))}{" "}
-            <span className="text-xs">HOURS </span>
+            <DaysHours deadline={Number(deadline)} />
           </div>
         }
         title={"Your next payment"}

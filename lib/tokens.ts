@@ -4,9 +4,9 @@ import { fantom } from "wagmi/chains"
 export type Token = {
   name: string
   symbol: string
-  decimals: number
   address: string
   chainId: number
+  decimals: number
   isNative: boolean
   isLp: boolean
   icon: string
@@ -115,4 +115,13 @@ export const findInternalTokenBySymbol = (chainSlug: string, symbol: string): To
 
 export const findInternalTokenByAddress = (chainSlug: string, address: string): Token | undefined => {
   return INTERNAL_TOKENS[chainSlug].find((token) => token.address === address)
+}
+
+export const findTokenByAddress = (chainSlug: string, address: string): Token | undefined => {
+  const found = findInternalTokenByAddress(chainSlug, address)
+  if (found) return found
+
+  // todo, this will also search the external user defined tokens in the future
+
+  return undefined
 }

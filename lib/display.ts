@@ -42,3 +42,19 @@ export function toHours(unixTimestamp: number) {
 
   return hours < 0 ? 0 : hours
 }
+
+export default function loanStatus(deadlineNext: number) {
+  const now = new Date().getTime()
+  const daysInSeconds = deadlineNext * 1000 - now
+
+  if (daysInSeconds <= 0) {
+    return {
+      displayText: "DEFAULT",
+      className: "text-red-500",
+    }
+  }
+  return {
+    displayText: "LIVE",
+    className: "text-green-500",
+  }
+}
