@@ -1,6 +1,7 @@
 "use client"
 
-import { ResumeDash } from "@/components/ux/resume-dash"
+import { DashboardResume } from "@/components/ux/dashboard-resume"
+import { DashboardUserTable } from "@/components/ux/dashboard-user-table"
 import TokenImage from "@/components/ux/token-image"
 import { filterByOwner } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
@@ -20,8 +21,8 @@ export default function Dashboard() {
       </div>
       <div className="flex flex-col-2 gap-8">
         <div className="w-3/4">
-          <ResumeDash lending={userOffersLending} collateral={userOffersCollateral} />
-          {/* <UserBox type={"Borrow"} /> */}
+          <DashboardResume lending={userOffersLending} collateral={userOffersCollateral} />
+          <DashboardUserTable />
         </div>
         <div>Active Offers</div>
       </div>

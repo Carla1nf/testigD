@@ -1,4 +1,4 @@
-import { Token, findInternalTokenBySymbol } from "@/utils/tokens"
+import { Token, findInternalTokenBySymbol } from "@/lib/tokens"
 import { useEffect, useState } from "react"
 
 export const useInternalToken = (chainSlug: string, symbol: string) => {

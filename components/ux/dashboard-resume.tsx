@@ -4,15 +4,15 @@ import { DashboardAccessAlarm, DashboardAccountBalance, DashboardEqualizer, Dash
 import { useNextPayment } from "@/context/next-payment-context"
 import { useOwnershipBalance } from "@/hooks/useOwnsershipBalance"
 import { GetDataResponse } from "@/services/api"
-import { toDays, toHours } from "@/utils/display"
+import { toDays, toHours } from "@/lib/display"
 import dynamic from "next/dynamic"
 import { useAccount } from "wagmi"
 
 // import { ChainData, Circle, CirclesContainer, Container, Logo, NumberData } from "./Styles"
 
-const DashboardItem = dynamic(() => import("./dashboard-item"), { ssr: false })
+const DashboardResumeItem = dynamic(() => import("./dashboard-resume-item"), { ssr: false })
 
-export function ResumeDash({
+export function DashboardResume({
   lending,
   collateral,
 }: {
@@ -25,22 +25,22 @@ export function ResumeDash({
 
   return (
     <div className="grid grid-cols-2 gap-4 w-3/4">
-      <DashboardItem
+      <DashboardResumeItem
         value={ownershipBalance}
         title={"Historical loans"}
         Icon={<DashboardEqualizer className="w-[120px] h-[120px] mt-[3px] fill-[#A6A766]" />}
       />
-      <DashboardItem
+      <DashboardResumeItem
         value={collateral && Array.isArray(collateral) ? collateral.length : undefined}
         title={"Lending offers"}
         Icon={<DashboardAccountBalance className="w-[120px] h-[120px] mt-[3px] fill-[#6B66A7]" />}
       />
-      <DashboardItem
+      <DashboardResumeItem
         value={lending && Array.isArray(lending) ? lending.length : undefined}
         title={"Borrow offers"}
         Icon={<DashboardSavings className="w-[120px] h-[120px] mt-[3px] fill-[#A76666]" />}
       />
-      <DashboardItem
+      <DashboardResumeItem
         value={
           <div className="mt-1 text-2xl">
             {toDays(Number(deadline))} <span className="text-xs">DAYS</span> {toHours(Number(deadline))}{" "}

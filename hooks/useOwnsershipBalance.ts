@@ -1,4 +1,4 @@
-import { OWNERSHIP_ADDRESS } from "@/utils/contracts"
+import { OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { useContractRead } from "wagmi"
 import ownershipsAbi from "../abis/ownerships.json"
 

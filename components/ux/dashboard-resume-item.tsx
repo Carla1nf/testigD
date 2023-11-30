@@ -3,7 +3,7 @@
 import { ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const DashboardItem = ({ value, title, Icon }: { value: ReactNode; title: string; Icon: ReactNode }) => {
+const DashboardResumeItem = ({ value, title, Icon }: { value: ReactNode; title: string; Icon: ReactNode }) => {
   return (
     <div key={title} className="relative overflow-hidden dashboard-item-gradient p-3 rounded-lg">
       <div className="text-sm font-bold mb-1">{title}</div>
@@ -15,4 +15,4 @@ const DashboardItem = ({ value, title, Icon }: { value: ReactNode; title: string
   )
 }
 
-export default DashboardItem
+export default DashboardResumeItem
