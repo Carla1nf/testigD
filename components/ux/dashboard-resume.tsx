@@ -2,10 +2,10 @@
 
 import { DashboardAccessAlarm, DashboardAccountBalance, DashboardEqualizer, DashboardSavings } from "@/components/icons"
 import { useNextPayment } from "@/context/next-payment-context"
+import { useControlledAddress } from "@/hooks/useControlledAddress"
 import { useOwnershipBalance } from "@/hooks/useOwnsershipBalance"
 import { GetDataResponse } from "@/services/api"
 import dynamic from "next/dynamic"
-import { useAccount } from "wagmi"
 import DaysHours from "./deadline-datetime"
 
 // import { ChainData, Circle, CirclesContainer, Container, Logo, NumberData } from "./Styles"
@@ -20,7 +20,7 @@ export function DashboardResume({
   collateral: GetDataResponse["borrow"]
 }) {
   const deadline = useNextPayment()
-  const { address } = useAccount()
+  const { address } = useControlledAddress()
   const { ownershipBalance } = useOwnershipBalance(address)
 
   return (
@@ -31,12 +31,12 @@ export function DashboardResume({
         Icon={<DashboardEqualizer className="w-[120px] h-[120px] mt-[3px] fill-[#A6A766]" />}
       />
       <DashboardResumeItem
-        value={collateral && Array.isArray(collateral) ? collateral.length : undefined}
+        value={collateral && Array.isArray(lending) ? lending.length : undefined}
         title={"Lending offers"}
         Icon={<DashboardAccountBalance className="w-[120px] h-[120px] mt-[3px] fill-[#6B66A7]" />}
       />
       <DashboardResumeItem
-        value={lending && Array.isArray(lending) ? lending.length : undefined}
+        value={lending && Array.isArray(collateral) ? collateral.length : undefined}
         title={"Borrow offers"}
         Icon={<DashboardSavings className="w-[120px] h-[120px] mt-[3px] fill-[#A76666]" />}
       />
