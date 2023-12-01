@@ -59,6 +59,15 @@ export function loanStatus(deadlineNext: number) {
   }
 }
 
+/**
+ * This function displays a real percentage value, formatted as a string.
+ * @param {Object} params - The parameters for the function.
+ * @param {number} params.value - The value to calculate the percentage of.
+ * @param {boolean} [params.showSymbol=true] - Whether to show the percentage symbol in the output.
+ * @param {number} [params.decimalsWhenGteOne=0] - The number of decimal places to use when the value is greater than or equal to one.
+ * @param {number} [params.decimalsWhenLessThanOne=1] - The number of decimal places to use when the value is less than one.
+ * @returns {string} The percentage of the value, formatted as a string.
+ */
 export function percent({
   value,
   showSymbol = true,
@@ -72,8 +81,6 @@ export function percent({
 }) {
   const realValue = value * 100
   const decimals = realValue >= 1 ? decimalsWhenGteOne : decimalsWhenLessThanOne
-  console.log("value, decimals", value, decimals)
-
   const p = realValue.toFixed(decimals)
   return showSymbol ? `${p}%` : p
 }

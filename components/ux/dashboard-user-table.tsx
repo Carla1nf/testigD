@@ -1,11 +1,12 @@
 "use client"
 
+import { useControlledAddress } from "@/hooks/useControlledAddress"
 import { LoanStatus } from "@/hooks/useLoanValues"
 import { useOwnershipBalance } from "@/hooks/useOwnsershipBalance"
 import { cn, range } from "@/lib/utils"
 import dynamic from "next/dynamic"
 import { useMemo, useState } from "react"
-import { Address, useAccount } from "wagmi"
+import { Address } from "wagmi"
 import { Button } from "../ui/button"
 
 const DashboardUserTableItem = dynamic(() => import("../../components/ux/dashboard-user-table-item"), { ssr: false })
@@ -15,7 +16,7 @@ const DashboardUserTable = () => {
 
   // Leys simulate getting all the data required for Borrowed and see waht comes up
   // there arre a few RPC requetss here afaik
-  const { address } = useAccount()
+  const { address } = useControlledAddress()
 
   // This is the number of loans the user has taken (borrowed)
   const { ownershipBalance } = useOwnershipBalance(address)

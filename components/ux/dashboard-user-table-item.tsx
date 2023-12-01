@@ -1,10 +1,10 @@
 import { useManageNextPayment } from "@/context/next-payment-context"
-import { LoanStatus, TokenValue, useLoanValues } from "@/hooks/useLoanValues"
-import loanStatus from "@/lib/display"
+import { LoanStatus, useLoanValues } from "@/hooks/useLoanValues"
+import { loanStatus } from "@/lib/display"
+import { useEffect } from "react"
 import { Address } from "viem"
 import DaysHours from "./deadline-datetime"
-import TokenImage from "./token-image"
-import { useEffect } from "react"
+import DisplayToken from "./display-token"
 
 const DashboardUserTableItem = ({
   address,
@@ -75,16 +75,16 @@ const DashboardUserTableItem = ({
     return (
       <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0" key={data.loanId}>
         <td className="p-3">
-          {data?.loan?.collaterals?.length === 1 ? <DisplayToken token={data?.loan?.collaterals[0]} /> : null}
+          {data?.loan?.collaterals?.length === 1 ? <DisplayToken token={data?.loan?.collaterals[0]} size={24} /> : null}
           {data?.loan?.collaterals?.length === 2 ? (
             <div className="flex flex-col gap-2">
-              <DisplayToken token={data.loan.collaterals[0]} />
-              <DisplayToken token={data.loan.collaterals[1]} />
+              <DisplayToken token={data.loan.collaterals[0]} size={24} />
+              <DisplayToken token={data.loan.collaterals[1]} size={24} />
             </div>
           ) : null}
         </td>
         <td className="p-3">
-          <DisplayToken token={data.loan.token} />
+          <DisplayToken token={data.loan.token} size={24} />
         </td>
         <td className="p-3">{Number(data.loanId)}</td>
         <td className="p-3">
@@ -107,12 +107,3 @@ const DashboardUserTableItem = ({
 }
 
 export default DashboardUserTableItem
-
-const DisplayToken = ({ token }: { token: TokenValue }) => {
-  return (
-    <div className="flex flex-row gap-2 items-center">
-      <TokenImage width={24} height={24} chainSlug="fantom" symbol={token.symbol} />
-      {token.symbol}
-    </div>
-  )
-}

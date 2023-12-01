@@ -62,9 +62,11 @@ export type GetDataResponse = z.infer<typeof GetDataResponse>
 const getData = async () => {
   try {
     // todo: move URL into a config file in prep for xchain app
+    // [collaterals, lending, totalLiquidityLent]
     const response = await axios.get("https://v4wfbcl0v9.execute-api.us-east-1.amazonaws.com/Deploy/getData")
     const parsedResponse = GetDataSchema.parse(response.data)
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
+
     return parsedResponse
   } catch (error) {
     console.error("Api→getData", error)
@@ -83,8 +85,9 @@ export const getDebitaData = async () => {
 }
 
 const transformGetDataResponse = (response: GetData): GetDataResponse => {
+  // [collaterals, lending, totalLiquidityLent] = GetData
   return {
-    lend: response[0].map((event) => {
+    lend: response[1].map((event) => {
       return LenderOfferCreatedSchema.parse({
         id: event[0],
         owner: event[3],
@@ -93,7 +96,7 @@ const transformGetDataResponse = (response: GetData): GetDataResponse => {
         lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
       })
     }),
-    borrow: response[1].map((event) => {
+    borrow: response[0].map((event) => {
       return CollateralOfferCreatedSchema.parse({
         id: event[0],
         owner: event[3],

@@ -1,18 +1,18 @@
 "use client"
 
+import DashboardActiveOffers from "@/components/ux/dashboard-active-offers"
 import { DashboardResume } from "@/components/ux/dashboard-resume"
 import TokenImage from "@/components/ux/token-image"
+import { useControlledAddress } from "@/hooks/useControlledAddress"
 import { filterByOwner } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
 import dynamic from "next/dynamic"
-import { useAccount } from "wagmi"
 
-// Import your component with ssr set to false
 const DashboardUserTable = dynamic(() => import("../../components/ux/dashboard-user-table"), { ssr: false })
 
 export default function Dashboard() {
   const { data, isSuccess } = useDebitaDataQuery()
-  const { address } = useAccount()
+  const { address } = useControlledAddress()
   const userOffersLending: any[] = isSuccess ? filterByOwner(data?.lend, address) : []
   const userOffersCollateral: any[] = isSuccess ? filterByOwner(data?.borrow, address) : []
 
@@ -22,12 +22,14 @@ export default function Dashboard() {
         <TokenImage width={36} height={36} symbol={"FTM"} chainSlug={"fantom"} />
         Fantom Network
       </div>
-      <div className="flex flex-col-2 gap-8">
-        <div className="w-3/4">
+      <div className="flex flex-col-2 gap-12">
+        <div className="w-3/4 flex flex-col gap-4">
           <DashboardResume lending={userOffersLending} collateral={userOffersCollateral} />
           <DashboardUserTable />
         </div>
-        <div>Active Offers</div>
+        <div className="w-1/4">
+          <DashboardActiveOffers lending={userOffersLending} collateral={userOffersCollateral} />
+        </div>
       </div>
     </>
   )
