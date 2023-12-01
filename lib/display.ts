@@ -43,7 +43,7 @@ export function toHours(unixTimestamp: number) {
   return hours < 0 ? 0 : hours
 }
 
-export default function loanStatus(deadlineNext: number) {
+export function loanStatus(deadlineNext: number) {
   const now = new Date().getTime()
   const daysInSeconds = deadlineNext * 1000 - now
 
@@ -57,4 +57,23 @@ export default function loanStatus(deadlineNext: number) {
     displayText: "LIVE",
     className: "text-green-500",
   }
+}
+
+export function percent({
+  value,
+  showSymbol = true,
+  decimalsWhenGteOne = 0,
+  decimalsWhenLessThanOne = 1,
+}: {
+  value: number
+  showSymbol?: boolean
+  decimalsWhenGteOne?: number
+  decimalsWhenLessThanOne?: number
+}) {
+  const realValue = value * 100
+  const decimals = realValue >= 1 ? decimalsWhenGteOne : decimalsWhenLessThanOne
+  console.log("value, decimals", value, decimals)
+
+  const p = realValue.toFixed(decimals)
+  return showSymbol ? `${p}%` : p
 }
