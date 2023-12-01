@@ -33,13 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" type="image/svg+xml" href="/files/icon/debita-icon.svg" />
       </head>
-      <body className={cn("bg-background font-sans antialiased", fontSans.variable)}>
+      <body className={cn("bg-background font-sans antialiased h-[calc(100dvh)]", fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Providers>
             <>
               <BetaWarning />
               <Nav />
-              <main className="container flex min-h-screen flex-col py-16 grow">{children}</main>
+              <main className="flex min-h-screen flex-col py-16 px-12 grow">{children}</main>
               <footer className="p-8 text-center">&copy; 2023 Dēbita</footer>
             </>
           </Providers>

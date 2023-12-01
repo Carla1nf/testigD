@@ -64,7 +64,7 @@ const DashboardActiveOffersTable = ({
           <thead className="text-white" suppressHydrationWarning>
             <tr
               className={cn(
-                "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
+                "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-xs"
               )}
             >
               <th className="p-3 text-center">Collateral</th>
@@ -143,14 +143,14 @@ const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Addr
   const collateralToken1 = findTokenByAddress("fantom", data.collaterals[1])
 
   return (
-    <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0" key={item.id}>
+    <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 text-xs" key={item.id}>
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
         {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
         {collateralToken1 ? <DisplayToken token={collateralToken1} size={24} /> : null}
       </td>
       {/* Lending */}
-      <td className="p-3 align-top text-center">
+      <td className="p-3 align-top text-center items-center">
         {lenderToken ? <DisplayToken token={lenderToken} size={24} /> : null}
       </td>
       <td className="p-3 align-top text-center">{percent({ value: Number(data.interest) })}</td>

@@ -24,7 +24,7 @@ export function DashboardResume({
   const { ownershipBalance } = useOwnershipBalance(address)
 
   return (
-    <div className="grid grid-cols-2 gap-4 w-3/4">
+    <div className="grid grid-cols-2 gap-y-6 gap-x-8 w-3/4">
       <DashboardResumeItem
         value={ownershipBalance}
         title={"Historical loans"}

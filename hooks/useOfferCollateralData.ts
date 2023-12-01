@@ -37,7 +37,10 @@ export const useOfferCollateralData = (address: Address | undefined, index: numb
       if (parsedData.owner === ZERO_ADDRESS) {
         return null
       }
-      return parsedData
+      return {
+        ...parsedData,
+        interest: Number(parsedData.interest) / 1000,
+      }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,
   })
