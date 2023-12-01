@@ -96,7 +96,6 @@ const DashboardUserTableItem = ({
 }) => {
   const { isSuccess, isLoading, isError, data } = useLoanValues(address, index, status)
   const updateDeadline = useManageNextPayment()
-  console.log("updateDeadline", updateDeadline)
 
   if (isError || isLoading) {
     return null
