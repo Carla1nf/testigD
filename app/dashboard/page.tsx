@@ -1,11 +1,14 @@
 "use client"
 
 import { DashboardResume } from "@/components/ux/dashboard-resume"
-import { DashboardUserTable } from "@/components/ux/dashboard-user-table"
 import TokenImage from "@/components/ux/token-image"
 import { filterByOwner } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
+import dynamic from "next/dynamic"
 import { useAccount } from "wagmi"
+
+// Import your component with ssr set to false
+const DashboardUserTable = dynamic(() => import("../../components/ux/dashboard-user-table"), { ssr: false })
 
 export default function Dashboard() {
   const { data, isSuccess } = useDebitaDataQuery()
