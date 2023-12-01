@@ -9,6 +9,7 @@ import { Address, useAccount } from "wagmi"
 import { Button } from "../ui/button"
 import DaysHours from "./deadline-datetime"
 import TokenImage from "./token-image"
+import { useManageNextPayment } from "@/context/next-payment-context"
 
 export function DashboardUserTable() {
   const [status, setStatus] = useState<LoanStatus>("Borrowed")
@@ -94,6 +95,8 @@ const DashboardUserTableItem = ({
   status: LoanStatus
 }) => {
   const { isSuccess, isLoading, isError, data } = useLoanValues(address, index, status)
+  const updateDeadline = useManageNextPayment()
+  console.log("updateDeadline", updateDeadline)
 
   if (isError || isLoading) {
     return null
@@ -129,6 +132,13 @@ const DashboardUserTableItem = ({
 
   if (!shouldDisplay) {
     return
+  }
+
+  // ok, now we can consider this item for next payment deadline
+  if (!hasLoanExecuted && !hasLoanCompleted && Number(data.ownerNftTokenId) === Number(data.loan.collateralOwnerId)) {
+    if (updateDeadline) {
+      updateDeadline(Number(data.loan.deadlineNext))
+    }
   }
 
   if (isSuccess) {
