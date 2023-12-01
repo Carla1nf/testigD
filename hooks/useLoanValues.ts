@@ -17,6 +17,7 @@ export type TokenValue = Token & {
 
 type Loan = {
   id: number
+  collateralOwnerId: number
   collaterals?: TokenValue[]
   cooldown: bigint
   deadline: bigint
@@ -30,9 +31,11 @@ type Loan = {
   token: TokenValue
 }
 
-export const useLoanValues = (address: `0x${string}` | undefined, index: number) => {
+export type LoanStatus = "Borrowed" | "Lent"
+
+export const useLoanValues = (address: `0x${string}` | undefined, index: number, status: LoanStatus) => {
   const useLoanValuesQuery = useQuery({
-    queryKey: ["read-loan-values", address, index],
+    queryKey: ["read-loan-values", address, status, index],
     queryFn: async () => {
       // todo: Optimisation - we can read previous values here and ONLY get new values that could change, i.e. the loan data? the claimable debt?
       // See https://tanstack.com/query/latest/docs/react/reference/QueryCache
@@ -78,6 +81,7 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
             return {
               ...pick(found, ["name", "symbol", "address", "chainId", "decimals", "icon"]),
               value,
+              amount,
             }
           }
 
@@ -125,11 +129,21 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
         }
       }
 
-      const { cooldown, deadline, deadlineNext, executed, paymentAmount, paymentCount, paymentsPaid, timelap } =
-        loanData
+      const {
+        collateralOwnerID,
+        cooldown,
+        deadline,
+        deadlineNext,
+        executed,
+        paymentAmount,
+        paymentCount,
+        paymentsPaid,
+        timelap,
+      } = loanData
 
       const loan: Loan = {
         id: index,
+        collateralOwnerId: collateralOwnerID, // watchout for the name change here in ID!
         collaterals,
         cooldown,
         deadline,
@@ -148,7 +162,6 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number)
         ownerNftTokenId,
         loan,
         loanId,
-        // loanData,
       }
 
       return result
