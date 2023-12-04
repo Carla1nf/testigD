@@ -22,6 +22,74 @@ const LenderOfferCreatedSchema = z.object({
   lendingAmount: z.number(),
 })
 
+export type LenderOfferCreated = z.infer<typeof LenderOfferCreatedSchema>
+
+interface LenderOfferTokenData {
+  tokenAddress: string
+  apr: number
+  amount: number
+  events: LenderOfferCreated[]
+  price: number
+}
+
+export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<string, LenderOfferTokenData> => {
+  const tokensMap = new Map<string, LenderOfferTokenData>()
+
+  data.forEach((event) => {
+    const tokenAddress = event.lendingToken
+
+    // Check if the token data already exists in the map
+    if (tokensMap.has(tokenAddress)) {
+      const tokenData = tokensMap.get(tokenAddress)!
+      tokenData.events.push(event)
+      tokenData.apr += event.apr
+      tokenData.amount += event.lendingAmount * 10 ** 16
+    } else {
+      // Create a new entry for the token
+      tokensMap.set(tokenAddress, {
+        tokenAddress: tokenAddress,
+        apr: event.apr,
+        amount: event.lendingAmount * 10 ** 16,
+        events: [event],
+        price: 0,
+      })
+    }
+  })
+
+  return tokensMap
+}
+
+// export const processLenderOfferCreatedArray = (data: LenderOfferCreated[]) => {
+//   return data.reduce(
+//     (
+//       acc: {
+//         tokenAddresses: string[]
+//         tokenEvents: LenderOfferCreated[][]
+//         aprs: number[]
+//         amounts: number[]
+//       },
+//       event: LenderOfferCreated
+//     ) => {
+//       const tokenAddress = event.lendingToken
+//       const index = acc.tokenAddresses.indexOf(tokenAddress)
+
+//       if (index === -1) {
+//         acc.tokenAddresses.push(tokenAddress)
+//         acc.tokenEvents.push([event])
+//         acc.aprs.push(event.apr)
+//         acc.amounts.push(event.lendingAmount * 10 ** 16)
+//       } else {
+//         acc.tokenEvents[index].push(event)
+//         acc.aprs[index] += event.apr
+//         acc.amounts[index] += event.lendingAmount * 10 ** 16
+//       }
+
+//       return acc
+//     },
+//     { tokenAddresses: [], tokenEvents: [], aprs: [], amounts: [] }
+//   )
+// }
+
 /**
  * event CollateralOfferCreated(
  *   uint256 indexed id,
@@ -130,7 +198,7 @@ export type ProcessGetDataNestedArrayResult = {
  * @deprecated uses old format, we will update the UI to use the new object format
  * and be more expressive using filters
  */
-const processGetDataNestedArray = (data: GetDataNestedArray): ProcessGetDataNestedArrayResult => {
+export const processGetDataNestedArray = (data: GetDataNestedArray): ProcessGetDataNestedArrayResult => {
   return data.reduce(
     (
       acc: {
