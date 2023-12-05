@@ -154,8 +154,12 @@ export const getDebitaData = async () => {
 
 const transformGetDataResponse = (response: GetData): GetDataResponse => {
   // [collaterals, lending, totalLiquidityLent] = GetData
+  console.log("response", response)
+
   return {
     lend: response[1].map((event) => {
+      // console.log("transformGetDataResponse->lend->event", event)
+
       return LenderOfferCreatedSchema.parse({
         id: event[0],
         owner: event[3],

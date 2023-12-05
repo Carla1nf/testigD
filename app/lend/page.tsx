@@ -2,30 +2,29 @@
 
 import { AvailableIcon, MarketSizeIcon, TotalLentIcon } from "@/components/icons"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
+import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
-import TokenImage from "@/components/ux/token-image"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useLendingMarketStats } from "@/hooks/useLendingMarketStats"
 import { dollars } from "@/lib/display"
 import { findInternalTokenByAddress } from "@/lib/tokens"
+import { useRouter } from "next/navigation"
 
 export default function Lend() {
   const stats = useLendingMarketStats()
   const { dividedOffers } = useLendingMarket()
   const currentChain = useCurrentChain()
+  const router = useRouter()
 
   return (
     <>
       {/* Page header */}
-      <div className="flex justify-between">
+      <div className="flex justify-between mb-12">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Lending Market</h1>
-          <div className="flex items-center text-sm font-bold gap-2 mb-8">
-            <TokenImage width={20} height={20} symbol={"FTM"} chainSlug={"fantom"} />
-            Fantom Network
-          </div>
+          <DisplayNetwork currentChain={currentChain} />
         </div>
         <div className="grid grid-cols-3 gap-12">
           <Stat
@@ -57,12 +56,12 @@ export default function Lend() {
               className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
               suppressHydrationWarning
             >
-              <th className="p-3 text-left">Lend</th>
-              <th className="p-3 text-left">Offers</th>
-              <th className="p-3 text-left">Liquidity Offers</th>
-              <th className="p-3 text-left">Price</th>
-              <th className="p-3 text-left">Interest (%)</th>
-              <th className="p-3 text-left">&nbsp;</th>
+              <th className="p-3 px-4 text-left">Lend</th>
+              <th className="p-3 px-4 text-left">Offers</th>
+              <th className="p-3 px-4 text-left">Liquidity Offers</th>
+              <th className="p-3 px-4 text-left">Price</th>
+              <th className="p-3 px-4 text-left">Interest (%)</th>
+              <th className="p-3 px-4 text-left">&nbsp;</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
@@ -71,11 +70,17 @@ export default function Lend() {
               console.log("values", values)
 
               return (
-                <tr>
-                  <td>{token ? <DisplayToken size={36} token={token} /> : null}</td>
-                  <td>{values.events.length}</td>
-                  <td>{values.events.length}</td>
-                  <td>{dollars({ value: values.price })}</td>
+                <tr
+                  onClick={() => {
+                    router.push(`/lend/${address}`)
+                  }}
+                >
+                  <td className="p-2 text-left px-4 items-center">
+                    {token ? <DisplayToken size={28} token={token} /> : null}
+                  </td>
+                  <td className="p-2 text-left px-4 items-center">{values.events.length}</td>
+                  <td className="p-2 text-left px-4 items-center">{values.events.length}</td>
+                  <td className="p-2 text-left px-4 items-center">{dollars({ value: values.price })}</td>
                 </tr>
               )
             })}
