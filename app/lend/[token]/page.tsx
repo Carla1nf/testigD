@@ -11,34 +11,27 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
 import { useSpecificLendingMarketStats } from "@/hooks/useSpecificLendingMarketStats"
-import { dollars } from "@/lib/display"
+import { dollars, percent, timelapDays, toDays } from "@/lib/display"
+import { fromDecimals } from "@/lib/erc20"
 import { Token, findInternalTokenByAddress } from "@/lib/tokens"
 import { PercentIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useMemo } from "react"
 import { Address } from "viem"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
-  const { address } = useControlledAddress()
   const currentChain = useCurrentChain()
-
   const stats = useSpecificLendingMarketStats(params.token)
   const token = findInternalTokenByAddress(currentChain.slug, params.token)
   const { dividedOffers } = useLendingMarket()
 
   // Get the divided offers for this specific token (specificDividedOffers.events)
-  const specificDividedOffers = useMemo(() => {
-    if (!dividedOffers) return undefined
-    return dividedOffers.get(params.token)
-  }, [dividedOffers, params.token])
-
-  console.log("specificDividedOffers", specificDividedOffers)
+  const specificDividedOffers = dividedOffers?.get(params.token) ?? undefined
 
   return (
     <>
       {/* Page header */}
-      <div className="flex justify-between mb-12">
-        <div className="space-y-2">
+      <div className="flex justify-between mb-12 gap-8">
+        <div className="space-y-2 max-w-lg min-w-md w-md">
           <div className="flex items-center gap-8">
             <h1 className="text-3xl font-bold flex flex-row gap-2 items-center">
               {token ? <DisplayToken size={28} token={token} /> : null}
@@ -48,7 +41,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           </div>
           <DisplayNetwork currentChain={currentChain} />
         </div>
-        <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-3 gap-8 grow">
           <Stat
             value={dollars({ value: stats.price, decimals: 3 })}
             title={"Price"}
@@ -60,8 +53,8 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             Icon={<HourGlassIcon className="w-10 h-10 fill-white" />}
           />
           <Stat
-            value={dollars({ value: stats.mediumInterest })}
-            title={"Mediium Interest %"}
+            value={percent({ value: stats.mediumInterest, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+            title={"Medium Interest %"}
             Icon={<PercentIcon className="w-10 h-10" />}
           />
         </div>
@@ -80,18 +73,18 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             >
               <th className="p-3 text-left">Lend</th>
               <th className="p-3 text-left">Collateral</th>
-              <th className="p-3 text-left">LTV</th>
-              <th className="p-3 text-left">Lending amt.</th>
-              <th className="p-3 text-left">Collateral amt.</th>
-              <th className="p-3 text-left">Time</th>
-              <th className="p-3 text-left">Payments</th>
-              <th className="p-3 text-left">Interest (%)</th>
+              <th className="p-3 text-center">LTV</th>
+              <th className="p-3 text-center">Lending amt.</th>
+              <th className="p-3 text-center">Collateral amt.</th>
+              <th className="p-3 text-center">Time</th>
+              <th className="p-3 text-center">Payments</th>
+              <th className="p-3 text-center">Interest (%)</th>
               <th className="p-3 text-left">&nbsp;</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
             {specificDividedOffers?.events.map((event) => {
-              return <TableRow event={event} token={token} />
+              return <TableRow event={event} token={token} key={event.id} />
             })}
           </tbody>
         </table>
@@ -115,25 +108,56 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const router = useRouter()
   const { data: collateralData } = useOfferCollateralData(address, event.id)
 
-  // const lenderToken = findInternalTokenByAddress(currentChain.slug, collateralData?.wantedLenderToken as Address)
+  const lenderToken = findInternalTokenByAddress(currentChain.slug, collateralData?.wantedLenderToken as Address)
   const collateralToken0 = findInternalTokenByAddress(currentChain.slug, collateralData?.collaterals[0] as Address)
   const collateralToken1 = findInternalTokenByAddress(currentChain.slug, collateralData?.collaterals[1] as Address)
 
   // const collateralToken = findInternalTokenByAddress(currentChain.slug, event.tokenAddress)
-  console.log("TableRow->event", event)
-  console.log("TableRow->collateralData", collateralData)
+  // console.log("TableRow->event", event)
+  // console.log("TableRow->collateralData", collateralData)
 
   return (
     <tr
       onClick={() => {
         router.push(`/borrow-offer/${event.id}`)
       }}
+      key={`${lenderToken?.symbol}_${event.id}`}
     >
-      <td>{token ? <DisplayToken size={28} token={token} /> : null}</td>
-      <td>
-        {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} /> : null}
-        {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} /> : null}
+      <td className="p-3 text-left">{token ? <DisplayToken size={28} token={token} /> : null}</td>
+      <td className="p-3 text-left">
+        <div className="flex flex-col gap-2">
+          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} /> : null}
+          {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} /> : null}
+        </div>
       </td>
+      <td className="p-3 text-center">n/a</td>
+      <td className="p-3 text-center ">
+        <div>
+          {event.lendingAmount} {lenderToken?.symbol}
+        </div>
+      </td>
+      <td className="p-3 text-center">
+        <div className="flex flex-col gap-2">
+          {collateralToken0 ? (
+            <div>
+              {fromDecimals(collateralData?.collateralAmount[0] as bigint, collateralToken0.decimals)}{" "}
+              {collateralToken0?.symbol}
+            </div>
+          ) : null}
+          {collateralToken1 ? (
+            <div>
+              {fromDecimals(collateralData?.collateralAmount[1] as bigint, collateralToken1.decimals)}{" "}
+              {collateralToken1?.symbol}
+            </div>
+          ) : null}
+        </div>
+      </td>
+      <td className="p-3 text-center">{timelapDays(Number(collateralData?.timelap))} Days</td>
+      <td className="p-3 text-center">{Number(collateralData?.paymentCount)}</td>
+      <td className="p-3 text-center">
+        {percent({ value: event.apr, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+      </td>
+      <td className="p-3 text-left">n/a</td>
     </tr>
   )
 }

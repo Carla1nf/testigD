@@ -18,6 +18,8 @@ export default function Lend() {
   const currentChain = useCurrentChain()
   const router = useRouter()
 
+  // console.log("Lend page", stats, dividedOffers)
+
   return (
     <>
       {/* Page header */}
@@ -60,7 +62,7 @@ export default function Lend() {
               <th className="p-3 px-4 text-center">Offers</th>
               <th className="p-3 px-4 text-center">Liquidity Offers</th>
               <th className="p-3 px-4 text-center">Price</th>
-              <th className="p-3 px-4 text-center">Interest (%)</th>
+              <th className="p-3 px-4 text-center">Avg Interest</th>
               <th className="p-3 px-4 text-left">&nbsp;</th>
             </tr>
           </thead>
@@ -71,6 +73,17 @@ export default function Lend() {
               if (!token) {
                 return null
               }
+              /**
+               * This is the calc in V1:
+               *
+               * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
+               *
+               * And converted to V2 like this
+               * todo: I dont like that this business logic is inside a render function
+               */
+
+              const liquidityOffer = (values.amount / 10 ** 16) * values.price
+
               return (
                 <tr
                   onClick={() => {
@@ -82,7 +95,7 @@ export default function Lend() {
                     {token ? <DisplayToken size={28} token={token} /> : null}
                   </td>
                   <td className="p-2 text-center px-4 items-center">{values.events.length}</td>
-                  <td className="p-2 text-center px-4 items-center">n/a</td>
+                  <td className="p-2 text-center px-4 items-center">{dollars({ value: liquidityOffer })}</td>
                   <td className="p-2 text-center px-4 items-center">{dollars({ value: values?.price ?? 0 })}</td>
                   <td className="p-2 text-center px-4 items-center">
                     {percent({ value: values.averageApr, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
