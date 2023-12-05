@@ -26,14 +26,15 @@ export type LenderOfferCreated = z.infer<typeof LenderOfferCreatedSchema>
 
 export interface LenderOfferTokenData {
   tokenAddress: string
-  apr: number
+
+  averageApr: number
   amount: number
   events: LenderOfferCreated[]
   price: number
 }
 
 export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<string, LenderOfferTokenData> => {
-  const tokensMap = new Map<string, LenderOfferTokenData>()
+  const tokensMap = new Map<string, LenderOfferTokenData & { totalApr: number }>()
 
   data.forEach((event) => {
     const tokenAddress = event.lendingToken
@@ -42,13 +43,14 @@ export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<strin
     if (tokensMap.has(tokenAddress)) {
       const tokenData = tokensMap.get(tokenAddress)!
       tokenData.events.push(event)
-      tokenData.apr += event.apr
+      tokenData.totalApr += event.apr
       tokenData.amount += event.lendingAmount * 10 ** 16
     } else {
       // Create a new entry for the token
       tokensMap.set(tokenAddress, {
         tokenAddress: tokenAddress,
-        apr: event.apr,
+        totalApr: event.apr,
+        averageApr: 0,
         amount: event.lendingAmount * 10 ** 16,
         events: [event],
         price: 0,
@@ -56,39 +58,21 @@ export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<strin
     }
   })
 
-  return tokensMap
+  // ok now that we have collected all events, lets loop again and aclaulte the actual averahe apr
+  const finalMap = new Map<string, Omit<LenderOfferTokenData, "totalApr">>()
+
+  tokensMap.forEach((tokenData, tokenAddress) => {
+    finalMap.set(tokenAddress, {
+      tokenAddress: tokenData.tokenAddress,
+      averageApr: tokenData.totalApr / tokenData.events.length,
+      amount: tokenData.amount,
+      events: tokenData.events,
+      price: tokenData.price,
+    })
+  })
+
+  return finalMap
 }
-
-// export const processLenderOfferCreatedArray = (data: LenderOfferCreated[]) => {
-//   return data.reduce(
-//     (
-//       acc: {
-//         tokenAddresses: string[]
-//         tokenEvents: LenderOfferCreated[][]
-//         aprs: number[]
-//         amounts: number[]
-//       },
-//       event: LenderOfferCreated
-//     ) => {
-//       const tokenAddress = event.lendingToken
-//       const index = acc.tokenAddresses.indexOf(tokenAddress)
-
-//       if (index === -1) {
-//         acc.tokenAddresses.push(tokenAddress)
-//         acc.tokenEvents.push([event])
-//         acc.aprs.push(event.apr)
-//         acc.amounts.push(event.lendingAmount * 10 ** 16)
-//       } else {
-//         acc.tokenEvents[index].push(event)
-//         acc.aprs[index] += event.apr
-//         acc.amounts[index] += event.lendingAmount * 10 ** 16
-//       }
-
-//       return acc
-//     },
-//     { tokenAddresses: [], tokenEvents: [], aprs: [], amounts: [] }
-//   )
-// }
 
 /**
  * event CollateralOfferCreated(
@@ -108,7 +92,6 @@ const CollateralOfferCreatedSchema = z.object({
 })
 
 type GetData = z.infer<typeof GetDataSchema>
-type GetDataElement = z.infer<typeof GetDataElementSchema>
 type GetDataNestedArray = z.infer<typeof GetDataNestedArraySchema>
 
 export type OfferType = "Lend" | "Borrow"
@@ -153,13 +136,9 @@ export const getDebitaData = async () => {
 }
 
 const transformGetDataResponse = (response: GetData): GetDataResponse => {
-  // [collaterals, lending, totalLiquidityLent] = GetData
-  console.log("response", response)
-
   return {
     lend: response[1].map((event) => {
       // console.log("transformGetDataResponse->lend->event", event)
-
       return LenderOfferCreatedSchema.parse({
         id: event[0],
         owner: event[3],
@@ -196,41 +175,6 @@ export type ProcessGetDataNestedArrayResult = {
   tokenEvents: GetDataNestedArray[]
   sumOfAPR: number[]
   sumOfAmounts: number[]
-}
-
-/**
- * @deprecated uses old format, we will update the UI to use the new object format
- * and be more expressive using filters
- */
-export const processGetDataNestedArray = (data: GetDataNestedArray): ProcessGetDataNestedArrayResult => {
-  return data.reduce(
-    (
-      acc: {
-        tokenAddresses: string[]
-        tokenEvents: GetDataNestedArray[]
-        sumOfAPR: number[]
-        sumOfAmounts: number[]
-      },
-      event: GetDataElement
-    ) => {
-      const tokenAddress = event[4]
-      const index = acc.tokenAddresses.indexOf(tokenAddress)
-
-      if (index === -1) {
-        acc.tokenAddresses.push(tokenAddress)
-        acc.tokenEvents.push([event])
-        acc.sumOfAPR.push(event[2])
-        acc.sumOfAmounts.push(event[1] * 10 ** 16)
-      } else {
-        acc.tokenEvents[index].push(event)
-        acc.sumOfAPR[index] += event[2]
-        acc.sumOfAmounts[index] += event[1] * 10 ** 16
-      }
-
-      return acc
-    },
-    { tokenAddresses: [], tokenEvents: [], sumOfAPR: [], sumOfAmounts: [] }
-  )
 }
 
 /**

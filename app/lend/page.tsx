@@ -8,7 +8,7 @@ import Stat from "@/components/ux/stat"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useLendingMarketStats } from "@/hooks/useLendingMarketStats"
-import { dollars } from "@/lib/display"
+import { dollars, percent } from "@/lib/display"
 import { findInternalTokenByAddress } from "@/lib/tokens"
 import { useRouter } from "next/navigation"
 
@@ -57,30 +57,36 @@ export default function Lend() {
               suppressHydrationWarning
             >
               <th className="p-3 px-4 text-left">Lend</th>
-              <th className="p-3 px-4 text-left">Offers</th>
-              <th className="p-3 px-4 text-left">Liquidity Offers</th>
-              <th className="p-3 px-4 text-left">Price</th>
-              <th className="p-3 px-4 text-left">Interest (%)</th>
+              <th className="p-3 px-4 text-center">Offers</th>
+              <th className="p-3 px-4 text-center">Liquidity Offers</th>
+              <th className="p-3 px-4 text-center">Price</th>
+              <th className="p-3 px-4 text-center">Interest (%)</th>
               <th className="p-3 px-4 text-left">&nbsp;</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
             {Array.from(dividedOffers ?? [])?.map(([address, values]) => {
               const token = findInternalTokenByAddress(currentChain.slug, address)
-              console.log("values", values)
 
+              if (!token) {
+                return null
+              }
               return (
                 <tr
                   onClick={() => {
                     router.push(`/lend/${address}`)
                   }}
+                  key={`${token.symbol}_${address}`}
                 >
                   <td className="p-2 text-left px-4 items-center">
                     {token ? <DisplayToken size={28} token={token} /> : null}
                   </td>
-                  <td className="p-2 text-left px-4 items-center">{values.events.length}</td>
-                  <td className="p-2 text-left px-4 items-center">{values.events.length}</td>
-                  <td className="p-2 text-left px-4 items-center">{dollars({ value: values.price })}</td>
+                  <td className="p-2 text-center px-4 items-center">{values.events.length}</td>
+                  <td className="p-2 text-center px-4 items-center">n/a</td>
+                  <td className="p-2 text-center px-4 items-center">{dollars({ value: values?.price ?? 0 })}</td>
+                  <td className="p-2 text-center px-4 items-center">
+                    {percent({ value: values.averageApr, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+                  </td>
                 </tr>
               )
             })}

@@ -37,6 +37,10 @@ export const useOfferCollateralData = (address: Address | undefined, index: numb
       if (parsedData.owner === ZERO_ADDRESS) {
         return null
       }
+
+      // we should process the data here, collateral tokens should be an array of grouped data, not as multiple arrays
+      console.log("parsedData", parsedData)
+
       return {
         ...parsedData,
         interest: Number(parsedData.interest) / 1000,

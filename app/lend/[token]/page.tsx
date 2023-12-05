@@ -120,7 +120,8 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const collateralToken1 = findInternalTokenByAddress(currentChain.slug, collateralData?.collaterals[1] as Address)
 
   // const collateralToken = findInternalTokenByAddress(currentChain.slug, event.tokenAddress)
-  console.log("values", event)
+  console.log("TableRow->event", event)
+  console.log("TableRow->collateralData", collateralData)
 
   return (
     <tr

@@ -7,7 +7,6 @@ export const useSpecificLendingMarketStats = (address: string) => {
   const [waitingToBeLent, setWaitingToBeLent] = useState(0)
   const [mediumInterest, setMediumInterest] = useState(0)
   const currentChain = useCurrentChain()
-
   const tokenPricing = useTokenPrice(currentChain.slug, address as Address)
 
   // useEffect(() => {
