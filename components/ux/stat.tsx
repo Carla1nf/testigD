@@ -7,12 +7,12 @@ const Stat = ({ value, title, Icon }: { value: ReactNode; title: string; Icon: R
   return (
     <div
       key={title}
-      className="overflow-hidden dashboard-item-gradient p-3 rounded-lg flex flex-row gap-4 items-center"
+      className="overflow-hidden dashboard-item-gradient py-3 px-8 rounded-lg flex flex-row justify-center items-center border border-white/5"
     >
-      <div className="max-w-[64px]">{Icon}</div>
-      <div>
+      <div className="pr-4">{Icon}</div>
+      <div className="text-left grow">
         <div className="text-xs font-bold">{title}</div>
-        <div className="text-2xl font-bold text-[#A957A4]">
+        <div className="text-2xl font-medium text-[#A957A4]">
           {value === undefined ? <Skeleton className="h-4 h-[80px] w-[200px]" /> : value}
         </div>
       </div>

@@ -24,7 +24,7 @@ const LenderOfferCreatedSchema = z.object({
 
 export type LenderOfferCreated = z.infer<typeof LenderOfferCreatedSchema>
 
-interface LenderOfferTokenData {
+export interface LenderOfferTokenData {
   tokenAddress: string
   apr: number
   amount: number
