@@ -1,5 +1,6 @@
-import z from "zod"
+import { Token } from "@/lib/tokens"
 import axios from "axios"
+import z from "zod"
 
 const GetDataElementSchema = z.tuple([z.number(), z.number(), z.number(), z.string(), z.string()])
 const GetDataNestedArraySchema = z.array(GetDataElementSchema)
@@ -26,11 +27,13 @@ export type LenderOfferCreated = z.infer<typeof LenderOfferCreatedSchema>
 
 export interface LenderOfferTokenData {
   tokenAddress: string
-
-  averageApr: number
+  averageInterestRate: number
   amount: number
+  amountRaw: number
   events: LenderOfferCreated[]
+  liquidityOffer: number
   price: number
+  token?: Token
 }
 
 export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<string, LenderOfferTokenData> => {
@@ -44,30 +47,36 @@ export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<strin
       const tokenData = tokensMap.get(tokenAddress)!
       tokenData.events.push(event)
       tokenData.totalApr += event.apr
-      tokenData.amount += event.lendingAmount * 10 ** 16
+      tokenData.amount += event.lendingAmount
+      tokenData.amountRaw += event.lendingAmount * 10 ** 16
     } else {
-      // Create a new entry for the token
       tokensMap.set(tokenAddress, {
         tokenAddress: tokenAddress,
         totalApr: event.apr,
-        averageApr: 0,
-        amount: event.lendingAmount * 10 ** 16,
+        averageInterestRate: 0,
+        amount: event.lendingAmount,
+        amountRaw: event.lendingAmount * 10 ** 16,
         events: [event],
         price: 0,
+        token: undefined,
+        liquidityOffer: 0,
       })
     }
   })
 
-  // ok now that we have collected all events, lets loop again and aclaulte the actual averahe apr
+  // ok now that we have collected all events, lets loop again and calculate the actual average apr
   const finalMap = new Map<string, Omit<LenderOfferTokenData, "totalApr">>()
 
   tokensMap.forEach((tokenData, tokenAddress) => {
     finalMap.set(tokenAddress, {
       tokenAddress: tokenData.tokenAddress,
-      averageApr: tokenData.totalApr / tokenData.events.length,
+      averageInterestRate: tokenData.totalApr / tokenData.events.length,
       amount: tokenData.amount,
+      amountRaw: tokenData.amountRaw,
       events: tokenData.events,
       price: tokenData.price,
+      token: tokenData.token,
+      liquidityOffer: tokenData.liquidityOffer,
     })
   })
 

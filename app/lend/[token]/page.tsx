@@ -12,6 +12,7 @@ import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
 import { useSpecificLendingMarketStats } from "@/hooks/useSpecificLendingMarketStats"
 import { dollars, ltv, percent } from "@/lib/display"
+import { filterOffersByToken } from "@/lib/filters"
 import { Token, findInternalTokenByAddress } from "@/lib/tokens"
 import { PercentIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -20,10 +21,9 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   const currentChain = useCurrentChain()
   const stats = useSpecificLendingMarketStats(params.token)
   const token = findInternalTokenByAddress(currentChain.slug, params.token)
-  const { dividedOffers } = useLendingMarket()
-
-  // Get the divided offers for this specific token (specificDividedOffers.events)
-  const specificDividedOffers = dividedOffers?.get(params.token) ?? undefined
+  const { offers } = useLendingMarket()
+  const marketOffers = token ? filterOffersByToken(offers, token) : []
+  const events = Array.isArray(marketOffers) && marketOffers.length > 0 ? marketOffers[0].events : []
 
   return (
     <>
@@ -75,7 +75,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
       </div>
 
       {/* Render token table (secondary level - specific token selected)  */}
-      <ShowWhenTrue when={!!specificDividedOffers && specificDividedOffers?.events?.length > 0}>
+      <ShowWhenTrue when={Array.isArray(marketOffers) && marketOffers.length > 0}>
         <table
           className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
           suppressHydrationWarning
@@ -96,7 +96,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
-            {specificDividedOffers?.events.map((event) => {
+            {events?.map((event: any) => {
               return <TableRow event={event} token={token} key={event.id} />
             })}
           </tbody>
@@ -123,7 +123,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         router.push(`/borrow-offer/${event.id}`)
       }}
       key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
-      className="hover:bg-[#383838]"
+      className="hover:bg-[#383838] cursor-pointer"
     >
       <td className="p-3 text-left">{token ? <DisplayToken size={28} token={token} /> : null}</td>
       <td className="p-3 text-left">

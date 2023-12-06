@@ -9,16 +9,13 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useLendingMarketStats } from "@/hooks/useLendingMarketStats"
 import { dollars, percent } from "@/lib/display"
-import { findInternalTokenByAddress } from "@/lib/tokens"
 import { useRouter } from "next/navigation"
 
 export default function Lend() {
   const stats = useLendingMarketStats()
-  const { dividedOffers } = useLendingMarket()
+  const { offers } = useLendingMarket()
   const currentChain = useCurrentChain()
   const router = useRouter()
-
-  // console.log("Lend page", stats, dividedOffers)
 
   return (
     <>
@@ -50,7 +47,7 @@ export default function Lend() {
       </div>
 
       {/* Render token table (top level)  */}
-      <ShowWhenTrue when={!!dividedOffers && dividedOffers?.size > 0}>
+      <ShowWhenTrue when={Array.isArray(offers) && offers.length > 0}>
         <table
           className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
           suppressHydrationWarning
@@ -65,42 +62,31 @@ export default function Lend() {
               <th className="p-3 px-4 text-center">Liquidity Offers</th>
               <th className="p-3 px-4 text-center">Price</th>
               <th className="p-3 px-4 text-center">Avg Interest</th>
-              <th className="p-3 px-4 text-left">&nbsp;</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
-            {Array.from(dividedOffers ?? [])?.map(([address, values]) => {
-              const token = findInternalTokenByAddress(currentChain.slug, address)
-
-              if (!token) {
+            {offers?.map((offer: any) => {
+              if (!offer.token) {
                 return null
               }
-              /**
-               * This is the calc in V1:
-               *
-               * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
-               *
-               * And converted to V2 like this
-               * todo: I dont like that this business logic is inside a render function
-               */
-
-              const liquidityOffer = (values.amount / 10 ** 16) * values.price
-
               return (
                 <tr
                   onClick={() => {
-                    router.push(`/lend/${address}`)
+                    router.push(`/lend/${offer.token.address}`)
                   }}
-                  key={`${token.symbol}_${address}`}
+                  key={`${offer.token.symbol}_${offer.token.address}`}
+                  className="hover:bg-[#383838] cursor-pointer"
                 >
                   <td className="p-2 text-left px-4 items-center">
-                    {token ? <DisplayToken size={28} token={token} /> : null}
+                    {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
                   </td>
-                  <td className="p-2 text-center px-4 items-center">{values.events.length}</td>
-                  <td className="p-2 text-center px-4 items-center">{dollars({ value: liquidityOffer })}</td>
-                  <td className="p-2 text-center px-4 items-center">{dollars({ value: values?.price ?? 0 })}</td>
+                  <td className="p-2 text-center px-4 items-center">{offer.events.length}</td>
+                  <td className="p-2 text-center px-4 items-center">{dollars({ value: offer.liquidityOffer })}</td>
                   <td className="p-2 text-center px-4 items-center">
-                    {percent({ value: values.averageApr, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+                    {dollars({ value: offer?.price ?? 0, decimals: 2 })}
+                  </td>
+                  <td className="p-2 text-center px-4 items-center">
+                    {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
                   </td>
                 </tr>
               )

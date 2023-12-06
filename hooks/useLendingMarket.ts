@@ -1,50 +1,42 @@
+import { findInternalTokenByAddress } from "@/lib/tokens"
 import { LenderOfferTokenData, processLenderOfferCreated } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
-import fetchTokenPrices, { extractAddressFromLlamaUuid, makeLlamaUuids } from "@/services/token-prices"
+import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
 import { Address } from "viem"
 import useCurrentChain from "./useCurrentChain"
 
 export const useLendingMarket = () => {
-  const { data, isSuccess } = useDebitaDataQuery()
+  const { data } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
-  const [dividedOffers, setDividedOffers] = useState<Map<string, LenderOfferTokenData>>()
 
-  useEffect(() => {
-    if (isSuccess) {
-      setDividedOffers(processLenderOfferCreated(data.borrow))
-    }
-  }, [isSuccess, data])
+  const query: any = useQuery({
+    queryKey: ["lending-market-divided-offers", currentChain.slug, data?.borrow?.length],
+    queryFn: async () => {
+      const dividedOffers = processLenderOfferCreated(data?.borrow ?? [])
+      const offers: LenderOfferTokenData[] = Array.from(dividedOffers.values())
 
-  // in V1, they then render each token address in a loop inside the EachToken component, and this then does an `inddividual` defillama fetch call
-  // call defi llama but as a CSV List so it's all in one fetch call
-  const tokenLlamaUuids = makeLlamaUuids(currentChain.slug, Array.from((dividedOffers?.keys() ?? []) as Address[]))
-  const { data: tokenPricesResult, isSuccess: isTokenPriceFetchSuccess } = useQuery({
-    queryKey: ["token-prices", tokenLlamaUuids],
-    queryFn: () => fetchTokenPrices(tokenLlamaUuids),
-    // we want to cache this for 5 minutes
-    staleTime: 5 * 60 * 1000,
+      for (let i = 0; i < offers.length; i++) {
+        const offer = offers[i]
+        const tokenLlamaUuid = makeLlamaUuid(currentChain.slug, offer.tokenAddress as Address)
+        const tokenPrice = await fetchTokenPrice(tokenLlamaUuid)
+        const token = findInternalTokenByAddress(currentChain.slug, offer.tokenAddress as Address)
+        offer.price = tokenPrice?.price ?? 0
+        offer.token = token
+
+        /**
+         * This is the calc from V1
+         * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
+         */
+        offer.liquidityOffer = offer.amount * offer.price
+      }
+
+      return { dividedOffers, offers }
+    },
   })
-
-  // Inject prices when received
-  useEffect(() => {
-    if (isTokenPriceFetchSuccess) {
-      const newDividedOffers = new Map(dividedOffers)
-      tokenPricesResult.forEach((values, llamaId) => {
-        const address = extractAddressFromLlamaUuid(llamaId)
-        const dividedOffer = newDividedOffers.get(address)
-        if (dividedOffer) {
-          dividedOffer.price = values.price
-        }
-      })
-
-      setDividedOffers(newDividedOffers)
-    }
-  }, [isTokenPriceFetchSuccess, tokenPricesResult])
 
   return {
     borrow: data?.borrow, // why the flip here? investigate
-    dividedOffers,
+    offers: query?.data?.offers ?? undefined,
   }
 }
