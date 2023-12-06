@@ -14,7 +14,7 @@ import { useSpecificLendingMarketStats } from "@/hooks/useSpecificLendingMarketS
 import { dollars, ltv, percent } from "@/lib/display"
 import { filterOffersByToken } from "@/lib/filters"
 import { Token, findInternalTokenByAddress } from "@/lib/tokens"
-import { PercentIcon } from "lucide-react"
+import { LucideChevronRight, PercentIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
@@ -32,9 +32,9 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
         <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
           {/* Mobile / tablet view */}
           <div className="space-y-2 @6xl:hidden">
-            <h1 className="text-2xl font-bold flex flex-row  gap-2 items-center whitespace-nowrap">
+            <h1 className="text-2xl font-bold flex flex-row gap-2 items-center whitespace-nowrap">
+              Lending Market <LucideChevronRight className="w-6 h-6 stroke-neutral-500" />
               {token ? <DisplayToken size={28} token={token} /> : null}
-              Lending Market
             </h1>
             <div className="flex flex-row items-center justify-between gap-8">
               <DisplayNetwork currentChain={currentChain} />
@@ -44,13 +44,15 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           {/* Desktop view */}
           <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
             <div className="flex items-center justify-between gap-8">
-              <h1 className="text-3xl font-bold flex flex-row  gap-2 items-center whitespace-nowrap">
+              <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
+                Lending Market <LucideChevronRight className="w-6 h-6 stroke-neutral-500" />
                 {token ? <DisplayToken size={28} token={token} /> : null}
-                Lending Market
               </h1>
+            </div>
+            <div className="flex justify-between">
+              <DisplayNetwork currentChain={currentChain} />
               <BackLink />
             </div>
-            <DisplayNetwork currentChain={currentChain} />
           </div>
           <div className="grid grid-cols-3 gap-8">
             <Stat
