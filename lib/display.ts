@@ -35,10 +35,7 @@ export function timelapDays(daysInSeconds: number) {
 export function toDays(unixTimestamp: number) {
   const now = new Date().getTime()
   const daysInSeconds = unixTimestamp * 1000 - now
-
   const days = Math.floor(daysInSeconds / MILLISECONDS_PER_DAY)
-
-  // console.log("toDays", { unixTimestamp, now, daysInSeconds, MILLISECONDS_PER_DAY, days })
   return days < 0 ? 0 : days
 }
 
@@ -46,8 +43,6 @@ export function toHours(unixTimestamp: number) {
   const now = new Date().getTime()
   const daysInSeconds = unixTimestamp * 1000 - now
   let hours = Math.floor((daysInSeconds % MILLISECONDS_PER_DAY) / MILLISECONDS_PER_HOUR)
-  // console.log("toDays", unixTimestamp, now, daysInSeconds, hours)
-
   return hours < 0 ? 0 : hours
 }
 
@@ -91,4 +86,9 @@ export function percent({
   const decimals = realValue >= 1 ? decimalsWhenGteOne : decimalsWhenLessThanOne
   const p = realValue.toFixed(decimals)
   return showSymbol ? `${p}%` : p
+}
+
+export function ltv(ltv: number) {
+  if (ltv) return ltv.toFixed(2)
+  return 0
 }

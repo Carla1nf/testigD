@@ -11,12 +11,10 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
 import { useSpecificLendingMarketStats } from "@/hooks/useSpecificLendingMarketStats"
-import { dollars, percent, timelapDays, toDays } from "@/lib/display"
-import { fromDecimals } from "@/lib/erc20"
+import { dollars, ltv, percent } from "@/lib/display"
 import { Token, findInternalTokenByAddress } from "@/lib/tokens"
 import { PercentIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Address } from "viem"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
   const currentChain = useCurrentChain()
@@ -95,7 +93,6 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
               <th className="p-3 text-center">Time</th>
               <th className="p-3 text-center">Payments</th>
               <th className="p-3 text-center">Interest (%)</th>
-              <th className="p-3 text-left">&nbsp;</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
@@ -109,35 +106,24 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   )
 }
 
-// I Really dislike this pattern, we are fetching data during rendering
-// I would much prefer if the data xcan be pre-fetched aso the cache is primed
-// Thisd will result in a better experience for the user and for the devs, we currentlyhave knowldege spread out across the app
-// I wonder if this is better suited in the API layer.
-//
-// For now, I am happy to go this route but ultimately, we can do better than this
-//
-// Let's get ALL of the logic converted from V1 and then we can refactor
-
 const TableRow = ({ event, token }: { event: any; token?: Token }) => {
-  const { address } = useControlledAddress()
-  const currentChain = useCurrentChain()
   const router = useRouter()
+  const { address } = useControlledAddress()
   const { data: collateralData } = useOfferCollateralData(address, event.id)
 
-  const lenderToken = findInternalTokenByAddress(currentChain.slug, collateralData?.wantedLenderToken as Address)
-  const collateralToken0 = findInternalTokenByAddress(currentChain.slug, collateralData?.collaterals[0] as Address)
-  const collateralToken1 = findInternalTokenByAddress(currentChain.slug, collateralData?.collaterals[1] as Address)
-
-  // const collateralToken = findInternalTokenByAddress(currentChain.slug, event.tokenAddress)
-  // console.log("TableRow->event", event)
-  // console.log("TableRow->collateralData", collateralData)
+  const collateral0 = collateralData?.collaterals[0]
+  const collateral1 = collateralData?.collaterals[1]
+  const collateralToken0 = collateral0?.token
+  const collateralToken1 = collateral1?.token
+  const lenderToken = collateralData?.lender?.token
 
   return (
     <tr
       onClick={() => {
         router.push(`/borrow-offer/${event.id}`)
       }}
-      key={`${lenderToken?.symbol}_${event.id}`}
+      key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
+      className="hover:bg-[#383838]"
     >
       <td className="p-3 text-left">{token ? <DisplayToken size={28} token={token} /> : null}</td>
       <td className="p-3 text-left">
@@ -147,8 +133,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         </div>
       </td>
 
-      <td className="p-3 text-center">-</td>
-
+      <td className="p-3 text-center">{ltv(collateralData?.ltv)}</td>
       <td className="p-3 text-center ">
         <div>
           {event.lendingAmount} {lenderToken?.symbol}
@@ -158,24 +143,21 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         <div className="flex flex-col gap-2">
           {collateralToken0 ? (
             <div>
-              {fromDecimals((collateralData?.collateralAmount[0] as bigint) ?? 0, collateralToken0.decimals)}{" "}
-              {collateralToken0?.symbol}
+              {collateral0.amount} {collateralToken0?.symbol}
             </div>
           ) : null}
           {collateralToken1 ? (
             <div>
-              {fromDecimals((collateralData?.collateralAmount[1] as bigint) ?? 0, collateralToken1.decimals)}{" "}
-              {collateralToken1?.symbol}
+              {collateral1.amount} {collateralToken1?.symbol}
             </div>
           ) : null}
         </div>
       </td>
-      <td className="p-3 text-center">{timelapDays(Number(collateralData?.timelap))} Days</td>
+      <td className="p-3 text-center">{collateralData?.numberOfLoanDays} Days</td>
       <td className="p-3 text-center">{Number(collateralData?.paymentCount ?? 0)}</td>
       <td className="p-3 text-center">
         {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
       </td>
-      <td className="p-3 text-left">n/a</td>
     </tr>
   )
 }
