@@ -25,8 +25,11 @@ const MILLISECONDS_PER_HOUR = 1000 * SECONDS_PER_HOUR
 export const MILLISECONDS_PER_MINUTE = 1000 * SECONDS_PER_MINUTE
 
 export function timelapDays(daysInSeconds: number) {
-  const days = Math.floor(daysInSeconds / SECONDS_PER_DAY)
-  return days < 0 ? 0 : days
+  if (daysInSeconds > 0) {
+    const days = Math.floor(daysInSeconds / SECONDS_PER_DAY)
+    return days < 0 ? 0 : days
+  }
+  return 0
 }
 
 export function toDays(unixTimestamp: number) {

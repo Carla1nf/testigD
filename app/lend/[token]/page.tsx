@@ -130,7 +130,9 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
           {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} /> : null}
         </div>
       </td>
-      <td className="p-3 text-center">n/a</td>
+
+      <td className="p-3 text-center">-</td>
+
       <td className="p-3 text-center ">
         <div>
           {event.lendingAmount} {lenderToken?.symbol}
@@ -140,22 +142,22 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         <div className="flex flex-col gap-2">
           {collateralToken0 ? (
             <div>
-              {fromDecimals(collateralData?.collateralAmount[0] as bigint, collateralToken0.decimals)}{" "}
+              {fromDecimals((collateralData?.collateralAmount[0] as bigint) ?? 0, collateralToken0.decimals)}{" "}
               {collateralToken0?.symbol}
             </div>
           ) : null}
           {collateralToken1 ? (
             <div>
-              {fromDecimals(collateralData?.collateralAmount[1] as bigint, collateralToken1.decimals)}{" "}
+              {fromDecimals((collateralData?.collateralAmount[1] as bigint) ?? 0, collateralToken1.decimals)}{" "}
               {collateralToken1?.symbol}
             </div>
           ) : null}
         </div>
       </td>
       <td className="p-3 text-center">{timelapDays(Number(collateralData?.timelap))} Days</td>
-      <td className="p-3 text-center">{Number(collateralData?.paymentCount)}</td>
+      <td className="p-3 text-center">{Number(collateralData?.paymentCount ?? 0)}</td>
       <td className="p-3 text-center">
-        {percent({ value: event.apr, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+        {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
       </td>
       <td className="p-3 text-left">n/a</td>
     </tr>
