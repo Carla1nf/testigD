@@ -15,6 +15,8 @@ import { dollars, ltv, percent } from "@/lib/display"
 import { filterOffersByToken } from "@/lib/filters"
 import { Token, findInternalTokenByAddress } from "@/lib/tokens"
 import { LucideChevronRight, PercentIcon } from "lucide-react"
+import Link from "next/link"
+
 import { useRouter } from "next/navigation"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
@@ -29,31 +31,22 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
     <>
       {/* Page header */}
       <div className="@container mb-8 lg:mb-16">
-        <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
-          {/* Mobile / tablet view */}
-          <div className="space-y-2 @6xl:hidden">
-            <h1 className="text-2xl font-bold flex flex-row gap-2 items-center whitespace-nowrap">
-              Lending Market <LucideChevronRight className="w-6 h-6 stroke-neutral-500" />
-              {token ? <DisplayToken size={28} token={token} /> : null}
+        {/* Breadcrumbs idea */}
+        <div className="flex gap-1 text-xs items-center mb-4">
+          <DisplayNetwork currentChain={currentChain} size={18} />
+          <LucideChevronRight className="w-4 h-4 stroke-neutral-500" />
+          <Link href={`/lend/`} className="hover:text-white/75">
+            Lending Market
+          </Link>
+        </div>
+        <div className="flex flex-col @6xl:flex-row gap-8 justify-between items-center">
+          {/* Page title */}
+          <div className="space-y-2 flex-row justify-center">
+            <h1 className="text-3xl font-bold flex flex-row gap-2 items-center whitespace-nowrap">
+              Lending {token ? <DisplayToken size={28} token={token} className="flex-row-reverse gap-1" /> : null}
             </h1>
-            <div className="flex flex-row items-center justify-between gap-8">
-              <DisplayNetwork currentChain={currentChain} />
-              <BackLink />
-            </div>
           </div>
-          {/* Desktop view */}
-          <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
-            <div className="flex items-center justify-between gap-8">
-              <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-                Lending Market <LucideChevronRight className="w-6 h-6 stroke-neutral-500" />
-                {token ? <DisplayToken size={28} token={token} /> : null}
-              </h1>
-            </div>
-            <div className="flex justify-between">
-              <DisplayNetwork currentChain={currentChain} />
-              <BackLink />
-            </div>
-          </div>
+
           <div className="grid grid-cols-3 gap-8">
             <Stat
               value={dollars({ value: stats.price, decimals: 3 })}

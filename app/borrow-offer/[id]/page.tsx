@@ -48,7 +48,13 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
           <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
             <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-              Lend ID #{Number(id)}
+              Lend ID #{Number(id)}{" "}
+              {/* {lendingToken ? (
+                <>
+                  <LucideChevronRight className="w-4 h-4 stroke-neutral-500" />
+                  <DisplayToken size={28} token={lendingToken} className="flex-row-reverse gap-1" />
+                </>
+              ) : null} */}
             </h1>
           </div>
           <div className="grid grid-cols-3 gap-8">

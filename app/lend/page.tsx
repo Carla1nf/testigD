@@ -9,6 +9,7 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useLendingMarketStats } from "@/hooks/useLendingMarketStats"
 import { dollars, percent } from "@/lib/display"
+import { LucideChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export default function Lend() {
@@ -21,10 +22,14 @@ export default function Lend() {
     <>
       {/* Page header */}
       <div className="@container mb-8">
+        {/* Breadcrumbs idea */}
+        <div className="flex gap-1 text-xs items-center mb-4">
+          <DisplayNetwork currentChain={currentChain} size={18} />
+        </div>
+
         <div className="flex flex-col @4xl:flex-row gap-8 justify-between">
-          <div className="space-y-2">
+          <div className="flex items-center">
             <h1 className="text-3xl font-bold">Lending Market</h1>
-            <DisplayNetwork currentChain={currentChain} />
           </div>
           <div className="grid grid-cols-3 gap-8">
             <Stat
