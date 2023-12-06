@@ -12,7 +12,7 @@ const DisplayNetwork = ({
   size?: number
 }) => {
   return (
-    <div className={cn("flex items-center text-sm font-bold gap-1 mb-8", className)}>
+    <div className={cn("flex items-center text-sm font-bold gap-1", className)}>
       {currentChain.name}
       <TokenImage width={size ?? 20} height={size ?? 20} symbol={currentChain.symbol} chainSlug={currentChain.slug} />
     </div>

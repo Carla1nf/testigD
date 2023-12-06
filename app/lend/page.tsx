@@ -23,27 +23,29 @@ export default function Lend() {
   return (
     <>
       {/* Page header */}
-      <div className="flex justify-between mb-12">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Lending Market</h1>
-          <DisplayNetwork currentChain={currentChain} />
-        </div>
-        <div className="grid grid-cols-3 gap-12">
-          <Stat
-            value={dollars({ value: stats.available, decimals: 0 })}
-            title={"Available"}
-            Icon={<AvailableIcon className="w-10 h-10 fill-white" />}
-          />
-          <Stat
-            value={dollars({ value: stats.marketSize, decimals: 0 })}
-            title={"Market Size"}
-            Icon={<MarketSizeIcon className="w-10 h-10 fill-white" />}
-          />
-          <Stat
-            value={dollars({ value: stats.totalLiquidityLent, decimals: 0 })}
-            title={"Total Lent"}
-            Icon={<TotalLentIcon className="w-10 h-10 fill-white" />}
-          />
+      <div className="@container mb-8">
+        <div className="flex flex-col @4xl:flex-row gap-8 justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">Lending Market</h1>
+            <DisplayNetwork currentChain={currentChain} />
+          </div>
+          <div className="grid grid-cols-3 gap-8">
+            <Stat
+              value={dollars({ value: stats.available, decimals: 0 })}
+              title={"Available"}
+              Icon={<AvailableIcon className="w-10 h-10 fill-white" />}
+            />
+            <Stat
+              value={dollars({ value: stats.marketSize, decimals: 0 })}
+              title={"Market Size"}
+              Icon={<MarketSizeIcon className="w-10 h-10 fill-white" />}
+            />
+            <Stat
+              value={dollars({ value: stats.totalLiquidityLent, decimals: 0 })}
+              title={"Total Lent"}
+              Icon={<TotalLentIcon className="w-10 h-10 fill-white" />}
+            />
+          </div>
         </div>
       </div>
 

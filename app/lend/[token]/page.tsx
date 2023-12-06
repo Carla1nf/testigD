@@ -30,33 +30,49 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   return (
     <>
       {/* Page header */}
-      <div className="flex justify-between mb-12 gap-8">
-        <div className="space-y-2 max-w-lg min-w-md w-md">
-          <div className="flex items-center gap-8">
-            <h1 className="text-3xl font-bold flex flex-row gap-2 items-center">
+      <div className="@container mb-8 lg:mb-16">
+        <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
+          {/* Mobile / tablet view */}
+          <div className="space-y-2 @6xl:hidden">
+            <h1 className="text-2xl font-bold flex flex-row  gap-2 items-center whitespace-nowrap">
               {token ? <DisplayToken size={28} token={token} /> : null}
               Lending Market
             </h1>
-            <BackLink />
+            <div className="flex flex-row items-center justify-between gap-8">
+              <DisplayNetwork currentChain={currentChain} />
+              <BackLink />
+            </div>
           </div>
-          <DisplayNetwork currentChain={currentChain} />
-        </div>
-        <div className="grid grid-cols-3 gap-8 grow">
-          <Stat
-            value={dollars({ value: stats.price, decimals: 3 })}
-            title={"Price"}
-            Icon={<PriceIcon className="w-10 h-10 fill-white" />}
-          />
-          <Stat
-            value={dollars({ value: stats.waitingToBeLent })}
-            title={"Wating to be lent"}
-            Icon={<HourGlassIcon className="w-10 h-10 fill-white" />}
-          />
-          <Stat
-            value={percent({ value: stats.mediumInterest, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
-            title={"Medium Interest %"}
-            Icon={<PercentIcon className="w-10 h-10" />}
-          />
+          {/* Desktop view */}
+          <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
+            <div className="flex items-center justify-between gap-8">
+              <h1 className="text-3xl font-bold flex flex-row  gap-2 items-center whitespace-nowrap">
+                {token ? <DisplayToken size={28} token={token} /> : null}
+                Lending Market
+              </h1>
+              <BackLink />
+            </div>
+            <DisplayNetwork currentChain={currentChain} />
+          </div>
+          <div className="grid grid-cols-3 gap-8">
+            <Stat
+              value={dollars({ value: stats.price, decimals: 3 })}
+              title={"Price"}
+              Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
+            />
+            <Stat
+              value={dollars({ value: stats.waitingToBeLent })}
+              title={"Waiting to be lent"}
+              titleSmall={"Available"}
+              Icon={<HourGlassIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
+            />
+            <Stat
+              value={percent({ value: stats.mediumInterest, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+              title={"Medium Interest %"}
+              titleSmall={"Avg Int %"}
+              Icon={<PercentIcon className="w-6 h-6 md:w-10 md:h-10" />}
+            />
+          </div>
         </div>
       </div>
 
