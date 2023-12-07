@@ -22,3 +22,7 @@ export const clampHigh = (value: number, increment: number) => {
   const nextHigherMultiple = Math.ceil(value / increment) * increment
   return Math.max(value, nextHigherMultiple)
 }
+
+export const fixedDecimals = (value: number, decimals = 2) => {
+  return Number(value.toFixed(decimals))
+}
