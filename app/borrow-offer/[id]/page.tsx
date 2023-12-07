@@ -2,7 +2,7 @@
 
 import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
-import { PriceIcon } from "@/components/icons"
+import { PersonIcon, PriceIcon } from "@/components/icons"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
@@ -10,7 +10,7 @@ import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
-import { dollars, ltv } from "@/lib/display"
+import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
 import { fetchHistoricPrices, makeLlamaUuid } from "@/services/token-prices"
 import { LucideChevronRight } from "lucide-react"
 import Link from "next/link"
@@ -19,6 +19,8 @@ import dayjs from "dayjs"
 import { fixedDecimals } from "@/lib/utils"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { useMemo } from "react"
+import { Button } from "@/components/ui/button"
+import pluralize from "pluralize"
 
 const getPoints = async (currentChain: any, collateralData: any) => {
   console.log("collateralData", collateralData)
@@ -62,16 +64,18 @@ const calcCollateralsPriceHistory = (prices0: any, amount0: number, prices1: any
 
 export default function BorrowOffer({ params }: { params: { id: string } }) {
   const id = Number(params.id)
-  console.log("id", id)
 
-  const router = useRouter()
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data: collateralData } = useOfferCollateralData(address, id)
 
-  const lendingToken = collateralData?.lending?.token
-  const collateral0Token = collateralData?.collaterals[0]?.token
-  const collateral1Token = collateralData?.collaterals[1]?.token
+  const lending = collateralData?.lending
+  const collateral0 = collateralData?.collaterals[0]
+  const collateral1 = collateralData?.collaterals[1]
+
+  const lendingToken = lending ? lending?.token : undefined
+  const collateral0Token = collateral0 ? collateral0?.token : undefined
+  const collateral1Token = collateral1 ? collateral0?.token : undefined
 
   const lendingPrices = useHistoricalTokenPrices(currentChain.slug, lendingToken?.address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address)
@@ -113,6 +117,13 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     return []
   }, [currentChain, lendingToken])
 
+  // console.log("collateralData", collateralData)
+
+  const totalLoan = Number(collateralData?.lending?.amount ?? 0)
+  const totalInterestOnLoan = Number(collateralData?.interest ?? 0) * Number(lending?.amount ?? 0)
+  const totalLoanIncludingInterest = totalLoan + totalInterestOnLoan
+  const amountDuePerPayment = totalLoanIncludingInterest / Number(collateralData?.paymentCount ?? 1)
+
   return (
     <>
       {/* Page header */}
@@ -149,7 +160,73 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
           </div>
         </div>
         {/* Form */}
-        <div>Hello there, I am a form.</div>
+        <div className="space-y-8 max-w-xl w-full">
+          <div className="grid grid-cols-2 justify-between gap-8">
+            <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+              <PersonIcon className="w-6 h-6" />
+              {shortAddress(collateralData?.owner)}
+            </div>
+            <div>
+              {/* Cancel offer */}
+              <Button variant="muted" disabled={address === collateralData?.owner} className="h-full w-full">
+                Cancel Offer
+              </Button>
+            </div>
+          </div>
+          <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
+            <div className="grid grid-cols-2 justify-between gap-8">
+              <div className="flex flex-col gap-2">
+                &nbsp;Collateral
+                {collateral0 && collateral0Token ? (
+                  <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
+                ) : null}
+                {collateral1 && collateral1Token ? (
+                  <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
+                ) : null}
+              </div>
+              <div className="flex flex-col gap-2">
+                &nbsp;Wanted Lending
+                {lending && lendingToken ? (
+                  <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                ) : null}
+              </div>
+            </div>
+            <hr className="h-px my-8 bg-[#4D4348] border-0" />
+            <div className="grid grid-cols-3 justify-between gap-6 text-sm">
+              <div className="border border-[#41353B] rounded-sm p-2 px-4">
+                <div className="text-[#DCB5BC]">Payments Am.</div>
+                <div className="text-base">{Number(collateralData?.paymentCount ?? 0)}</div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Payments Every</div>
+                <div className="text-base">
+                  {Number(collateralData?.numberOfLoanDays ?? 0)}{" "}
+                  {pluralize("day", Number(collateralData?.numberOfLoanDays ?? 0))}
+                </div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Whitelist</div>
+                <div className="text-base">{collateralData?.whitelist?.length > 0 ? "Yes" : "No"}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
+              <div className="border border-[#41353B] rounded-sm p-2 px-4">
+                <div className="text-[#DCB5BC]">Total Interest</div>
+                <div className="text-base">
+                  {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {lendingToken?.symbol} (
+                  {percent({ value: collateralData?.interest ?? 0 })})
+                </div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Each Payment Am.</div>
+                <div className="text-base">
+                  {amountDuePerPayment.toFixed(2)} {lendingToken?.symbol}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   )

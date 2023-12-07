@@ -1,3 +1,5 @@
+import { Address } from "viem"
+
 type DollarsOptions = {
   value: number
   includeSymbol?: boolean
@@ -91,4 +93,14 @@ export function percent({
 export function ltv(ltv: number) {
   if (ltv) return ltv.toFixed(2)
   return 0
+}
+
+export const shortAddress = (address: Address) => {
+  if (!address) return ""
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+export const thresholdLow = (value: number, threshold: number, alternative: string, decimals = 2) => {
+  if (value < threshold) return alternative
+  return value.toFixed(decimals)
 }

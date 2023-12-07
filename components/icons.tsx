@@ -108,3 +108,28 @@ export const PercentageIcon = ({ className }: { className?: string }) => {
     </svg>
   )
 }
+
+export const PersonIcon = ({ className }: { className?: string }) => {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24">
+      <path
+        d="M20,21V19a4,4,0,0,0-4-4H8a4,4,0,0,0-4,4v2"
+        fill="none"
+        stroke="#D1D1D1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <circle
+        cx="12"
+        cy="7"
+        fill="none"
+        r="4"
+        stroke="#D1D1D1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  )
+}
