@@ -118,34 +118,35 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       {/* Page header */}
       <div className="@container mb-8 lg:mb-16">
         <Breadcrumbs items={breadcrumbs} />
-
-        <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
-          <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
-            <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-              Lend ID #{Number(id)}
-            </h1>
-          </div>
-          <div className="grid grid-cols-3 gap-8">
-            <Stat value={ltv(collateralData?.ltv)} title={"LTV"} Icon={null} />
-            <Stat
-              value={dollars({ value: collateralData?.lending?.valueUsd })}
-              title={"Lending"}
-              Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
-            />
-            <Stat
-              value={dollars({ value: collateralData?.totalCollateralValue })}
-              title={"Collateral"}
-              Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
-            />
-          </div>
-        </div>
       </div>
       {/* Page content */}
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
-        <div>
-          <ChartWrapper>
-            <LoanChart loanData={loanData} />
-          </ChartWrapper>
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
+            <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
+              <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
+                Lend ID #{Number(id)}
+              </h1>
+            </div>
+            <div className="grid grid-cols-3 gap-8">
+              <Stat value={ltv(collateralData?.ltv)} title={"LTV"} Icon={null} />
+              <Stat
+                value={dollars({ value: collateralData?.lending?.valueUsd })}
+                title={"Lending"}
+                Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
+              />
+              <Stat
+                value={dollars({ value: collateralData?.totalCollateralValue })}
+                title={"Collateral"}
+                Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
+              />
+            </div>
+          </div>
+          <div>
+            <ChartWrapper>
+              <LoanChart loanData={loanData} />
+            </ChartWrapper>
+          </div>
         </div>
         {/* Form */}
         <div>Hello there, I am a form.</div>
