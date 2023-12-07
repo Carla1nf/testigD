@@ -1,6 +1,7 @@
 "use client"
 
 import { AvailableIcon, MarketSizeIcon, TotalLentIcon } from "@/components/icons"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
@@ -9,8 +10,8 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { useLendingMarketStats } from "@/hooks/useLendingMarketStats"
 import { dollars, percent } from "@/lib/display"
-import { LucideChevronRight } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 
 export default function Lend() {
   const stats = useLendingMarketStats()
@@ -18,14 +19,16 @@ export default function Lend() {
   const currentChain = useCurrentChain()
   const router = useRouter()
 
+  const breadcrumbs = useMemo(
+    () => [<DisplayNetwork currentChain={currentChain} size={18} key="network" />],
+    [currentChain]
+  )
+
   return (
     <>
       {/* Page header */}
       <div className="@container mb-8">
-        {/* Breadcrumbs idea */}
-        <div className="flex gap-1 text-xs items-center mb-4">
-          <DisplayNetwork currentChain={currentChain} size={18} />
-        </div>
+        <Breadcrumbs items={breadcrumbs} />
 
         <div className="flex flex-col @4xl:flex-row gap-8 justify-between">
           <div className="flex items-center">

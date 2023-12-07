@@ -1,7 +1,7 @@
 "use client"
 
 import { HourGlassIcon, PriceIcon } from "@/components/icons"
-import BackLink from "@/components/ux/back-link"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
@@ -14,10 +14,10 @@ import { useSpecificLendingMarketStats } from "@/hooks/useSpecificLendingMarketS
 import { dollars, ltv, percent } from "@/lib/display"
 import { filterOffersByToken } from "@/lib/filters"
 import { Token, findInternalTokenByAddress } from "@/lib/tokens"
-import { LucideChevronRight, PercentIcon } from "lucide-react"
+import { PercentIcon } from "lucide-react"
 import Link from "next/link"
-
 import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
   const currentChain = useCurrentChain()
@@ -27,18 +27,21 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   const marketOffers = token ? filterOffersByToken(offers, token) : []
   const events = Array.isArray(marketOffers) && marketOffers.length > 0 ? marketOffers[0].events : []
 
+  const breadcrumbs = useMemo(
+    () => [
+      <DisplayNetwork currentChain={currentChain} size={18} key="network" />,
+      <Link href={`/lend/`} className="hover:text-white/75" key="lending-market">
+        Lending Market
+      </Link>,
+    ],
+    [currentChain]
+  )
+
   return (
     <>
       {/* Page header */}
       <div className="@container mb-8 lg:mb-16">
-        {/* Breadcrumbs idea */}
-        <div className="flex gap-1 text-xs items-center mb-4">
-          <DisplayNetwork currentChain={currentChain} size={18} />
-          <LucideChevronRight className="w-4 h-4 stroke-neutral-500" />
-          <Link href={`/lend/`} className="hover:text-white/75">
-            Lending Market
-          </Link>
-        </div>
+        <Breadcrumbs items={breadcrumbs} />
         <div className="flex flex-col @6xl:flex-row gap-8 justify-between items-center">
           {/* Page title */}
           <div className="space-y-2 flex-row justify-center">

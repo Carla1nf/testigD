@@ -17,6 +17,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import dayjs from "dayjs"
 import { fixedDecimals } from "@/lib/utils"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
+import { useMemo } from "react"
 
 const getPoints = async (currentChain: any, collateralData: any) => {
   console.log("collateralData", collateralData)
@@ -93,45 +95,34 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     timestamps,
   }
 
-  // useEffect(() => {
-  //   const doIt = async () => {
-  //     const x = await getPoints(currentChain, collateralData)
-  //     console.log("x", x)
-  //   }
-  //   doIt()
-  // }, [collateralData, currentChain])
+  const breadcrumbs = useMemo(() => {
+    const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
+    if (lendingToken) {
+      result.push(
+        <Link href={`/lend/`} className="hover:text-white/75" key="lending-market">
+          Lending Market
+        </Link>
+      )
+      result.push(
+        <Link href={`/lend/${lendingToken?.address}`} key="token">
+          <DisplayToken size={18} token={lendingToken} className="hover:text-white/75" />
+        </Link>
+      )
+      return result
+    }
+    return []
+  }, [currentChain, lendingToken])
 
   return (
     <>
       {/* Page header */}
       <div className="@container mb-8 lg:mb-16">
-        {/* Breadcrumbs idea */}
-        <div className="flex gap-1 text-xs items-center mb-4">
-          <DisplayNetwork currentChain={currentChain} size={18} />
-          {lendingToken ? (
-            <>
-              <LucideChevronRight className="w-4 h-4 stroke-neutral-500" />
-              <Link href={`/lend/`} className="hover:text-white/75">
-                Lending Market
-              </Link>
-              <LucideChevronRight className="w-4 h-4 stroke-neutral-500" />
-              <Link href={`/lend/${lendingToken?.address}`}>
-                <DisplayToken size={18} token={lendingToken} className="hover:text-white/75" />
-              </Link>
-            </>
-          ) : null}
-        </div>
+        <Breadcrumbs items={breadcrumbs} />
 
         <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
           <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
             <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-              Lend ID #{Number(id)}{" "}
-              {/* {lendingToken ? (
-                <>
-                  <LucideChevronRight className="w-4 h-4 stroke-neutral-500" />
-                  <DisplayToken size={28} token={lendingToken} className="flex-row-reverse gap-1" />
-                </>
-              ) : null} */}
+              Lend ID #{Number(id)}
             </h1>
           </div>
           <div className="grid grid-cols-3 gap-8">
