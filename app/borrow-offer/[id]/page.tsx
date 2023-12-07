@@ -1,5 +1,7 @@
 "use client"
 
+import ChartWrapper from "@/components/charts/chart-wrapper"
+import LoanChart from "@/components/charts/loan-chart"
 import { PriceIcon } from "@/components/icons"
 import BackLink from "@/components/ux/back-link"
 import DisplayNetwork from "@/components/ux/display-network"
@@ -71,6 +73,25 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
             />
           </div>
         </div>
+      </div>
+      {/* Page content */}
+      <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
+        {/* Chart */}
+        <div>
+          <ChartWrapper>
+            <LoanChart
+              loanData={{
+                historicalLender: [100.2, 99.15, 100.4, 101.4, 100.3],
+                historicalCollateral: [89.97, 109.3, 141.88, 142.44, 148.53],
+                lastLender: 100.3,
+                lastCollateral: 148.53,
+                timestamps: ["22/10/23", "02/11/23", "14/11/23", "25/11/23", "07/12/23"],
+              }}
+            />
+          </ChartWrapper>
+        </div>
+        {/* Form */}
+        <div>Hello there, I am a form.</div>
       </div>
     </>
   )
