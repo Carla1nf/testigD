@@ -3,6 +3,7 @@ import { Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import z from "zod"
 import { useWindowSize } from "usehooks-ts"
 import { useMemo } from "react"
+import { dollars } from "@/lib/display"
 
 // todo: What happens when there are multiple collateral tokens?
 const findHighest = (lender: number[], collateral: number[]) => {
@@ -98,8 +99,10 @@ const LoanChartTooltip = ({ active, payload }: { active?: boolean; payload?: any
           borderRadius: "10px",
         }}
       >
-        <p style={{ color: "#705BDC" }}>{`Collateral: $${data.collateral}`}</p>
-        <p style={{ color: "#D75071" }}>{`Debt: $${data.lending == undefined ? 0 : data.lending}`}</p>
+        <p style={{ color: "#705BDC" }}>{`Collateral: ${dollars({ value: data.collateral })}`}</p>
+        <p style={{ color: "#D75071" }}>{`Debt: ${dollars({
+          value: data.lending == undefined ? 0 : data.lending,
+        })}`}</p>
       </div>
     )
   }

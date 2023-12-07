@@ -171,63 +171,6 @@ export const fetchHistoricPrices = async (llamaUuid: string, numberOfPrices = 5)
   }
 }
 
-// export const fetchHistoricPrices = async (
-//   chainSlug: string,
-//   lending: Address,
-//   collateral0: Address,
-//   collateral1?: Address
-// ) => {
-//   const times = getTimes(6)
-//   const url = makeBatchHistoricalUrl(times, chainSlug, lending, collateral0, collateral1)
-
-//   try {
-//     const response = await fetch(url)
-//     const data = await response?.json()
-//     DefiLamaHistoricalPriceSchema.parse(data)
-
-//     // Define a transformation function
-//     const transformData = (data: DefiLamaHistoricalPrice) => {
-//       const keys = Object.keys(data.coins)
-//       const values = Object.values(data.coins)
-
-//       return keys.reduce((accumulator, key, index) => {
-//         const tokenAddress = key.split(":")[1]
-//         if (tokenAddress === lending) {
-//           accumulator["lending"] = {
-//             address: tokenAddress,
-//             symbol: values[index].symbol,
-//             prices: values[index].prices,
-//           }
-//         } else if (tokenAddress === collateral0) {
-//           accumulator["collateral0"] = {
-//             address: tokenAddress,
-//             symbol: values[index].symbol,
-//             prices: values[index].prices,
-//           }
-//         } else if (tokenAddress === collateral1) {
-//           accumulator["collateral1"] = {
-//             address: tokenAddress,
-//             symbol: values[index].symbol,
-//             prices: values[index].prices,
-//           }
-//         }
-//         return accumulator
-//       }, {} as Record<string, any>)
-//     }
-
-//     // Apply the transformation to the schema
-//     const TransformedDefiLamaHistoricalPriceSchema = DefiLamaHistoricalPriceSchema.transform(transformData)
-
-//     // Now use the transformed schema to parse and transform data
-//     const transformedParsedData = TransformedDefiLamaHistoricalPriceSchema.parse(data)
-
-//     return transformedParsedData
-//   } catch (error) {
-//     console.error("Failed to fetch historical token prices:", error)
-//     return undefined
-//   }
-// }
-
 export const extractAddressFromLlamaUuid = (uuid: string) => uuid.split(":")[1]
 
 export const makeLlamaUuid = (chainSlug: string, address: Address) => `${chainSlug}:${address}`
