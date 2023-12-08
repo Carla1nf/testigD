@@ -15,6 +15,7 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         muted: "bg-[#21232B] border-2 border-white/10 text-white",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        action: "button-action-gradient rounded-md text-white",
         link: "text-primary underline-offset-4 hover:underline",
         "table-tab": "text-primary font-bold text-xs",
       },

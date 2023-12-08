@@ -3,6 +3,8 @@
 import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
 import { PersonIcon, PriceIcon } from "@/components/icons"
+import { Button } from "@/components/ui/button"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
@@ -11,16 +13,12 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
 import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
-import { fetchHistoricPrices, makeLlamaUuid } from "@/services/token-prices"
-import { LucideChevronRight } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import dayjs from "dayjs"
 import { fixedDecimals } from "@/lib/utils"
-import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { useMemo } from "react"
-import { Button } from "@/components/ui/button"
+import { fetchHistoricPrices, makeLlamaUuid } from "@/services/token-prices"
+import dayjs from "dayjs"
+import Link from "next/link"
 import pluralize from "pluralize"
+import { useMemo } from "react"
 
 const getPoints = async (currentChain: any, collateralData: any) => {
   console.log("collateralData", collateralData)
@@ -224,6 +222,12 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
                   {amountDuePerPayment.toFixed(2)} {lendingToken?.symbol}
                 </div>
               </div>
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              <Button variant="action" className="px-16">
+                Approve Offer
+              </Button>
             </div>
           </div>
         </div>

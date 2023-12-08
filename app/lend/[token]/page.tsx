@@ -86,8 +86,8 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
               <th className="p-3 text-left">Lend</th>
               <th className="p-3 text-left">Collateral</th>
               <th className="p-3 text-center">LTV</th>
-              <th className="p-3 text-center">Lending amt.</th>
-              <th className="p-3 text-center">Collateral amt.</th>
+              {/* <th className="p-3 text-center">Lending amt.</th>
+              <th className="p-3 text-center">Collateral amt.</th> */}
               <th className="p-3 text-center">Time</th>
               <th className="p-3 text-center">Payments</th>
               <th className="p-3 text-center">Interest (%)</th>
@@ -113,7 +113,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const collateral1 = collateralData?.collaterals[1]
   const collateralToken0 = collateral0?.token
   const collateralToken1 = collateral1?.token
-  const lenderToken = collateralData?.lender?.token
+  // const lenderToken = collateralData?.lender?.token
 
   return (
     <tr
@@ -123,16 +123,18 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
       className="hover:bg-[#383838] cursor-pointer"
     >
-      <td className="p-3 text-left">{token ? <DisplayToken size={28} token={token} /> : null}</td>
+      <td className="p-3 text-left">
+        {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}
+      </td>
       <td className="p-3 text-left">
         <div className="flex flex-col gap-2">
-          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} /> : null}
-          {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} /> : null}
+          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : null}
+          {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
         </div>
       </td>
 
       <td className="p-3 text-center">{ltv(collateralData?.ltv)}</td>
-      <td className="p-3 text-center ">
+      {/* <td className="p-3 text-center ">
         <div>
           {event.lendingAmount} {lenderToken?.symbol}
         </div>
@@ -150,7 +152,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
             </div>
           ) : null}
         </div>
-      </td>
+      </td> */}
       <td className="p-3 text-center">{collateralData?.numberOfLoanDays} Days</td>
       <td className="p-3 text-center">{Number(collateralData?.paymentCount ?? 0)}</td>
       <td className="p-3 text-center">

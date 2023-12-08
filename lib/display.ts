@@ -19,6 +19,21 @@ export function dollars({ value, includeSymbol = true, decimals = 2 }: DollarsOp
   return formatter.format(value)
 }
 
+type FormatNumberOptions = {
+  value: number
+  decimals?: number
+}
+
+export function formatNumber({ value, decimals = 2 }: FormatNumberOptions): string {
+  const options: Intl.NumberFormatOptions = {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }
+
+  const formatter = new Intl.NumberFormat("en-US", options)
+  return formatter.format(value)
+}
+
 export const SECONDS_PER_MINUTE = 60
 const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 const SECONDS_PER_DAY = SECONDS_PER_HOUR * 24
