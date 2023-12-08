@@ -6,9 +6,10 @@ interface TokenImageProps {
   height: number | string
   symbol: string
   chainSlug: string
+  className?: string
 }
 
-const TokenImage: React.FC<TokenImageProps> = ({ width, height, symbol, chainSlug }) => {
+const TokenImage: React.FC<TokenImageProps> = ({ width, height, symbol, chainSlug, className }) => {
   const token = useInternalToken(chainSlug, symbol)
 
   // token search still ongoing
@@ -19,6 +20,7 @@ const TokenImage: React.FC<TokenImageProps> = ({ width, height, symbol, chainSlu
         width={parseInt(width.toString())}
         height={parseInt(height.toString())}
         alt={"Token loading"}
+        className={className}
       />
     )
   }
@@ -31,6 +33,7 @@ const TokenImage: React.FC<TokenImageProps> = ({ width, height, symbol, chainSlu
         width={parseInt(width.toString())}
         height={parseInt(height.toString())}
         alt={"token unknown"}
+        className={className}
       />
     )
   }
@@ -42,6 +45,7 @@ const TokenImage: React.FC<TokenImageProps> = ({ width, height, symbol, chainSlu
       width={parseInt(width.toString())}
       height={parseInt(height.toString())}
       alt={token?.name ?? "Token Image"}
+      className={className}
     />
   )
 }

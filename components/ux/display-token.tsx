@@ -17,8 +17,14 @@ const DisplayToken = ({
   className?: string
 }) => {
   return (
-    <div className={cn("flex flex-row flex-wrap gap-2 items-center", className)}>
-      <TokenImage width={size ?? 24} height={size ?? 24} chainSlug="fantom" symbol={token.symbol} />
+    <div className={cn("flex flex-row flex-wrap gap-[6px] items-center", className)}>
+      <TokenImage
+        width={size ?? 24}
+        height={size ?? 24}
+        chainSlug="fantom"
+        symbol={token.symbol}
+        className="mr-[2px]"
+      />
       {amount ? <span className="text-white">{formatNumber({ value: amount, decimals })}</span> : null}
       {token.symbol}
     </div>
