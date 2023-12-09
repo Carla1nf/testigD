@@ -16,6 +16,12 @@ The old CRA app (deprectaed) proved tricky to integrate with modern tooling. To 
 
 [CSS Modules](https://nextjs.org/docs/app/building-your-application/styling/css-modules) are built in and easy to use in NextJS, check the docs for how to use them.
 
+## Colours and theming
+
+- Colour pallets are inspired by [IBM Carbon](https://carbondesignsystem.com/data-visualization/color-palettes/)
+- [Tailwind](https://tailwindcss.com/docs/customizing-colors) is used for the wider layout and responsive design
+- Tins and shades are courtesy of [hex color](https://www.color-hex.com/color/32282d)
+
 ### MUI & NextJS
 
 [MUI app directory](https://mui.com/material-ui/guides/next-js-app-router/) support comes baked in, so we can continue to use MUI for some aspects, but I would eventually want to remove it. To use MUI we need to make sure that all compoennts that touch it use the `"use client"` directive which may cause problematic.
