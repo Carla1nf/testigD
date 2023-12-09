@@ -35,7 +35,11 @@ export const useOfferCollateralData = (address: Address | undefined, index: numb
         args: [index],
       })
 
+      // console.log("RAW collateralData", collateralData)
+
       const parsedData = CollateralDataReceivedSchema.parse(collateralData)
+
+      // console.log("parsedData", parsedData)
 
       // We get WAY TOO MUCH DATA from this function, it will trip RPC limits at some point
       // @ts-ignore
