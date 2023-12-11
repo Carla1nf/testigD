@@ -30,7 +30,8 @@ import erc20Abi from "../../../abis/erc20.json"
 import { borrowOfferMachine } from "./borrow-offer-machine"
 import { writeContract } from "wagmi/actions"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
-import { describe } from "node:test"
+
+import { useToast } from "@/components/ui/use-toast"
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -102,6 +103,7 @@ function getAcceptLendingOfferValue(collateralData: any) {
 export default function BorrowOffer({ params }: { params: { id: string } }) {
   const id = Number(params.id)
   const config = useConfig()
+  const { toast } = useToast()
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
@@ -143,6 +145,13 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       // console.log("cancelLenderOffer->request", request)
       const executed = await writeContract(request)
       // console.log("cancelLenderOffer->executed", executed)
+
+      toast({
+        variant: "success",
+        title: "Offer Cancelled",
+        description: "You have cancelled the offer.",
+        // tx: executed,
+      })
       return executed
     } catch (error) {
       console.log("cancelLenderOffer->error", error)
@@ -163,6 +172,13 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
       const executed = await writeContract(request)
       console.log("increaseAllowance->executed", executed)
+
+      toast({
+        variant: "success",
+        title: "Allowance Increased",
+        description: "You have increased the allowance and can now accept the offer.",
+        // tx: executed,
+      })
       return executed
     } catch (error) {
       console.log("increaseAllowance->error", error)
@@ -188,6 +204,13 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
       const executed = await writeContract(request)
       console.log("userAcceptOffer->executed", executed)
+
+      toast({
+        variant: "success",
+        title: "Offer Accepted",
+        description: "You have accepted the offer.",
+        // tx: executed,
+      })
       return executed
     } catch (error) {
       console.log("userAcceptOffer->error", error)
@@ -317,6 +340,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       <div className="@container mb-8 lg:mb-16">
         <Breadcrumbs items={breadcrumbs} />
       </div>
+
       {/* Page content */}
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
         <div className="flex flex-col gap-8">

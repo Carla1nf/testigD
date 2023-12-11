@@ -7,6 +7,7 @@ import "@/styles/globals.css"
 import "@rainbow-me/rainbowkit/styles.css"
 import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
+import { Toaster } from "@/components/ui/toaster"
 
 /**
  * These are the google fonts imported in the V1 website. find out if they are still used and import as necessary
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Nav />
               <main className="flex min-h-screen flex-col py-16 px-12 grow">{children}</main>
               <footer className="p-8 text-center">&copy; 2023 Dēbita</footer>
+              <Toaster />
             </>
           </Providers>
         </ThemeProvider>
