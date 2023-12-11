@@ -16,10 +16,10 @@ import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
 import { fixedDecimals } from "@/lib/utils"
-import { ZERO_ADDRESS } from "@/services/constants"
+import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
-import { CheckCircle, XCircle } from "lucide-react"
+import { CheckCircle, ExternalLink, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { useEffect, useMemo } from "react"
@@ -29,6 +29,8 @@ import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import { borrowOfferMachine } from "./borrow-offer-machine"
 import { writeContract } from "wagmi/actions"
+import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
+import { describe } from "node:test"
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -128,19 +130,19 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     args: [address, DEBITA_ADDRESS],
   })
 
-  const cancelLenderOffer = async () => {
+  const cancelOffer = async () => {
     try {
       const { request } = await config.publicClient.simulateContract({
         address: DEBITA_ADDRESS,
-        functionName: "cancelLenderOffer",
+        functionName: "cancelCollateralOffer",
         abi: debitaAbi,
         args: [id],
         account: address,
+        gas: BigInt(900000),
       })
-      console.log("cancelLenderOffer->request", request)
-
+      // console.log("cancelLenderOffer->request", request)
       const executed = await writeContract(request)
-      console.log("cancelLenderOffer->executed", executed)
+      // console.log("cancelLenderOffer->executed", executed)
       return executed
     } catch (error) {
       console.log("cancelLenderOffer->error", error)
@@ -200,7 +202,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     borrowOfferMachine.provide({
       actors: {
         acceptOffer: fromPromise(userAcceptOffer),
-        cancelBorrowOffer: fromPromise(cancelLenderOffer),
+        cancelBorrowOffer: fromPromise(cancelOffer),
         increaseAllowance: fromPromise(increaseAllowance),
       },
       actions: {
@@ -282,6 +284,27 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     timestamps,
   }
 
+  if (collateralData === null) {
+    return (
+      <RedirectToDashboardShortly
+        title="Borrow offer not found"
+        description={
+          <>
+            We are unable to find borrow offer {id}, please contact us in our{" "}
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="nofollow noreferrer"
+              className="text-pink-500 hover:underline flex-inline items-end gap-1"
+            >
+              Discord support channel <ExternalLink className="w-4 h-4 mb-[4px] inline" />
+            </a>
+          </>
+        }
+      />
+    )
+  }
+
   // RENDERING
   return (
     <>
@@ -323,14 +346,15 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
           <ShowWhenTrue when={borrowMachineState.matches("isOwner")}>
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+                You are the Owner
                 <PersonIcon className="w-6 h-6" />
-                {shortAddress(collateralData?.owner)}
+                {/* {shortAddress(collateralData?.owner)} */}
               </div>
               <div>
                 {/* Cancel the offer */}
                 <ShowWhenTrue when={borrowMachineState.matches("isOwner.idle")}>
                   <Button
-                    variant="muted"
+                    variant="action"
                     className="h-full w-full"
                     onClick={() => {
                       borrowMachineSend({ type: "owner.cancel" })
