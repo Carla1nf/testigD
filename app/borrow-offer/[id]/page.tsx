@@ -3,10 +3,9 @@
 import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
 import { PersonIcon, PriceIcon, SpinnerIcon } from "@/components/icons"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
@@ -18,14 +17,18 @@ import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
 import { fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
+import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
-import { AlertCircle } from "lucide-react"
+import { CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { useMemo } from "react"
-import { useContractRead, useContractWrite } from "wagmi"
+import { useConfig, useContractRead, useContractWrite } from "wagmi"
+import { Actor, fromPromise } from "xstate"
 import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
+import { ownerCancelBorrowOfferMachine } from "./owner-cancel-borrow-offer-machine"
+import { writeContract } from "wagmi/actions"
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -96,6 +99,7 @@ function getAcceptLendingOfferValue(collateralData: any) {
 
 export default function BorrowOffer({ params }: { params: { id: string } }) {
   const id = Number(params.id)
+  const config = useConfig()
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
@@ -115,8 +119,6 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
-  console.log("collateralData", collateralData)
-
   // check if we have thw allowance to spend the lender token
   const { data: currentLendingTokenAllowance } = useContractRead({
     address: collateralData?.lending?.address ?? "",
@@ -125,31 +127,18 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     args: [address, DEBITA_ADDRESS],
   })
 
-  console.log("currentLendingTokenAllowance", currentLendingTokenAllowance)
-
   const { write: increaseLendingAllowance, isLoading: isIncreaseLendingAllowanceLoading } = useContractWrite({
     address: collateralData?.lending?.address ?? "",
     functionName: "approve",
     abi: erc20Abi,
     args: [DEBITA_ADDRESS, collateralData?.lending?.amount ?? 0],
-    onError(error) {
-      console.log("approve->error", error)
-    },
-    onSettled(data, error) {
-      console.log("approve->settled", { data, error })
-    },
-    onSuccess(data) {
-      console.log("approve->success", data)
-    },
   })
 
   const {
-    data: acceptCollateralOfferData,
     write: acceptCollateralOffer,
     isSuccess: isAcceptCollateralOfferSuccess,
     isLoading: isAcceptCollateralOfferLoading,
     isError: isAcceptCollateralOfferError,
-    error: acceptCollateralOfferError,
   } = useContractWrite({
     address: DEBITA_ADDRESS,
     functionName: `acceptCollateralOffer`,
@@ -160,40 +149,53 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     // chainId: currentChain?.chainId,
   })
 
-  const {
-    // data: cancelLenderOfferData,
-    write: cancelLendingOffer,
-    isSuccess: isCancelOfferSuccess,
-    isLoading: isCancelOfferLoading,
-    isError: isCancelOfferError,
-  } = useContractWrite({
-    address: DEBITA_ADDRESS,
-    functionName: "cancelLenderOffer",
-    abi: debitaAbi,
-    args: [id],
-  })
+  /**
+   * We use this pattern so we can log simulate the transaction before executing it
+   * and get logging information to aid debugging.
+   *
+   * We should be able to declare this outside of react and have it still work, so find out how to pass args in
+   * @returns
+   */
+  const cancelLenderOffer = async () => {
+    try {
+      const { request } = await config.publicClient.simulateContract({
+        address: DEBITA_ADDRESS,
+        functionName: "cancelLenderOffer",
+        abi: debitaAbi,
+        args: [id],
+        account: address,
+      })
+      console.log("cancelLenderOffer->request", request)
+
+      const executed = await writeContract(request)
+      console.log("cancelLenderOffer->executed", executed)
+      return executed
+    } catch (error) {
+      console.log("cancelLenderOffer->error", error)
+      throw error
+    }
+  }
 
   // we will use booleans for now but we will move this to state machines in a later refactor
   const isOwnerConnected = address === collateralData?.owner
-
   const isAcceptOfferDisabled =
     isAcceptCollateralOfferLoading || isAcceptCollateralOfferSuccess || isAcceptCollateralOfferError
-  const shouldShowApproveOfferForm = !(isCancelOfferSuccess || isCancelOfferLoading)
 
-  // lets build the real loan data
-  const loanData = {
-    historicalLender: calcPriceHistory(lendingPrices, collateralData?.lending?.amount ?? 0),
-    historicalCollateral: calcCollateralsPriceHistory(
-      collateral0Prices,
-      collateralData?.collaterals[0]?.amount ?? 0,
-      collateral1Prices,
-      collateralData?.collaterals[1]?.amount ?? 0
-    ),
-    lastLender: 100.3,
-    lastCollateral: 148.53,
-    timestamps,
+  // STATE MACHINE
+  // OWNER - CANCEL BORROW OFFER
+  const [stateCancelBorrowMachine, sendCancelBorrowMachine] = useMachine(
+    ownerCancelBorrowOfferMachine.provide({
+      actors: {
+        cancelBorrowOffer: fromPromise(cancelLenderOffer),
+      },
+    })
+  )
+  if (isOwnerConnected && stateCancelBorrowMachine.matches("isNotOwner")) {
+    sendCancelBorrowMachine({ type: "owner" })
   }
 
+  // BREADCRUMS
+  // CONFIG
   const breadcrumbs = useMemo(() => {
     const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
     if (lendingToken) {
@@ -212,13 +214,25 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
     return []
   }, [currentChain, lendingToken])
 
-  // console.log("collateralData", collateralData)
-
   const totalLoan = Number(collateralData?.lending?.amount ?? 0)
   const totalInterestOnLoan = Number(collateralData?.interest ?? 0) * Number(lending?.amount ?? 0)
   const totalLoanIncludingInterest = totalLoan + totalInterestOnLoan
   const amountDuePerPayment = totalLoanIncludingInterest / Number(collateralData?.paymentCount ?? 1)
 
+  // CHARTING
+  // DATA STRUCTURE
+  const chartValues = {
+    historicalLender: calcPriceHistory(lendingPrices, collateralData?.lending?.amount ?? 0),
+    historicalCollateral: calcCollateralsPriceHistory(
+      collateral0Prices,
+      collateralData?.collaterals[0]?.amount ?? 0,
+      collateral1Prices,
+      collateralData?.collaterals[1]?.amount ?? 0
+    ),
+    lastLender: 100.3,
+    lastCollateral: 148.53,
+    timestamps,
+  }
   return (
     <>
       {/* Page header */}
@@ -250,38 +264,63 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
           </div>
           <div>
             <ChartWrapper>
-              <LoanChart loanData={loanData} />
+              <LoanChart loanData={chartValues} />
             </ChartWrapper>
           </div>
         </div>
         <div className="space-y-8 max-w-xl w-full">
-          <ShowWhenTrue when={isOwnerConnected || true}>
+          {/* Owners can cancel the offer */}
+          <ShowWhenTrue when={stateCancelBorrowMachine.matches("isOwner")}>
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
                 <PersonIcon className="w-6 h-6" />
                 {shortAddress(collateralData?.owner)}
               </div>
               <div>
-                <ShowWhenTrue when={isCancelOfferLoading}>
+                {/* Cancel the offer */}
+                <ShowWhenTrue when={stateCancelBorrowMachine.matches("isOwner.idle")}>
+                  <Button
+                    variant="muted"
+                    className="h-full w-full"
+                    onClick={() => {
+                      sendCancelBorrowMachine({ type: "owner.cancel" })
+                    }}
+                  >
+                    Cancel Offer
+                  </Button>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={stateCancelBorrowMachine.matches("isOwner.error")}>
+                  <Button
+                    variant="error"
+                    className="h-full w-full gap-2"
+                    onClick={() => {
+                      sendCancelBorrowMachine({ type: "owner.retry" })
+                    }}
+                  >
+                    <XCircle className="h-5 w-5" /> Cancel Failed - Retry?
+                  </Button>
+                </ShowWhenTrue>
+
+                {/* Cancelling the offeer */}
+                <ShowWhenTrue when={stateCancelBorrowMachine.matches("isOwner.cancelling")}>
                   <Button variant="muted" className="h-full w-full">
                     Cancelling
                     <SpinnerIcon className="ml-2 animate-spin-slow" />
                   </Button>
                 </ShowWhenTrue>
-                <ShowWhenTrue when={!isCancelOfferLoading}>
-                  <Button
-                    variant="muted"
-                    className="h-full w-full"
-                    onClick={() => cancelLendingOffer()}
-                    disabled={isCancelOfferSuccess}
-                  >
-                    Cancel Offer
-                  </Button>
+
+                {/* Offer cancelled */}
+                <ShowWhenTrue when={stateCancelBorrowMachine.matches("isOwner.cancelled")}>
+                  <div className="h-full w-full inline-flex bg-success text-white gap-2 items-center justify-center border border-white/25 rounded-md">
+                    <CheckCircle className="w-5 h-5" /> Cancelled
+                  </div>
                 </ShowWhenTrue>
               </div>
             </div>
           </ShowWhenTrue>
-          <ShowWhenFalse when={isOwnerConnected}>
+
+          {/* Non owners can see who the owner is */}
+          <ShowWhenTrue when={stateCancelBorrowMachine.matches("isNotOwner")}>
             <div className="flex justify-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
                 Owner
@@ -289,7 +328,9 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
                 {shortAddress(collateralData?.owner)}
               </div>
             </div>
-          </ShowWhenFalse>
+          </ShowWhenTrue>
+
+          {/*           
           <ShowWhenTrue when={isCancelOfferSuccess}>
             <Alert variant="success" className="mt-8">
               <AlertCircle className="w-5 h-5 mr-2" />
@@ -310,72 +351,71 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
               <AlertTitle>Waiting</AlertTitle>
               <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
             </Alert>
-          </ShowWhenTrue>
+          </ShowWhenTrue> */}
           {/* Form */}
 
-          <ShowWhenTrue when={shouldShowApproveOfferForm}>
-            <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
-              <div className="grid grid-cols-2 justify-between gap-8">
-                <div className="flex flex-col gap-3">
-                  <div>
-                    &nbsp;Collateral
-                    <span className="text-white/50 text-xs italic ml-2">
-                      {dollars({ value: collateralData?.totalCollateralValue ?? 0 })}
-                    </span>
-                  </div>
-                  {collateral0 && collateral0Token ? (
-                    <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
-                  ) : null}
-                  {collateral1 && collateral1Token ? (
-                    <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
-                  ) : null}
+          <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
+            <div className="grid grid-cols-2 justify-between gap-8">
+              <div className="flex flex-col gap-3">
+                <div>
+                  &nbsp;Collateral
+                  <span className="text-white/50 text-xs italic ml-2">
+                    {dollars({ value: collateralData?.totalCollateralValue ?? 0 })}
+                  </span>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <div>
-                    &nbsp;Wanted Lending
-                    <span className="text-white/50 text-xs italic ml-2">
-                      {dollars({ value: collateralData?.lending?.valueUsd ?? 0 })}
-                    </span>
-                  </div>
-                  {lending && lendingToken ? (
-                    <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
-                  ) : null}
+                {collateral0 && collateral0Token ? (
+                  <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
+                ) : null}
+                {collateral1 && collateral1Token ? (
+                  <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
+                ) : null}
+              </div>
+              <div className="flex flex-col gap-3">
+                <div>
+                  &nbsp;Wanted Lending
+                  <span className="text-white/50 text-xs italic ml-2">
+                    {dollars({ value: collateralData?.lending?.valueUsd ?? 0 })}
+                  </span>
+                </div>
+                {lending && lendingToken ? (
+                  <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                ) : null}
+              </div>
+            </div>
+            <hr className="h-px my-8 bg-[#4D4348] border-0" />
+            <div className="grid grid-cols-3 justify-between gap-6 text-sm">
+              <div className="border border-[#41353B] rounded-sm p-2 px-4">
+                <div className="text-[#DCB5BC]">Payments Am.</div>
+                <div className="text-base">{Number(collateralData?.paymentCount ?? 0)}</div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Payments Every</div>
+                <div className="text-base">
+                  {Number(collateralData?.numberOfLoanDays ?? 0)}{" "}
+                  {pluralize("day", Number(collateralData?.numberOfLoanDays ?? 0))}
                 </div>
               </div>
-              <hr className="h-px my-8 bg-[#4D4348] border-0" />
-              <div className="grid grid-cols-3 justify-between gap-6 text-sm">
-                <div className="border border-[#41353B] rounded-sm p-2 px-4">
-                  <div className="text-[#DCB5BC]">Payments Am.</div>
-                  <div className="text-base">{Number(collateralData?.paymentCount ?? 0)}</div>
-                </div>
-                <div className="border border-[#41353B] rounded-sm p-2">
-                  <div className="text-[#DCB5BC]">Payments Every</div>
-                  <div className="text-base">
-                    {Number(collateralData?.numberOfLoanDays ?? 0)}{" "}
-                    {pluralize("day", Number(collateralData?.numberOfLoanDays ?? 0))}
-                  </div>
-                </div>
-                <div className="border border-[#41353B] rounded-sm p-2">
-                  <div className="text-[#DCB5BC]">Whitelist</div>
-                  <div className="text-base">{collateralData?.whitelist?.length > 0 ? "Yes" : "No"}</div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Whitelist</div>
+                <div className="text-base">{collateralData?.whitelist?.length > 0 ? "Yes" : "No"}</div>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
+              <div className="border border-[#41353B] rounded-sm p-2 px-4">
+                <div className="text-[#DCB5BC]">Total Interest</div>
+                <div className="text-base">
+                  {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {lendingToken?.symbol} (
+                  {percent({ value: collateralData?.interest ?? 0 })})
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
-                <div className="border border-[#41353B] rounded-sm p-2 px-4">
-                  <div className="text-[#DCB5BC]">Total Interest</div>
-                  <div className="text-base">
-                    {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {lendingToken?.symbol} (
-                    {percent({ value: collateralData?.interest ?? 0 })})
-                  </div>
-                </div>
-                <div className="border border-[#41353B] rounded-sm p-2">
-                  <div className="text-[#DCB5BC]">Each Payment Am.</div>
-                  <div className="text-base">
-                    {amountDuePerPayment.toFixed(2)} {lendingToken?.symbol}
-                  </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Each Payment Am.</div>
+                <div className="text-base">
+                  {amountDuePerPayment.toFixed(2)} {lendingToken?.symbol}
                 </div>
               </div>
-              <ShowWhenTrue when={isAcceptCollateralOfferError}>
+            </div>
+            {/* <ShowWhenTrue when={isAcceptCollateralOfferError}>
                 <Alert variant="error" className="mt-8">
                   <AlertCircle className="w-5 h-5 mr-2" />
                   <AlertTitle>Error</AlertTitle>
@@ -395,58 +435,57 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
                   <AlertTitle>Waiting</AlertTitle>
                   <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
                 </Alert>
-              </ShowWhenTrue>
-              <div className="mt-8 flex justify-center">
-                {/* Show the Approve offer button when we have the correct allowance */}
-                {(Number(currentLendingTokenAllowance) ?? 0) < Number(collateralData?.lending?.amount ?? 0) ? (
-                  <Button
-                    variant={isAcceptCollateralOfferLoading ? "muted" : "action"}
-                    className="px-16"
-                    onClick={async () => {
-                      if (increaseLendingAllowance) {
-                        increaseLendingAllowance()
-                      }
-                    }}
-                  >
-                    {isIncreaseLendingAllowanceLoading ? (
-                      <>
-                        Loading...
-                        <SpinnerIcon className="ml-2 animate-spin-slow" />
-                      </>
-                    ) : (
-                      "Approve Offer"
-                    )}
-                  </Button>
-                ) : null}
+              </ShowWhenTrue> */}
+            <div className="mt-8 flex justify-center">
+              {/* Show the Approve offer button when we have the correct allowance */}
+              {(Number(currentLendingTokenAllowance) ?? 0) < Number(collateralData?.lending?.amount ?? 0) ? (
+                <Button
+                  variant={isAcceptCollateralOfferLoading ? "muted" : "action"}
+                  className="px-16"
+                  onClick={async () => {
+                    if (increaseLendingAllowance) {
+                      increaseLendingAllowance()
+                    }
+                  }}
+                >
+                  {isIncreaseLendingAllowanceLoading ? (
+                    <>
+                      Loading...
+                      <SpinnerIcon className="ml-2 animate-spin-slow" />
+                    </>
+                  ) : (
+                    "Approve Offer"
+                  )}
+                </Button>
+              ) : null}
 
-                {/* Show the Approve offer button until we have the desired allowance */}
-                {(Number(currentLendingTokenAllowance) ?? 0) >= Number(collateralData?.lending?.amount ?? 0) ? (
-                  <Button
-                    variant={isAcceptCollateralOfferLoading ? "muted" : "action"}
-                    className="px-16"
-                    onClick={async () => {
-                      if (acceptCollateralOffer) {
-                        const value = getAcceptLendingOfferValue(collateralData)
-                        console.log("value", value)
+              {/* Show the Approve offer button until we have the desired allowance */}
+              {(Number(currentLendingTokenAllowance) ?? 0) >= Number(collateralData?.lending?.amount ?? 0) ? (
+                <Button
+                  variant={isAcceptCollateralOfferLoading ? "muted" : "action"}
+                  className="px-16"
+                  onClick={async () => {
+                    if (acceptCollateralOffer) {
+                      const value = getAcceptLendingOfferValue(collateralData)
+                      console.log("value", value)
 
-                        acceptCollateralOffer?.({ value: BigInt(value) })
-                      }
-                    }}
-                    disabled={isAcceptOfferDisabled}
-                  >
-                    {isAcceptCollateralOfferLoading ? (
-                      <>
-                        Loading...
-                        <SpinnerIcon className="ml-2 animate-spin-slow" />
-                      </>
-                    ) : (
-                      "Accept Offer"
-                    )}
-                  </Button>
-                ) : null}
-              </div>
+                      acceptCollateralOffer?.({ value: BigInt(value) })
+                    }
+                  }}
+                  disabled={isAcceptOfferDisabled}
+                >
+                  {isAcceptCollateralOfferLoading ? (
+                    <>
+                      Loading...
+                      <SpinnerIcon className="ml-2 animate-spin-slow" />
+                    </>
+                  ) : (
+                    "Accept Offer"
+                  )}
+                </Button>
+              ) : null}
             </div>
-          </ShowWhenTrue>
+          </div>
         </div>
       </div>
     </>
