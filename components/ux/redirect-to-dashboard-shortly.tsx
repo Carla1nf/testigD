@@ -20,7 +20,7 @@ const RedirectToDashboardShortly = ({ title, description }: { title: string; des
     <div>
       <h1 className="text-2xl mb-4 font-bold">{title}</h1>
       <p className="text-base mb-16">{description}</p>
-      <p className="italic text-sm">Redirecting to the dashboard shortly...</p>
+      <p className="italic text-sm text-white/50">Redirecting to the dashboard shortly...</p>
     </div>
   )
 }

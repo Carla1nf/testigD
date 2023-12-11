@@ -11,6 +11,7 @@ import { Address } from "wagmi"
 import { Button } from "../ui/button"
 import DisplayToken from "./display-token"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
+import { useRouter } from "next/navigation"
 
 const DashboardActiveOffers = ({
   lending,
@@ -132,18 +133,25 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
 }
 
 const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Address; item: any }) => {
+  const router = useRouter()
   const { data } = useOfferCollateralData(address, item.id)
 
   if (!data) {
     return null
   }
 
-  const lenderToken = findTokenByAddress("fantom", data.wantedLenderToken)
-  const collateralToken0 = findTokenByAddress("fantom", data.collaterals[0])
-  const collateralToken1 = findTokenByAddress("fantom", data.collaterals[1])
+  const lenderToken = data?.lending?.token
+  const collateralToken0 = data?.collaterals[0]?.token
+  const collateralToken1 = data?.collaterals[1]?.token
 
   return (
-    <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 text-xs" key={item.id}>
+    <tr
+      className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 text-xs cursor-pointer"
+      key={item.id}
+      onClick={() => {
+        router.push(`/borrow-offer/${item.id}`)
+      }}
+    >
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
         {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}

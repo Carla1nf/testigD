@@ -1,16 +1,20 @@
-import { clampHigh } from "@/lib/utils"
-import { Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
-import z from "zod"
-import { useWindowSize } from "usehooks-ts"
-import { useMemo } from "react"
 import { dollars } from "@/lib/display"
+import { clampHigh, dynamicClampIncrement, lastNumber } from "@/lib/utils"
+import { useMemo } from "react"
+import { Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
+import { useWindowSize } from "usehooks-ts"
+import z from "zod"
 
 // todo: What happens when there are multiple collateral tokens?
 const findHighest = (lender: number[], collateral: number[]) => {
   const highest = Math.max(...lender, ...collateral)
-  return Math.ceil(highest)
+  return highest
 }
 
+const findLowest = (lender: number[], collateral: number[]) => {
+  const lowest = Math.min(...lender, ...collateral)
+  return Math.floor(lowest)
+}
 /**
  * This function calculates the dimensions of the chart based on the window width.
  *
@@ -64,12 +68,17 @@ const LoanChart = ({ loanData }: { loanData: LoanData }) => {
       }
     })
     const highestValue = findHighest(parsed.historicalLender, parsed.historicalCollateral)
+    const clampIncrement = dynamicClampIncrement(
+      lastNumber(parsed.historicalLender),
+      lastNumber(parsed.historicalCollateral)
+    )
+
     return (
       <LineChart data={points} width={dimensions.width} height={dimensions.height}>
         <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
         <YAxis
           dataKey={`collateral`}
-          domain={[0, clampHigh(highestValue, 50)]}
+          domain={[0, clampHigh(highestValue, clampIncrement)]}
           tick={{ fontSize: 10 }}
           tickLine={false}
           axisLine={false}

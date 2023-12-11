@@ -290,15 +290,20 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         title="Borrow offer not found"
         description={
           <>
-            We are unable to find borrow offer {id}, please contact us in our{" "}
+            <div className="mb-4">
+              We are unable to find borrow offer {id}, it appears to have either already been accepted or may have never
+              existed.
+            </div>
+            Please contact us in our{" "}
             <a
               href={DISCORD_INVITE_URL}
               target="_blank"
               rel="nofollow noreferrer"
               className="text-pink-500 hover:underline flex-inline items-end gap-1"
             >
-              Discord support channel <ExternalLink className="w-4 h-4 mb-[4px] inline" />
-            </a>
+              Discord <ExternalLink className="w-4 h-4 mb-[4px] inline" />
+            </a>{" "}
+            if you need further assistance.
           </>
         }
       />
@@ -375,9 +380,9 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
                   </Button>
                 </ShowWhenTrue>
 
-                {/* Cancelling the offeer */}
+                {/* Cancelling the offer */}
                 <ShowWhenTrue when={borrowMachineState.matches("isOwner.cancelling")}>
-                  <Button variant="muted" className="h-full w-full">
+                  <Button variant="action" className="h-full w-full">
                     Cancelling
                     <SpinnerIcon className="ml-2 animate-spin-slow" />
                   </Button>
