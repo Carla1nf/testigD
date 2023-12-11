@@ -597,7 +597,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
                   {/* The offer is accepted */}
                   <ShowWhenTrue when={borrowMachineState.matches("isNotOwner.offerAccepted")}>
-                    <Button variant={"success"} className="px-16">
+                    <Button variant={"success"} className="px-16 gap-2">
                       <CheckCircle className="w-5 h-5" />
                       Offer Accepted
                     </Button>
