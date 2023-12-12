@@ -19,7 +19,7 @@ import { fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
-import { CheckCircle, ExternalLink, XCircle } from "lucide-react"
+import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { useEffect, useMemo } from "react"
@@ -458,31 +458,37 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
           {/* Form Panel */}
           <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
+            <div className="text-xl mb-4 font-bold">Borrow Offer</div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="flex flex-col gap-3">
                 <div>
-                  &nbsp;Collateral
+                  Collateral
                   <span className="text-white/50 text-xs italic ml-2">
                     {dollars({ value: collateralData?.totalCollateralValue ?? 0 })}
                   </span>
                 </div>
-                {collateral0 && collateral0Token ? (
-                  <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
-                ) : null}
-                {collateral1 && collateral1Token ? (
-                  <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
-                ) : null}
+                <div className="-ml-[2px]">
+                  {collateral0 && collateral0Token ? (
+                    <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
+                  ) : null}
+                  {collateral1 && collateral1Token ? (
+                    <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
+                  ) : null}
+                </div>
               </div>
               <div className="flex flex-col gap-3">
                 <div>
-                  &nbsp;Wanted Lending
+                  Wanted Lending
                   <span className="text-white/50 text-xs italic ml-2">
                     {dollars({ value: collateralData?.lending?.valueUsd ?? 0 })}
                   </span>
                 </div>
+
                 {lending && lendingToken ? (
-                  <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                  <div className="-ml-[2px]">
+                    <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -630,8 +636,48 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
             </div>
           </div>
+
+          {/* Description panel */}
+          {/* <Description /> */}
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * This panel will generate the borrow offer description from the passed collateral data
+ *
+ * The text is hard coded for now just to show what It coulkd look like
+ * @returns
+ */
+
+const Description = () => {
+  return (
+    <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex flex-col gap-4 text-sm">
+      <div className="flex flex-row gap-2 items-center text-base">
+        <Info className="w-5 h-5" />
+        Details
+      </div>
+      <div className="">
+        You will lend 100 axlUSDC worth $100.00 against 450 FTM collateral worth $171.55 at 2% interest.
+        <br />
+        <br />
+        After 40 days, one of the following scenarios will occur:
+      </div>
+      <dl className="border border-white/15 p-4 rounded-sm bg-[#181a20]">
+        <dt className="font-bold mb-2">Successful repayment</dt>
+        <dd className="mb-4">
+          - The borrower repays the loan (and interest) after 40 days. You receive the 100 axlUSDC lent along with 2%
+          interest for a total of 102 axlUSDC which is an effective APR of 18.25%
+        </dd>
+
+        <dt className="font-bold mb-2">Defaulted repayment</dt>
+        <dd className="">
+          - The borrower does not repay the loan and you can claim the collateral, this is equivalent to a purchase of
+          450 FTM for $100.00 or $0.22 per FTM a 45% discount on the current price.
+        </dd>
+      </dl>
+    </div>
   )
 }
