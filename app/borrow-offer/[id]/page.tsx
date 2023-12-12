@@ -142,9 +142,10 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         account: address,
         gas: BigInt(900000),
       })
-      // console.log("cancelLenderOffer->request", request)
+      // console.log("cancelLenderOffer→request", request)
+
       const executed = await writeContract(request)
-      // console.log("cancelLenderOffer->executed", executed)
+      console.log("cancelLenderOffer→executed", executed)
 
       toast({
         variant: "success",
@@ -154,7 +155,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       })
       return executed
     } catch (error) {
-      console.log("cancelLenderOffer->error", error)
+      console.log("cancelLenderOffer→error", error)
       throw error
     }
   }
@@ -168,10 +169,10 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         args: [DEBITA_ADDRESS, BigInt(collateralData?.lending?.amountRaw ?? 0)],
         account: address,
       })
-      console.log("increaseAllowance->request", request)
+      // console.log("increaseAllowance→request", request)
 
       const executed = await writeContract(request)
-      console.log("increaseAllowance->executed", executed)
+      console.log("increaseAllowance→executed", executed)
 
       toast({
         variant: "success",
@@ -181,7 +182,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       })
       return executed
     } catch (error) {
-      console.log("increaseAllowance->error", error)
+      console.log("increaseAllowance→error", error)
       throw error
     }
   }
@@ -199,11 +200,10 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         // gas: BigInt(900000),
         // chainId: currentChain?.chainId,
       })
-
-      console.log("userAcceptOffer->request", request)
+      // console.log("userAcceptOffer→request", request)
 
       const executed = await writeContract(request)
-      console.log("userAcceptOffer->executed", executed)
+      console.log("userAcceptOffer→executed", executed)
 
       toast({
         variant: "success",
@@ -213,7 +213,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       })
       return executed
     } catch (error) {
-      console.log("userAcceptOffer->error", error)
+      console.log("userAcceptOffer→error", error)
       throw error
     }
   }
@@ -230,17 +230,70 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       },
       actions: {
         userIncreasedAllowance: (params) => {
-          console.log("userIncreasedAllowance->params", params)
+          console.log("action→userIncreasedAllowance→params", params)
         },
         userAcceptedOffer: (params) => {
-          console.log("userAcceptedOffer->params", params)
+          console.log("actions→userAcceptedOffer→params", params)
         },
         ownerCancelledOffer: (params) => {
-          console.log("ownerCancelledOffer->params", params)
+          console.log("actions→ownerCancelledOffer→params", params)
         },
       },
     })
   )
+
+  /**
+   * These are the toast messages we need would display (taken from the old app)
+   */
+
+  {
+    /* <ShowWhenTrue when={isAcceptCollateralOfferError}>
+                <Alert variant="error" className="mt-8">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription> Transaction Failed. Please try again later.</AlertDescription>
+                </Alert>
+              </ShowWhenTrue>
+              <ShowWhenTrue when={isAcceptCollateralOfferSuccess}>
+                <Alert variant="success" className="mt-8">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  <AlertTitle>Success</AlertTitle>
+                  <AlertDescription>Transaction sent. You&apos;ll be redirected in a moment.</AlertDescription>
+                </Alert>
+              </ShowWhenTrue>
+              <ShowWhenTrue when={isAcceptCollateralOfferLoading}>
+                <Alert variant="warning" className="mt-8">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  <AlertTitle>Waiting</AlertTitle>
+                  <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
+                </Alert>
+              </ShowWhenTrue> */
+  }
+
+  {
+    /*           
+          <ShowWhenTrue when={isCancelOfferSuccess}>
+            <Alert variant="success" className="mt-8">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <AlertTitle>Cancelled</AlertTitle>
+              <AlertDescription>You have cancelled this offer.</AlertDescription>
+            </Alert>
+          </ShowWhenTrue>
+          <ShowWhenTrue when={isCancelOfferError}>
+            <Alert variant="error" className="mt-8">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription> Transaction Failed. Please try again later.</AlertDescription>
+            </Alert>
+          </ShowWhenTrue>
+          <ShowWhenTrue when={isCancelOfferLoading}>
+            <Alert variant="warning" className="mt-8">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <AlertTitle>Waiting</AlertTitle>
+              <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
+            </Alert>
+          </ShowWhenTrue> */
+  }
 
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
@@ -433,29 +486,6 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
             </div>
           </ShowWhenTrue>
 
-          {/*           
-          <ShowWhenTrue when={isCancelOfferSuccess}>
-            <Alert variant="success" className="mt-8">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Cancelled</AlertTitle>
-              <AlertDescription>You have cancelled this offer.</AlertDescription>
-            </Alert>
-          </ShowWhenTrue>
-          <ShowWhenTrue when={isCancelOfferError}>
-            <Alert variant="error" className="mt-8">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription> Transaction Failed. Please try again later.</AlertDescription>
-            </Alert>
-          </ShowWhenTrue>
-          <ShowWhenTrue when={isCancelOfferLoading}>
-            <Alert variant="warning" className="mt-8">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Waiting</AlertTitle>
-              <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
-            </Alert>
-          </ShowWhenTrue> */}
-
           {/* Form Panel */}
           <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
             <div className="text-xl mb-4 font-bold">Borrow Offer</div>
@@ -529,27 +559,6 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
                 </div>
               </div>
             </div>
-            {/* <ShowWhenTrue when={isAcceptCollateralOfferError}>
-                <Alert variant="error" className="mt-8">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription> Transaction Failed. Please try again later.</AlertDescription>
-                </Alert>
-              </ShowWhenTrue>
-              <ShowWhenTrue when={isAcceptCollateralOfferSuccess}>
-                <Alert variant="success" className="mt-8">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <AlertTitle>Success</AlertTitle>
-                  <AlertDescription>Transaction sent. You&apos;ll be redirected in a moment.</AlertDescription>
-                </Alert>
-              </ShowWhenTrue>
-              <ShowWhenTrue when={isAcceptCollateralOfferLoading}>
-                <Alert variant="warning" className="mt-8">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <AlertTitle>Waiting</AlertTitle>
-                  <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
-                </Alert>
-              </ShowWhenTrue> */}
 
             {/* Buttons */}
             <div className="mt-8 flex justify-center">
