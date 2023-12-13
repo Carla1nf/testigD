@@ -7,7 +7,7 @@ type BreadcrumbsProps = {
 
 const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
   return (
-    <div className="flex gap-1 text-xs items-center mb-4">
+    <div className="flex gap-1 text-xs items-center">
       {items.map((item, index) => (
         <React.Fragment key={index}>
           {item}

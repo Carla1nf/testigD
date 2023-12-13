@@ -390,19 +390,15 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
   return (
     <>
       {/* Page header */}
-      <div className="@container mb-8 lg:mb-16">
+      <div className="@container mb-8 space-y-4">
         <Breadcrumbs items={breadcrumbs} />
+        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Lend ID #{Number(id)}</h1>
       </div>
 
       {/* Page content */}
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
-            <div className="space-y-2 hidden @6xl:flex flex-col justify-center">
-              <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-                Lend ID #{Number(id)}
-              </h1>
-            </div>
             <div className="grid grid-cols-3 gap-8">
               <Stat value={ltv(collateralData?.ltv)} title={"LTV"} Icon={null} />
               <Stat
