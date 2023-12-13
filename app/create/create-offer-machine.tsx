@@ -1,9 +1,21 @@
+import { Token } from "@/lib/tokens"
 import { createMachine } from "xstate"
 
 export const machine = createMachine(
   {
     id: "createOffer",
     initial: "form",
+    context: {
+      collateralToken1: undefined,
+      collateralValue1: undefined,
+      collateralToken2: undefined,
+      collateralValue2: undefined,
+      token: undefined,
+      tokenValue: undefined,
+      durationDays: undefined,
+      interestPercent: undefined,
+      numberOfPayments: undefined,
+    },
     states: {
       form: {
         description: "Form can be filled out in any order",
@@ -13,7 +25,7 @@ export const machine = createMachine(
             states: {
               idle: {
                 on: {
-                  collateral1: {
+                  collateralToken1: {
                     target: "selected",
                     guard: "ifValidToken",
                     actions: [
@@ -28,7 +40,7 @@ export const machine = createMachine(
               },
               selected: {
                 on: {
-                  collateral1: {
+                  collateralToken1: {
                     target: "selected",
                     guard: "ifValidToken",
                     actions: [
@@ -292,21 +304,32 @@ export const machine = createMachine(
         },
       },
     },
-    types: {
-      events: {} as
+    types: {} as {
+      context: {
+        collateralToken1: Token | undefined
+        collateralValue1: number | undefined
+        collateralToken2: Token | undefined
+        collateralValue2: number | undefined
+        token: Token | undefined
+        tokenValue: number | undefined
+        durationDays: number | undefined
+        interestPercent: number | undefined
+        numberOfPayments: number | undefined
+      }
+      events:
         | { type: "back" }
         | { type: "next" }
         | { type: "retry" }
-        | { type: "token" }
         | { type: "confirm" }
-        | { type: "tokenValue" }
-        | { type: "collateral1" }
-        | { type: "durationDays" }
-        | { type: "interestPercent" }
-        | { type: "collateralToken0" }
-        | { type: "collateralValue0" }
-        | { type: "collateralValue1" }
-        | { type: "numberOfPayments" },
+        | { type: "token"; value: Token }
+        | { type: "tokenValue"; value: number }
+        | { type: "durationDays"; value: number }
+        | { type: "interestPercent"; value: number }
+        | { type: "collateralToken0"; value: Token }
+        | { type: "collateralValue0"; value: number }
+        | { type: "collateralToken1"; value: Token }
+        | { type: "collateralValue1"; value: number }
+        | { type: "numberOfPayments"; value: number }
     },
   },
   {

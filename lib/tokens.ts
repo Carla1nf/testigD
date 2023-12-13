@@ -125,3 +125,9 @@ export const findTokenByAddress = (chainSlug: string, address: string): Token | 
 
   return undefined
 }
+
+export const getAllTokens = (chainSlug: string) => {
+  const tokens = [...INTERNAL_TOKENS[chainSlug]]
+
+  return tokens
+}
