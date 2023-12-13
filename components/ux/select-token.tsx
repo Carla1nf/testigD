@@ -7,11 +7,11 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { Token, getAllTokens } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
-import * as React from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getAddress } from "viem"
+import { Input } from "../ui/input"
 import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayToken from "./display-token"
-import { Input } from "../ui/input"
 
 const SelectToken = ({
   defaultToken,
@@ -23,12 +23,12 @@ const SelectToken = ({
   onTokenValueChange: (value: number) => void
 }) => {
   const currentChain = useCurrentChain()
-  const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState(defaultToken?.address ?? "")
-  const [token, setToken] = React.useState<Token | null>(defaultToken)
-  const [tokenValue, setTokenValue] = React.useState<number | null>(null)
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState(defaultToken?.address ?? "")
+  const [token, setToken] = useState<Token | null>(defaultToken)
+  const [tokenValue, setTokenValue] = useState<number | null>(null)
 
-  const tokens = React.useMemo(() => {
+  const tokens = useMemo(() => {
     // clear selected token when the chain changes
     setToken(null)
 
@@ -40,12 +40,21 @@ const SelectToken = ({
     return all
   }, [currentChain.slug])
 
+  // it sucks that we need to do this, I would prefer it if react useState used the value passed on first render
+  useEffect(() => {
+    setToken(defaultToken)
+  }, [defaultToken])
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <div className="flex flex-row items-center bg-[#2F2F2F] px-2 py-1 gap-2 rounded-md">
+      <div className="flex flex-row items-center bg-[#2F2F2F] px-4 py-1 gap-2 rounded-lg w-full">
         <PopoverTrigger asChild>
-          <Button variant="create" role="combobox" aria-expanded={open} className="basis-2/3 justify-start">
-            {token ? <DisplayToken token={token} size={24} className="text-base" /> : <span>Select token...</span>}
+          <Button variant="create" role="combobox" aria-expanded={open} className="basis-2/3 justify-start pl-1">
+            {token ? (
+              <DisplayToken token={token} size={24} className="text-base font-bold" />
+            ) : (
+              <span className="text-sm font-normal text-[#757575]">Select token...</span>
+            )}
           </Button>
         </PopoverTrigger>
         <div className="grow">
@@ -67,7 +76,7 @@ const SelectToken = ({
                 }
               }
             }}
-            className="px-2 py-1 bg-[#2F2F2F] text-base"
+            className="px-2 py-1 bg-[#2F2F2F] text-base font-bold tracking-wide text-[#9F9F9F] leading-6"
             placeholder="0"
           />
         </div>
@@ -100,9 +109,6 @@ const SelectToken = ({
             }
             return 0
           }}
-          onValueChange={(value) => {
-            console.log("onValueChange, value", value)
-          }}
         >
           <CommandInput placeholder="Select Token / Paste an address" />
           <CommandEmpty>No token found.</CommandEmpty>
@@ -121,12 +127,12 @@ const SelectToken = ({
                       onSelectToken(item)
                     }
                   } else {
-                    // we have the same token selected, so, act like a toggle and unselect it
-                    setValue("")
-                    setToken(null)
+                    // we have the same token selected, so, act like a toggle and use the default token instead
+                    setValue(defaultToken.address ?? "")
+                    setToken(defaultToken)
                     // notify the outside world
                     if (onSelectToken) {
-                      onSelectToken(null)
+                      onSelectToken(defaultToken)
                     }
                   }
                   setOpen(false)
@@ -139,7 +145,7 @@ const SelectToken = ({
                   <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
                 </ShowWhenFalse>
 
-                <DisplayToken token={item} size={24} />
+                <DisplayToken token={item} size={24} className="text-base font-bold" />
               </CommandItem>
             ))}
           </CommandGroup>
