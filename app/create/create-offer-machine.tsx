@@ -334,7 +334,16 @@ export const machine = createMachine(
   },
   {
     actions: {
-      setCollateralToken1: ({ context, event }) => {},
+      setCollateralToken1: ({ context, event }) => {
+        if ("value" in event) {
+          try {
+            const parsed = tokenSchema.parse(event.value)
+            context.collateralToken1 = parsed
+          } catch (error) {
+            console.log("setCollateralToken1->error", error)
+          }
+        }
+      },
       updateLTV: ({ context, event }) => {},
       updateChartValues: ({ context, event }) => {},
       setToken: ({ context, event }) => {},
