@@ -367,12 +367,21 @@ export const machine = createMachine(
         return false
       },
       isNonNegativeInteger: ({ context, event }, params) => {
+        if ("value" in event) {
+          return Number.isInteger(event.value) && Number(event.value) >= 0
+        }
         return false
       },
       isValidNumberOfPayments: ({ context, event }, params) => {
+        if ("value" in event) {
+          return Number.isInteger(event.value) && Number(event.value) >= 0 && Number(event.value) <= 10
+        }
         return false
       },
       isValidDurationDays: ({ context, event }, params) => {
+        if ("value" in event) {
+          return Number.isInteger(event.value) && Number(event.value) >= 0 && Number(event.value) <= 365
+        }
         return false
       },
     },
