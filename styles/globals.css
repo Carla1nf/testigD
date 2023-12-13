@@ -113,6 +113,9 @@
 .dashboard-item-gradient {
   background: linear-gradient(90deg, rgba(215, 80, 113, 0.1) -4.81%, rgba(112, 91, 220, 0.1) 95.43%);
 }
-.button-action-gradient {
+.action-gradient {
   background: linear-gradient(270deg, rgb(112, 91, 220) -25.93%, rgb(215, 80, 113) 138.83%);
+}
+.action-gradient-muted {
+  background: linear-gradient(270deg, rgba(112, 91, 220, 50%) -25.93%, rgba(215, 80, 113, 50%) 138.83%);
 }

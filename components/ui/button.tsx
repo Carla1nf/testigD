@@ -17,7 +17,8 @@ const buttonVariants = cva(
         success: "bg-success border-2 border-white/10 text-white",
         error: "bg-error/75 border-2 border-white/10 text-white",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        action: "button-action-gradient rounded-md text-white",
+        action: "action-gradient rounded-md text-white",
+        "action-muted": "action-gradient-muted rounded-md text-white/50",
         link: "text-primary underline-offset-4 hover:underline",
         create:
           "bg-[#2F2F2F] border-none hover:border-none hover:bg-[#2F2F2F] focus:border-none focus:bg-[#2F2F2F] focus:ring-0 focus:ring-offset-0 focus:ring-transparent",
