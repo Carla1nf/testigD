@@ -14,7 +14,8 @@ export default function Create() {
 
   const [machineState, machineSend] = useMachine(machine.provide({}))
   const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
-  const ftusdcm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "USDC"), [currentChain.slug])
+  const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "USDC"), [currentChain.slug])
+
   // @ts-ignore
   console.log("machineState", machineState.value.form)
 
@@ -33,6 +34,9 @@ export default function Create() {
               defaultToken={ftm as Token}
               onSelectToken={(token: Token | null) => {
                 console.log("onSelectToken->token", token)
+              }}
+              onTokenValueChange={(value: number) => {
+                console.log("onTokenValueChange->value", value)
               }}
             />
           </div>

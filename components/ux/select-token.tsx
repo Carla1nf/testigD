@@ -11,22 +11,28 @@ import * as React from "react"
 import { getAddress } from "viem"
 import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayToken from "./display-token"
+import { Input } from "../ui/input"
 
 const SelectToken = ({
   defaultToken,
   onSelectToken,
+  onTokenValueChange,
 }: {
   defaultToken: Token
   onSelectToken: (token: Token | null) => void
+  onTokenValueChange: (value: number) => void
 }) => {
   const currentChain = useCurrentChain()
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState(defaultToken?.address ?? "")
   const [token, setToken] = React.useState<Token | null>(defaultToken)
+  const [tokenValue, setTokenValue] = React.useState<number | null>(null)
 
   const tokens = React.useMemo(() => {
     // clear selected token when the chain changes
     setToken(null)
+
+    // refresh tokens when the chain changes
     const all = getAllTokens(currentChain.slug)
     all.sort((a, b) => {
       return a.symbol.localeCompare(b.symbol)
@@ -34,23 +40,50 @@ const SelectToken = ({
     return all
   }, [currentChain.slug])
 
-  console.log("defaultToken", defaultToken)
-  console.log("token", token)
-  console.log("value", value)
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className=" justify-between">
-          {token ? <DisplayToken token={token} size={24} /> : <span>Select token...</span>}
-          <ShowWhenTrue when={open}>
-            <ChevronUp className="ml-2 h-4 w-4 shrink-0 opacity-50 text-[#D75071]" />
-          </ShowWhenTrue>
-          <ShowWhenFalse when={open}>
-            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50 stroke-[#D75071] stroke-2" />
-          </ShowWhenFalse>
-        </Button>
-      </PopoverTrigger>
+      <div className="flex flex-row items-center bg-[#2F2F2F] px-2 py-1 gap-2 rounded-md">
+        <PopoverTrigger asChild>
+          <Button variant="create" role="combobox" aria-expanded={open} className="basis-2/3 justify-start">
+            {token ? <DisplayToken token={token} size={24} className="text-base" /> : <span>Select token...</span>}
+          </Button>
+        </PopoverTrigger>
+        <div className="grow">
+          <Input
+            variant="create"
+            type="number"
+            value={tokenValue ?? ""}
+            onChange={(e) => {
+              const value = e.target.value
+              if (value) {
+                setTokenValue(Number(e.target.value))
+                if (onTokenValueChange) {
+                  onTokenValueChange(Number(e.target.value))
+                }
+              } else {
+                setTokenValue(null)
+                if (onTokenValueChange) {
+                  onTokenValueChange(0)
+                }
+              }
+            }}
+            className="px-2 py-1 bg-[#2F2F2F] text-base"
+            placeholder="0"
+          />
+        </div>
+        <ShowWhenTrue when={open}>
+          <ChevronUp
+            className="h-6 w-6 shrink-0 opacity-50 text-[#D75071] cursor-pointer"
+            onClick={() => setOpen(false)}
+          />
+        </ShowWhenTrue>
+        <ShowWhenFalse when={open}>
+          <ChevronDown
+            className="h-6 w-6 shrink-0 opacity-50 stroke-[#D75071] cursor-pointer"
+            onClick={() => setOpen(true)}
+          />
+        </ShowWhenFalse>
+      </div>
       <PopoverContent className="min-w-[320px] p-0">
         <Command
           filter={(itemAddress, search) => {
