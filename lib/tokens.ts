@@ -1,16 +1,19 @@
 import { ZERO_ADDRESS } from "@/services/constants"
 import { fantom } from "wagmi/chains"
+import z from "zod"
 
-export type Token = {
-  name: string
-  symbol: string
-  address: string
-  chainId: number
-  decimals: number
-  isNative: boolean
-  isLp: boolean
-  icon: string
-}
+export const tokenSchema = z.object({
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number(),
+  address: z.string(),
+  chainId: z.number(),
+  isNative: z.boolean(),
+  isLp: z.boolean(),
+  icon: z.string(),
+})
+
+export type Token = z.infer<typeof tokenSchema>
 
 type Tokens = Record<string, Token[]>
 

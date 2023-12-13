@@ -1,4 +1,4 @@
-import { Token } from "@/lib/tokens"
+import { Token, tokenSchema } from "@/lib/tokens"
 import { createMachine } from "xstate"
 
 export const machine = createMachine(
@@ -27,7 +27,7 @@ export const machine = createMachine(
                 on: {
                   collateralToken1: {
                     target: "selected",
-                    guard: "ifValidToken",
+                    guard: "isValidToken",
                     actions: [
                       { type: "setCollateralToken1" },
                       { type: "updateLTV" },
@@ -42,7 +42,7 @@ export const machine = createMachine(
                 on: {
                   collateralToken1: {
                     target: "selected",
-                    guard: "ifValidToken",
+                    guard: "isValidToken",
                     actions: [
                       { type: "setCollateralToken1" },
                       { type: "updateLTV" },
@@ -64,7 +64,7 @@ export const machine = createMachine(
                 on: {
                   token: {
                     target: "selected",
-                    guard: "ifValidToken",
+                    guard: "isValidToken",
                     actions: [
                       { type: "setToken" },
                       { type: "updateLTV" },
@@ -79,7 +79,7 @@ export const machine = createMachine(
                 on: {
                   token: {
                     target: "selected",
-                    guard: "ifValidToken",
+                    guard: "isValidToken",
                     actions: [
                       { type: "setToken" },
                       { type: "updateLTV" },
@@ -125,7 +125,7 @@ export const machine = createMachine(
                 on: {
                   collateralToken0: {
                     target: "selected",
-                    guard: "ifValidToken",
+                    guard: "isValidToken",
                     actions: [
                       { type: "setCollateralToken0" },
                       { type: "updateLTV" },
@@ -140,7 +140,7 @@ export const machine = createMachine(
                 on: {
                   collateralToken0: {
                     target: "selected",
-                    guard: "ifValidToken",
+                    guard: "isValidToken",
                     actions: [
                       { type: "setCollateralToken0" },
                       { type: "updateLTV" },
@@ -356,7 +356,14 @@ export const machine = createMachine(
       isFormComplete: ({ context, event }, params) => {
         return false
       },
-      ifValidToken: ({ context, event }, params) => {
+      isValidToken: ({ context, event }, params) => {
+        if ("value" in event) {
+          try {
+            const parsed = tokenSchema.parse(event.value)
+            console.log("isValidToken->parsed", parsed)
+            return true
+          } catch (error) {}
+        }
         return false
       },
       isNonNegativeInteger: ({ context, event }, params) => {
