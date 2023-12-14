@@ -66,11 +66,11 @@ const SelectToken = ({
             type="number"
             value={tokenValue ?? ""}
             onChange={(e) => {
-              const value = e.target.value
-              if (value) {
-                setTokenValue(e.target.value)
+              const value = parseFloat(e.target.value)
+              if (value && value >= 0) {
+                setTokenValue(value)
                 if (onTokenValueChange) {
-                  onTokenValueChange(e.target.value)
+                  onTokenValueChange(value)
                 }
               } else {
                 setTokenValue(null)
