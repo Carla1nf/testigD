@@ -12,8 +12,8 @@ const labelVariants = cva(
     variants: {
       variant: {
         default: "",
-        create: "text-[#9F9F9F] text-sm mb-1",
-        "create-muted": "text-[#565555] text-sm mb-1",
+        create: "text-[#9F9F9F] text-sm mb-2",
+        "create-muted": "text-[#565555] text-sm mb-2",
       },
     },
     defaultVariants: {

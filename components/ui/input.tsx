@@ -10,6 +10,7 @@ const inputVariants = cva(
       variant: {
         default: "",
         create: "bg-[#2F2F2F] border-none hover:border-none hover:bg-[#2F2F2F]",
+        "create-secondary": "bg-[#342F49] rounded-md text-white border-none hover:border-none",
         action: "action-gradient rounded-md text-white border-none hover:border-none",
       },
     },

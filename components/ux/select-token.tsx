@@ -43,7 +43,10 @@ const SelectToken = ({
   // it sucks that we need to do this, I would prefer it if react useState used the value passed on first render
   useEffect(() => {
     setToken(defaultToken)
-  }, [defaultToken])
+    if (onSelectToken) {
+      onSelectToken(defaultToken)
+    }
+  }, [defaultToken, onSelectToken])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

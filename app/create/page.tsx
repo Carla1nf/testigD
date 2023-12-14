@@ -6,7 +6,7 @@ import { machine } from "./create-offer-machine"
 import SelectToken from "@/components/ux/select-token"
 import { Token, findInternalTokenBySymbol } from "@/lib/tokens"
 import useCurrentChain from "@/hooks/useCurrentChain"
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,12 +15,38 @@ export default function Create() {
   const currentChain = useCurrentChain()
   // CREATE BORROW MACHINE
 
-  const [machineState, machineSend] = useMachine(machine.provide({}))
+  const [machineState, machineSend] = useMachine(machine)
   const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
 
+  console.log("context", machineState.context)
   // @ts-ignore
-  console.log("machineState", machineState.value.form)
+  // console.log("machineState", machineState.value.form)
+
+  const onSelectCollateralToken0 = useCallback(
+    (token: Token | null) => {
+      if (token) {
+        machineSend({ type: "collateralToken0", value: token })
+      }
+    },
+    [machineSend]
+  )
+  const onSelectCollateralToken1 = useCallback(
+    (token: Token | null) => {
+      if (token) {
+        machineSend({ type: "collateralToken1", value: token })
+      }
+    },
+    [machineSend]
+  )
+  const onSelectToken = useCallback(
+    (token: Token | null) => {
+      if (token) {
+        machineSend({ type: "token", value: token })
+      }
+    },
+    [machineSend]
+  )
 
   return (
     <div>
@@ -37,9 +63,7 @@ export default function Create() {
           {/* select token */}
           <SelectToken
             defaultToken={ftm as Token}
-            onSelectToken={(token: Token | null) => {
-              console.log("onSelectToken->token", token)
-            }}
+            onSelectToken={onSelectCollateralToken0}
             onTokenValueChange={(value: number) => {
               console.log("onTokenValueChange->value", value)
             }}
@@ -51,9 +75,7 @@ export default function Create() {
           <Label variant="create-muted">Your Second Collateral Token</Label>
           <SelectToken
             defaultToken={ftm as Token}
-            onSelectToken={(token: Token | null) => {
-              console.log("onSelectToken->token", token)
-            }}
+            onSelectToken={onSelectCollateralToken1}
             onTokenValueChange={(value: number) => {
               console.log("onTokenValueChange->value", value)
             }}
@@ -66,9 +88,7 @@ export default function Create() {
           {/* select token */}
           <SelectToken
             defaultToken={usdc as Token}
-            onSelectToken={(token: Token | null) => {
-              console.log("onSelectToken->token", token)
-            }}
+            onSelectToken={onSelectToken}
             onTokenValueChange={(value: number) => {
               console.log("onTokenValueChange->value", value)
             }}
@@ -84,7 +104,53 @@ export default function Create() {
             <Button variant="action">75%</Button>
             <Button variant="action">Custom</Button>
             <div>
-              <Input variant="action" className="text-center" />
+              <Input variant="action" className="text-center" placeholder="0" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 my-4">
+          {/* Interest on Loan (%) */}
+
+          <div className="">
+            <Label variant="create">Interest on Loan (%)</Label>
+
+            <div className="flex flex-row gap-[6px]">
+              <Button variant="action" className="w-8 h-8">
+                -
+              </Button>
+              <Input variant="create-secondary" className="text-center w-20 h-8" placeholder="0" />
+              <Button variant="action" className="w-8 h-8">
+                +
+              </Button>
+            </div>
+          </div>
+
+          <div className="">
+            <Label variant="create">Loan Duration (days)</Label>
+
+            <div className="flex flex-row gap-[6px]">
+              <Button variant="action" className="w-8 h-8">
+                -
+              </Button>
+              <Input variant="create-secondary" className="text-center w-20 h-8" placeholder="0" />
+              <Button variant="action" className="w-8 h-8">
+                +
+              </Button>
+            </div>
+          </div>
+
+          <div className="">
+            <Label variant="create">Total Payments</Label>
+
+            <div className="flex flex-row gap-[6px]">
+              <Button variant="action" className="w-8 h-8">
+                -
+              </Button>
+              <Input variant="create-secondary" className="text-center w-20 h-8" placeholder="0" />
+              <Button variant="action" className="w-8 h-8">
+                +
+              </Button>
             </div>
           </div>
         </div>

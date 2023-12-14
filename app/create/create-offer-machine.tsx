@@ -1,5 +1,13 @@
 import { Token, tokenSchema } from "@/lib/tokens"
-import { createMachine } from "xstate"
+import { assign, createMachine } from "xstate"
+
+const parseToken = (values: any) => {
+  try {
+    return tokenSchema.parse(values)
+  } catch (error) {
+    return undefined
+  }
+}
 
 export const machine = createMachine(
   {
@@ -28,12 +36,7 @@ export const machine = createMachine(
                   collateralToken1: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: [
-                      { type: "setCollateralToken1" },
-                      { type: "updateLTV" },
-                      { type: "updateChartValues" },
-                      { type: "validateForm" },
-                    ],
+                    actions: ["setCollateralToken1", "updateLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -43,12 +46,7 @@ export const machine = createMachine(
                   collateralToken1: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: [
-                      { type: "setCollateralToken1" },
-                      { type: "updateLTV" },
-                      { type: "updateChartValues" },
-                      { type: "validateForm" },
-                    ],
+                    actions: ["setCollateralToken1", "updateLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -65,12 +63,7 @@ export const machine = createMachine(
                   token: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: [
-                      { type: "setToken" },
-                      { type: "updateLTV" },
-                      { type: "updateChartValues" },
-                      { type: "validateForm" },
-                    ],
+                    actions: ["setToken", "updateLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -80,12 +73,7 @@ export const machine = createMachine(
                   token: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: [
-                      { type: "setToken" },
-                      { type: "updateLTV" },
-                      { type: "updateChartValues" },
-                      { type: "validateForm" },
-                    ],
+                    actions: ["setToken", "updateLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -100,7 +88,7 @@ export const machine = createMachine(
                   numberOfPayments: {
                     target: "hasValue",
                     guard: "isValidNumberOfPayments",
-                    actions: [{ type: "setNumberOfPayments" }, { type: "validateForm" }],
+                    actions: ["setNumberOfPayments", "validateForm"],
                     description: "Must be an integer value between 0 and 10",
                   },
                 },
@@ -110,7 +98,7 @@ export const machine = createMachine(
                   numberOfPayments: {
                     target: "hasValue",
                     guard: "isValidNumberOfPayments",
-                    actions: [{ type: "setNumberOfPayments" }, { type: "validateForm" }],
+                    actions: ["setNumberOfPayments", "validateForm"],
                     description: "Must be an integer value between 0 and 10",
                   },
                 },
@@ -126,12 +114,7 @@ export const machine = createMachine(
                   collateralToken0: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: [
-                      { type: "setCollateralToken0" },
-                      { type: "updateLTV" },
-                      { type: "updateChartValues" },
-                      { type: "validateForm" },
-                    ],
+                    actions: ["setCollateralToken0", "updateLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -141,12 +124,7 @@ export const machine = createMachine(
                   collateralToken0: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: [
-                      { type: "setCollateralToken0" },
-                      { type: "updateLTV" },
-                      { type: "updateChartValues" },
-                      { type: "validateForm" },
-                    ],
+                    actions: ["setCollateralToken0", "updateLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -161,7 +139,7 @@ export const machine = createMachine(
                   collateralValue0: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setCollateralValue0" }, { type: "updateLTV" }, { type: "validateForm" }],
+                    actions: ["setCollateralValue0", "updateLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -171,7 +149,7 @@ export const machine = createMachine(
                   collateralValue0: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setCollateralValue0" }, { type: "updateLTV" }, { type: "validateForm" }],
+                    actions: ["setCollateralValue0", "updateLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -186,7 +164,7 @@ export const machine = createMachine(
                   collateralValue1: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setCollateralValue1" }, { type: "updateLTV" }, { type: "validateForm" }],
+                    actions: ["setCollateralValue1", "updateLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -196,7 +174,7 @@ export const machine = createMachine(
                   collateralValue1: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setCollateralValue1" }, { type: "updateLTV" }, { type: "validateForm" }],
+                    actions: ["setCollateralValue1", "updateLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -211,7 +189,7 @@ export const machine = createMachine(
                   tokenValue: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setTokenValue" }, { type: "updateLTV" }, { type: "validateForm" }],
+                    actions: ["setTokenValue", "updateLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -221,7 +199,7 @@ export const machine = createMachine(
                   tokenValue: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setTokenValue" }, { type: "updateLTV" }, { type: "validateForm" }],
+                    actions: ["setTokenValue", "updateLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -236,7 +214,7 @@ export const machine = createMachine(
                   durationDays: {
                     target: "hasValue",
                     guard: "isValidDurationDays",
-                    actions: [{ type: "setDurationDays" }, { type: "validateForm" }],
+                    actions: ["setDurationDays", "validateForm"],
                     description: "Must be an integer between 0 and 365",
                   },
                 },
@@ -246,7 +224,7 @@ export const machine = createMachine(
                   durationDays: {
                     target: "hasValue",
                     guard: "isValidDurationDays",
-                    actions: [{ type: "setDurationDays" }, { type: "validateForm" }],
+                    actions: ["setDurationDays", "validateForm"],
                     description: "Must be an integer between 0 and 365",
                   },
                 },
@@ -262,7 +240,7 @@ export const machine = createMachine(
                   interestPercent: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: [{ type: "setInterestPercent" }, { type: "validateForm" }],
+                    actions: ["setInterestPercent", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -346,10 +324,32 @@ export const machine = createMachine(
       },
       updateLTV: ({ context, event }) => {},
       updateChartValues: ({ context, event }) => {},
-      setToken: ({ context, event }) => {},
-      setCollateralToken0: ({ context, event }) => {},
+      setCollateralToken0: assign({
+        token: ({ event }) => {
+          if (event && "value" in event) {
+            return parseToken(event.value)
+          }
+          return undefined
+        },
+      }),
       setCollateralValue0: ({ context, event }) => {},
+      setCollateralToken1: assign({
+        token: ({ event }) => {
+          if (event && "value" in event) {
+            return parseToken(event.value)
+          }
+          return undefined
+        },
+      }),
       setCollateralValue1: ({ context, event }) => {},
+      setToken: assign({
+        token: ({ event }) => {
+          if (event && "value" in event) {
+            return parseToken(event.value)
+          }
+          return undefined
+        },
+      }),
       setTokenValue: ({ context, event }) => {},
       setNumberOfPayments: ({ context, event }) => {},
       validateForm: ({ context, event }) => {},
@@ -367,11 +367,7 @@ export const machine = createMachine(
       },
       isValidToken: ({ context, event }, params) => {
         if ("value" in event) {
-          try {
-            const parsed = tokenSchema.parse(event.value)
-            console.log("isValidToken->parsed", parsed)
-            return true
-          } catch (error) {}
+          return Boolean(parseToken(event.value))
         }
         return false
       },
