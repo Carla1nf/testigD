@@ -43,9 +43,9 @@ const SelectToken = ({
   // it sucks that we need to do this, I would prefer it if react useState used the value passed on first render
   useEffect(() => {
     setToken(defaultToken)
-    if (onSelectToken) {
-      onSelectToken(defaultToken)
-    }
+    // if (onSelectToken) {
+    //   onSelectToken(defaultToken)
+    // }
   }, [defaultToken, onSelectToken])
 
   return (
@@ -68,9 +68,9 @@ const SelectToken = ({
             onChange={(e) => {
               const value = e.target.value
               if (value) {
-                setTokenValue(Number(e.target.value))
+                setTokenValue(e.target.value)
                 if (onTokenValueChange) {
-                  onTokenValueChange(Number(e.target.value))
+                  onTokenValueChange(e.target.value)
                 }
               } else {
                 setTokenValue(null)
