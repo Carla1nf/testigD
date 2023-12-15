@@ -1,4 +1,5 @@
 import { Token, tokenSchema } from "@/lib/tokens"
+import { fixedDecimals } from "@/lib/utils"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { getAddress } from "viem"
 import { assign, createMachine, fromPromise, raise } from "xstate"
@@ -73,12 +74,36 @@ export const machine = createMachine(
               ltv50: {},
               ltv75: {},
               ltvcustom: {},
+              calculating: {
+                invoke: {
+                  input: ({ context, event }) => ({ context, event }),
+                  src: fromPromise(async ({ input: { context, event } }) => {
+                    const desiredLtv = Number(event.value)
+                    if (context?.collateralValue0 || context?.collateralValue1) {
+                      // Calculate the amount of token needed to satisfy the desired LTV ratio
+                      // This will be used to determine the amount of token to borrow
+                      const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
+                      const desiredTokenValue = Number(totalCollateralValue) * desiredLtv
+                      const desiredTokenAmount = Number(desiredTokenValue) / Number(context.tokenPrice)
+                      return desiredTokenAmount
+                    }
+                    return 0
+                  }),
+                  onDone: {
+                    actions: ["raiseTokenAmount"],
+                  },
+                  onError: {
+                    actions: ["raiseTokenAmount"],
+                  },
+                },
+              },
             },
             on: {
               "ltv.25": { target: ".ltv25" },
               "ltv.50": { target: ".ltv50" },
               "ltv.75": { target: ".ltv75" },
               "ltv.custom": { target: ".ltvcustom" },
+              forceLtvRatio: { target: ".calculating" },
             },
           },
           collateralToken0: {
@@ -417,6 +442,7 @@ export const machine = createMachine(
         | { type: "ltv.50" }
         | { type: "ltv.75" }
         | { type: "ltv.custom" }
+        | { type: "forceLtvRatio"; value: number }
     },
   },
   {
@@ -537,7 +563,8 @@ export const machine = createMachine(
         },
       }),
       raiseLTV: raise(({ context }) => {
-        const ratio = Math.floor(Number(context?.ltvRatio ?? 0))
+        const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 2))
+        // console.log("raiseLTV->ratio", ratio)
         switch (ratio) {
           case 25: {
             return { type: "ltv.25" as const }
@@ -552,6 +579,13 @@ export const machine = createMachine(
             return { type: "ltv.custom" as const }
           }
         }
+      }),
+      //@ts-ignore
+      raiseTokenAmount: raise(({ event }) => {
+        //@ts-ignore
+        const amount = Number(fixedDecimals(event?.output ?? 0, 2))
+        console.log("raising->amount", amount)
+        return { type: "tokenAmount", value: amount }
       }),
       setNumberOfPayments: ({ context, event }) => {},
       setDurationDays: ({ context, event }) => {},

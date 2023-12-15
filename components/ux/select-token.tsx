@@ -3,58 +3,38 @@
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import useCurrentChain from "@/hooks/useCurrentChain"
-import { Token, getAllTokens } from "@/lib/tokens"
+import { Token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import { getAddress } from "viem"
 import { Input } from "../ui/input"
 import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayToken from "./display-token"
 
 const SelectToken = ({
+  tokens,
   defaultToken,
   onSelectToken,
-  onTokenValueChange,
+  onAmountChange,
 }: {
+  tokens?: Token[]
   defaultToken: Token
   onSelectToken: (token: Token | null) => void
-  onTokenValueChange: (value: number) => void
+  onAmountChange: (value: number) => void
 }) => {
-  const currentChain = useCurrentChain()
   const [open, setOpen] = useState(false)
-  const [value, setValue] = useState(defaultToken?.address ?? "")
-  const [token, setToken] = useState<Token | null>(defaultToken)
-  const [tokenValue, setTokenValue] = useState<number | null>(null)
-
-  const tokens = useMemo(() => {
-    // clear selected token when the chain changes
-    setToken(null)
-
-    // refresh tokens when the chain changes
-    const all = getAllTokens(currentChain.slug)
-    all.sort((a, b) => {
-      return a.symbol.localeCompare(b.symbol)
-    })
-    return all
-  }, [currentChain.slug])
-
-  // it sucks that we need to do this, I would prefer it if react useState used the value passed on first render
-  useEffect(() => {
-    setToken(defaultToken)
-    // if (onSelectToken) {
-    //   onSelectToken(defaultToken)
-    // }
-  }, [defaultToken, onSelectToken])
+  const [selectedAddress, setSelectedAddress] = useState(defaultToken?.address ?? "") // selected token address
+  const [selectedToken, setSelectedToken] = useState<Token | null>(defaultToken) // the current token (why do we need the address AND the token in two different states?)
+  const [amount, setAmount] = useState<number | null>(null) // the numeric value (actually this is the amount)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <div className="flex flex-row items-center bg-[#2F2F2F] px-4 py-1 gap-2 rounded-lg w-full">
         <PopoverTrigger asChild>
           <Button variant="create" role="combobox" aria-expanded={open} className="basis-2/3 justify-start pl-1">
-            {token ? (
-              <DisplayToken token={token} size={24} className="text-base font-bold" />
+            {selectedToken ? (
+              <DisplayToken token={selectedToken} size={24} className="text-base font-bold" />
             ) : (
               <span className="text-sm font-normal text-[#757575]">Select token...</span>
             )}
@@ -64,18 +44,18 @@ const SelectToken = ({
           <Input
             variant="create"
             type="number"
-            value={tokenValue ?? ""}
+            value={amount ?? ""}
             onChange={(e) => {
               const value = parseFloat(e.target.value)
               if (value && value >= 0) {
-                setTokenValue(value)
-                if (onTokenValueChange) {
-                  onTokenValueChange(value)
+                setAmount(value)
+                if (onAmountChange) {
+                  onAmountChange(value)
                 }
               } else {
-                setTokenValue(null)
-                if (onTokenValueChange) {
-                  onTokenValueChange(0)
+                setAmount(null)
+                if (onAmountChange) {
+                  onAmountChange(0)
                 }
               }
             }}
@@ -99,7 +79,7 @@ const SelectToken = ({
       <PopoverContent className="min-w-[320px] p-0">
         <Command
           filter={(itemAddress, search) => {
-            const token = tokens.find((token) => getAddress(token.address) === getAddress(itemAddress))
+            const token = tokens?.find((token) => getAddress(token.address) === getAddress(itemAddress))
             if (token) {
               const searchLower = search.toLowerCase()
               if (
@@ -116,23 +96,23 @@ const SelectToken = ({
           <CommandInput placeholder="Select Token / Paste an address" />
           <CommandEmpty>No token found.</CommandEmpty>
           <CommandGroup>
-            {tokens.map((item) => (
+            {tokens?.map((token) => (
               <CommandItem
-                key={item.address}
-                value={item.address}
-                onSelect={(currentValue) => {
+                key={token.address}
+                value={token.address}
+                onSelect={(address) => {
                   // if we have a new token selected
-                  if (currentValue !== value) {
-                    setValue(currentValue)
-                    setToken(item)
+                  if (address !== selectedAddress) {
+                    setSelectedAddress(address)
+                    setSelectedToken(token)
                     // notify the outside world
                     if (onSelectToken) {
-                      onSelectToken(item)
+                      onSelectToken(token)
                     }
                   } else {
                     // we have the same token selected, so, act like a toggle and use the default token instead
-                    setValue(defaultToken.address ?? "")
-                    setToken(defaultToken)
+                    setSelectedAddress(defaultToken.address ?? "")
+                    setSelectedToken(defaultToken)
                     // notify the outside world
                     if (onSelectToken) {
                       onSelectToken(defaultToken)
@@ -141,14 +121,14 @@ const SelectToken = ({
                   setOpen(false)
                 }}
               >
-                <ShowWhenTrue when={value ? getAddress(value) === item.address : false}>
+                <ShowWhenTrue when={selectedAddress ? getAddress(selectedAddress) === token.address : false}>
                   <Check className={cn("mr-2 h-4 w-4", "opacity-100")} />
                 </ShowWhenTrue>
-                <ShowWhenFalse when={value ? getAddress(value) === item.address : false}>
+                <ShowWhenFalse when={selectedAddress ? getAddress(selectedAddress) === token.address : false}>
                   <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
                 </ShowWhenFalse>
 
-                <DisplayToken token={item} size={24} className="text-base font-bold" />
+                <DisplayToken token={token} size={24} className="text-base font-bold" />
               </CommandItem>
             ))}
           </CommandGroup>

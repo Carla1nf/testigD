@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import SelectToken from "@/components/ux/select-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { dollars } from "@/lib/display"
-import { Token, findInternalTokenBySymbol } from "@/lib/tokens"
+import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
 import { useCallback, useEffect, useMemo } from "react"
@@ -29,6 +29,17 @@ export default function Create() {
     }
   }, [ftm, usdc, machineState.context.collateralToken0, machineSend])
 
+  // TOKENS
+  const tokens = useMemo(() => {
+    // refresh tokens when the chain changes
+    const all = getAllTokens(currentChain.slug)
+    all.sort((a, b) => {
+      return a.symbol.localeCompare(b.symbol)
+    })
+    return all
+  }, [currentChain.slug])
+
+  // EVENT HANDLERS
   const onSelectCollateralToken0 = useCallback(
     (token: Token | null) => {
       if (token) {
@@ -88,9 +99,10 @@ export default function Create() {
             />
           </div>
           <SelectToken
+            tokens={tokens}
             defaultToken={ftm as Token}
             onSelectToken={onSelectCollateralToken0}
-            onTokenValueChange={onSelectCollateralAmount0}
+            onAmountChange={onSelectCollateralAmount0}
           />
         </div>
 
@@ -107,9 +119,10 @@ export default function Create() {
             />
           </div>
           <SelectToken
+            tokens={tokens}
             defaultToken={usdc as Token}
             onSelectToken={onSelectToken}
-            onTokenValueChange={onSelectTokenAmount}
+            onAmountChange={onSelectTokenAmount}
           />
         </div>
 
@@ -117,7 +130,14 @@ export default function Create() {
         <div>
           <Label variant="create">LTV Ratio</Label>
           <div className="grid grid-cols-5 gap-4">
-            <Button variant={machineState.matches("form.ltvRatio.ltv25") ? "action" : "action-muted"}>25%</Button>
+            <Button
+              variant={machineState.matches("form.ltvRatio.ltv25") ? "action" : "action-muted"}
+              onClick={() => {
+                machineSend({ type: "forceLtvRatio", value: 0.25 })
+              }}
+            >
+              25%
+            </Button>
             <Button variant={machineState.matches("form.ltvRatio.ltv50") ? "action" : "action-muted"}>50%</Button>
             <Button variant={machineState.matches("form.ltvRatio.ltv75") ? "action" : "action-muted"}>75%</Button>
             <Button variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}>
@@ -128,6 +148,7 @@ export default function Create() {
                 variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}
                 className="text-center"
                 placeholder="0"
+                value={machineState.context.ltvRatio?.toFixed(2)}
               />
             </div>
           </div>
@@ -196,7 +217,7 @@ const TokenValuation = ({
   }
 
   return (
-    <p className={cn("text-xs text-[#9F9F9F]", className)}>
+    <p className={cn("text-[10px] text-[#9F9F9F]", className)}>
       {amount} {token.symbol} @ {dollars({ value: price })} = {dollars({ value })}
     </p>
   )
