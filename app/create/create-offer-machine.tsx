@@ -11,8 +11,6 @@ const parseToken = (values: any) => {
   }
 }
 
-export type Ltv = "25" | "50" | "75" | "Custom"
-
 const chainIdToSlug = (chainId: number) => {
   switch (chainId) {
     case 250: {
@@ -106,16 +104,14 @@ export const machine = createMachine(
                   }),
                   onDone: {
                     target: "selected",
-                    actions: ["setCollateralPrice0", "setCollateralValue0"],
+                    actions: ["setCollateralPrice0", "setCollateralValue0", "updateLTV", "raiseLTV"],
                   },
                   onError: {
                     target: "idle",
-                    // todo: alert the outside world thast the price wasnt available
                   },
                 },
               },
               selected: {
-                // entry: ["updateLTV", "updateChartValues", "validateForm"],
                 on: {
                   collateralToken0: {
                     target: "selecting",
@@ -400,7 +396,6 @@ export const machine = createMachine(
         interestPercent: number | undefined
         numberOfPayments: number | undefined
         ltvRatio: number | undefined
-        ltv: Ltv | undefined
       }
       events:
         | { type: "token"; value: Token }
@@ -533,7 +528,6 @@ export const machine = createMachine(
       // OTHER SETTERS
       updateLTV: assign({
         ltvRatio: ({ context }) => {
-          console.log("acyions->updateLTV->context", context)
           if (context?.collateralValue0 && context?.tokenValue) {
             const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
             const ltvValue = totalCollateralValue / context.tokenValue
@@ -542,14 +536,8 @@ export const machine = createMachine(
           return 0
         },
       }),
-      raiseLTV: raise(({ context, event }) => {
+      raiseLTV: raise(({ context }) => {
         const ratio = Math.floor(Number(context?.ltvRatio ?? 0))
-        console.log("raiseLTV")
-        console.log("ltvRatio", context.ltvRatio)
-        console.log("event", event)
-        console.log("ratio", ratio)
-
-        console.log("")
         switch (ratio) {
           case 25: {
             return { type: "ltv.25" as const }
@@ -565,11 +553,11 @@ export const machine = createMachine(
           }
         }
       }),
-      updateChartValues: ({ context, event }) => {},
       setNumberOfPayments: ({ context, event }) => {},
-      validateForm: ({ context, event }) => {},
       setDurationDays: ({ context, event }) => {},
       setInterestPercent: ({ context, event }) => {},
+      updateChartValues: ({ context, event }) => {},
+      validateForm: ({ context, event }) => {},
     },
     actors: {},
     guards: {

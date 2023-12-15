@@ -106,7 +106,6 @@ export default function Create() {
               className="mb-2 italic"
             />
           </div>
-
           <SelectToken
             defaultToken={usdc as Token}
             onSelectToken={onSelectToken}
