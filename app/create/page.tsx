@@ -10,6 +10,8 @@ import { useMachine } from "@xstate/react"
 import { useCallback, useEffect, useMemo } from "react"
 import { machine } from "./create-offer-machine"
 import { tokenMachine } from "./token-machine"
+import { cn } from "@/lib/utils"
+import { dollars } from "@/lib/display"
 
 export default function Create() {
   const currentChain = useCurrentChain()
@@ -18,53 +20,51 @@ export default function Create() {
 
   // CREATE BORROW MACHINE
   // Load up some some tasty default values
-  const [machineState, machineSend] = useMachine(machine, {
-    input: {
-      collateralToken0: ftm,
-      token: usdc, // might be better to do this with send events
-    },
-  })
-
-  const [stateCollateralToken0, sendCollateralToken0] = useMachine(tokenMachine)
+  const [machineState, machineSend] = useMachine(machine)
 
   useEffect(() => {
-    if (machineState.context.token) {
-      sendCollateralToken0({ type: "token", value: machineState.context.token })
+    if (ftm && machineState.context.collateralToken0 === undefined) {
+      machineSend({ type: "collateralToken0", value: ftm })
     }
-  }, [machineState.context.token, sendCollateralToken0])
+    // if (ftm && machineState.context.collateralToken1 === undefined) {
+    //   machineSend({ type: "collateralToken1", value: ftm })
+    // }
+    // if (usdc && machineState.context.token === undefined) {
+    //   machineSend({ type: "token", value: usdc })
+    // }
+  }, [ftm, machineState.context.collateralToken0, machineSend])
 
   const onSelectCollateralToken0 = useCallback(
     (token: Token | null) => {
       if (token) {
-        sendCollateralToken0({ type: "token", value: token })
+        machineSend({ type: "collateralToken0", value: token })
       }
-    },
-    [sendCollateralToken0]
-  )
-
-  const onSelectCollateralValue0 = useCallback(
-    (value: number) => {
-      sendCollateralToken0({ type: "amount", value })
-    },
-    [sendCollateralToken0]
-  )
-
-  console.log("stateCollateralToken0", stateCollateralToken0.context)
-
-  // const onSelectCollateralToken1 = useCallback(
-  //   (token: Token | null) => {
-  //     if (token) {
-  //       machineSend({ type: "collateralToken1", value: token })
-  //     }
-  //   },
-  //   [machineSend]
-  // )
-  const onSelectCollateralValue1 = useCallback(
-    (value: number) => {
-      machineSend({ type: "collateralValue1", value })
     },
     [machineSend]
   )
+
+  const onSelectCollateralAmlount0 = useCallback(
+    (value: number) => {
+      machineSend({ type: "collateralAmount0", value })
+    },
+    [machineSend]
+  )
+
+  console.log("MACHINE ")
+  console.log("collateralToken0", machineState.context.collateralToken0)
+  console.log("collateralAmount0", machineState.context.collateralAmount0)
+  console.log("collateralPrice0", machineState.context.collateralPrice0)
+  console.log("collateralValue0", machineState.context.collateralValue0)
+  // @ts-ignore
+  console.log("state.value.collateralToken0", machineState.value.form.collateralToken0)
+
+  console.log("token", machineState.context.token)
+  console.log("tokenAmount", machineState.context.tokenAmount)
+  console.log("tokenPrice", machineState.context.tokenPrice)
+  console.log("tokenValue", machineState.context.tokenValue)
+  // @ts-ignore
+  console.log("state.value.token", machineState.value.form.token)
+
   const onSelectToken = useCallback(
     (token: Token | null) => {
       if (token) {
@@ -73,9 +73,9 @@ export default function Create() {
     },
     [machineSend]
   )
-  const onSelectTokenValue = useCallback(
+  const onSelectTokenAmount = useCallback(
     (value: number) => {
-      machineSend({ type: "tokenValue", value })
+      machineSend({ type: "tokenAmount", value })
     },
     [machineSend]
   )
@@ -91,11 +91,20 @@ export default function Create() {
       <div className="bg-[#252324] p-4 max-w-[570px] flex flex-col gap-6">
         {/* Collateral token 0 */}
         <div className="">
-          <Label variant="create">Your Collateral Token</Label>
+          <div className="flex justify-between items-center">
+            <Label variant="create">Your Collateral Token</Label>
+            <TokenValuation
+              token={machineState.context.collateralToken0}
+              price={machineState.context.collateralPrice0}
+              amount={Number(machineState.context.collateralAmount0)}
+              value={machineState.context.collateralValue0}
+              className="mb-2 italic"
+            />
+          </div>
           <SelectToken
             defaultToken={ftm as Token}
             onSelectToken={onSelectCollateralToken0}
-            onTokenValueChange={onSelectCollateralValue0}
+            onTokenValueChange={onSelectCollateralAmlount0}
           />
         </div>
 
@@ -111,11 +120,21 @@ export default function Create() {
 
         {/* Wanted borrow token */}
         <div className="">
-          <Label variant="create">Wanted Borrow Token</Label>
+          <div className="flex justify-between items-center">
+            <Label variant="create">Wanted Borrow Token</Label>
+            <TokenValuation
+              token={machineState.context.token}
+              price={machineState.context.tokenPrice}
+              amount={Number(machineState.context.tokenAmount)}
+              value={machineState.context.tokenValue}
+              className="mb-2 italic"
+            />
+          </div>
+
           <SelectToken
             defaultToken={usdc as Token}
             onSelectToken={onSelectToken}
-            onTokenValueChange={onSelectTokenValue}
+            onTokenValueChange={onSelectTokenAmount}
           />
         </div>
 
@@ -180,5 +199,28 @@ export default function Create() {
         </div>
       </div>
     </div>
+  )
+}
+
+const TokenValuation = ({
+  token,
+  price,
+  amount,
+  value,
+  className,
+}: {
+  token: Token | undefined
+  price: number
+  amount: number
+  value: number
+  className?: string
+}) => {
+  if (!token || value === 0) {
+    return null
+  }
+  return (
+    <p className={cn("text-xs text-[#9F9F9F]", className)}>
+      {amount} {token.symbol} @ {dollars({ value: price })} = {dollars({ value })}
+    </p>
   )
 }
