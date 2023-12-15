@@ -1,7 +1,7 @@
 import { Token, tokenSchema } from "@/lib/tokens"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { getAddress } from "viem"
-import { assign, createMachine, fromPromise } from "xstate"
+import { assign, createMachine, fromPromise, raise } from "xstate"
 
 const parseToken = (values: any) => {
   try {
@@ -58,7 +58,7 @@ export const machine = createMachine(
         durationDays: undefined,
         interestPercent: undefined,
         numberOfPayments: undefined,
-        ltvValue: 0, // the clacukated LTV ratio of collateral (value) / token (value)
+        ltvRatio: 0, // the calculated LTV ratio of collateral (value) / token (value)
         // the exact LTV match of either 25/50/75/Custom which is used to select buttons,
         // we will move this to a state once I know how to raise events from within an action
         ltv: undefined,
@@ -68,6 +68,21 @@ export const machine = createMachine(
       form: {
         description: "Form can be filled out in any order",
         states: {
+          ltvRatio: {
+            initial: "ltvcustom",
+            states: {
+              ltv25: {},
+              ltv50: {},
+              ltv75: {},
+              ltvcustom: {},
+            },
+            on: {
+              "ltv.25": { target: ".ltv25" },
+              "ltv.50": { target: ".ltv50" },
+              "ltv.75": { target: ".ltv75" },
+              "ltv.custom": { target: ".ltvcustom" },
+            },
+          },
           collateralToken0: {
             initial: "idle",
             states: {
@@ -120,7 +135,7 @@ export const machine = createMachine(
                   collateralToken1: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: ["setCollateralToken1", "updateLTV", "updateChartValues", "validateForm"],
+                    actions: ["setCollateralToken1", "updateLTV", "raiseLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -130,7 +145,7 @@ export const machine = createMachine(
                   collateralToken1: {
                     target: "selected",
                     guard: "isValidToken",
-                    actions: ["setCollateralToken1", "updateLTV", "updateChartValues", "validateForm"],
+                    actions: ["setCollateralToken1", "updateLTV", "raiseLTV", "updateChartValues", "validateForm"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -145,19 +160,39 @@ export const machine = createMachine(
               idle: {
                 on: {
                   token: {
-                    target: "selected",
+                    target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setToken", "updateLTV", "updateChartValues", "validateForm"],
+                    actions: ["setToken"],
                     description: "event must contain a valid token",
+                  },
+                },
+              },
+              selecting: {
+                invoke: {
+                  input: ({ context }) => ({ context }),
+                  src: fromPromise(async ({ input: { context } }) => {
+                    console.log("getting prie for", context.token)
+
+                    return fetchPrice({
+                      event: { slug: chainIdToSlug(context.token.chainId), token: context.token },
+                    })
+                  }),
+                  onDone: {
+                    target: "selected",
+                    actions: ["setTokenPrice", "setTokenValue", "updateLTV", "raiseLTV", "validateForm"],
+                  },
+                  onError: {
+                    target: "idle",
+                    // todo: alert the outside world thast the price wasnt available
                   },
                 },
               },
               selected: {
                 on: {
                   token: {
-                    target: "selected",
+                    target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setToken", "updateLTV", "updateChartValues", "validateForm"],
+                    actions: ["setToken"], // "updateLTV", "updateChartValues", "validateForm"
                     description: "event must contain a valid token",
                   },
                 },
@@ -172,7 +207,7 @@ export const machine = createMachine(
                   collateralAmount0: {
                     target: "hasValue",
                     guard: "isParsedFloat",
-                    actions: ["setCollateralAmount0", "setCollateralValue0", "updateLTV", "validateForm"],
+                    actions: ["setCollateralAmount0", "setCollateralValue0", "updateLTV", "raiseLTV", "validateForm"],
                     description: "Must be an float value 0 or above",
                   },
                 },
@@ -182,7 +217,7 @@ export const machine = createMachine(
                   collateralAmount0: {
                     target: "hasValue",
                     guard: "isParsedFloat",
-                    actions: ["setCollateralAmount0", "setCollateralValue0", "updateLTV", "validateForm"],
+                    actions: ["setCollateralAmount0", "setCollateralValue0", "updateLTV", "raiseLTV", "validateForm"],
                     description: "Must be an float value 0 or above",
                   },
                 },
@@ -197,7 +232,7 @@ export const machine = createMachine(
                   collateralAmount1: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: ["setCollateralValue1", "updateLTV", "validateForm"],
+                    actions: ["setCollateralValue1", "updateLTV", "raiseLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -207,7 +242,7 @@ export const machine = createMachine(
                   collateralAmount1: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: ["setCollateralValue1", "updateLTV", "validateForm"],
+                    actions: ["setCollateralValue1", "updateLTV", "raiseLTV", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -221,9 +256,9 @@ export const machine = createMachine(
                 on: {
                   tokenAmount: {
                     target: "hasValue",
-                    guard: "isNonNegativeInteger",
-                    actions: ["setTokenValue", "updateLTV", "validateForm"],
-                    description: "Must be an integer value 0 or above",
+                    guard: "isParsedFloat",
+                    actions: ["setTokenAmount", "setTokenValue", "updateLTV", "raiseLTV", "validateForm"],
+                    description: "Must be an float value 0 or above",
                   },
                 },
               },
@@ -231,9 +266,9 @@ export const machine = createMachine(
                 on: {
                   tokenAmount: {
                     target: "hasValue",
-                    guard: "isNonNegativeInteger",
-                    actions: ["setTokenValue", "updateLTV", "validateForm"],
-                    description: "Must be an integer value 0 or above",
+                    guard: "isParsedFloat",
+                    actions: ["setTokenAmount", "setTokenValue", "updateLTV", "raiseLTV", "validateForm"],
+                    description: "Must be an float value 0 or above",
                   },
                 },
               },
@@ -364,7 +399,7 @@ export const machine = createMachine(
         durationDays: number | undefined
         interestPercent: number | undefined
         numberOfPayments: number | undefined
-        ltvValue: number | undefined
+        ltvRatio: number | undefined
         ltv: Ltv | undefined
       }
       events:
@@ -383,6 +418,10 @@ export const machine = createMachine(
         | { type: "durationDays"; value: number }
         | { type: "interestPercent"; value: number }
         | { type: "numberOfPayments"; value: number }
+        | { type: "ltv.25" }
+        | { type: "ltv.50" }
+        | { type: "ltv.75" }
+        | { type: "ltv.custom" }
     },
   },
   {
@@ -408,6 +447,8 @@ export const machine = createMachine(
       }),
       setToken: assign({
         token: ({ event }) => {
+          console.log("actions->setToken->event", event)
+
           if (event && "value" in event) {
             return parseToken(event.value)
           }
@@ -490,7 +531,40 @@ export const machine = createMachine(
         },
       }),
       // OTHER SETTERS
-      updateLTV: ({ context, event }) => {},
+      updateLTV: assign({
+        ltvRatio: ({ context }) => {
+          console.log("acyions->updateLTV->context", context)
+          if (context?.collateralValue0 && context?.tokenValue) {
+            const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
+            const ltvValue = totalCollateralValue / context.tokenValue
+            return Number(1 / ltvValue) * 100
+          }
+          return 0
+        },
+      }),
+      raiseLTV: raise(({ context, event }) => {
+        const ratio = Math.floor(Number(context?.ltvRatio ?? 0))
+        console.log("raiseLTV")
+        console.log("ltvRatio", context.ltvRatio)
+        console.log("event", event)
+        console.log("ratio", ratio)
+
+        console.log("")
+        switch (ratio) {
+          case 25: {
+            return { type: "ltv.25" as const }
+          }
+          case 50: {
+            return { type: "ltv.50" as const }
+          }
+          case 75: {
+            return { type: "ltv.75" as const }
+          }
+          default: {
+            return { type: "ltv.custom" as const }
+          }
+        }
+      }),
       updateChartValues: ({ context, event }) => {},
       setNumberOfPayments: ({ context, event }) => {},
       validateForm: ({ context, event }) => {},
