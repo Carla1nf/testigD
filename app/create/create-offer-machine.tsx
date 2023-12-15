@@ -584,7 +584,6 @@ export const machine = createMachine(
       raiseTokenAmount: raise(({ event }) => {
         //@ts-ignore
         const amount = Number(fixedDecimals(event?.output ?? 0, 2))
-        console.log("raising->amount", amount)
         return { type: "tokenAmount", value: amount }
       }),
       setNumberOfPayments: ({ context, event }) => {},

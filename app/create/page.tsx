@@ -100,7 +100,9 @@ export default function Create() {
           </div>
           <SelectToken
             tokens={tokens}
+            amount={machineState.context.collateralAmount0}
             defaultToken={ftm as Token}
+            selectedToken={machineState.context.collateralToken0}
             onSelectToken={onSelectCollateralToken0}
             onAmountChange={onSelectCollateralAmount0}
           />
@@ -120,6 +122,8 @@ export default function Create() {
           </div>
           <SelectToken
             tokens={tokens}
+            amount={machineState.context.tokenAmount}
+            selectedToken={machineState.context.token}
             defaultToken={usdc as Token}
             onSelectToken={onSelectToken}
             onAmountChange={onSelectTokenAmount}
@@ -138,8 +142,22 @@ export default function Create() {
             >
               25%
             </Button>
-            <Button variant={machineState.matches("form.ltvRatio.ltv50") ? "action" : "action-muted"}>50%</Button>
-            <Button variant={machineState.matches("form.ltvRatio.ltv75") ? "action" : "action-muted"}>75%</Button>
+            <Button
+              variant={machineState.matches("form.ltvRatio.ltv50") ? "action" : "action-muted"}
+              onClick={() => {
+                machineSend({ type: "forceLtvRatio", value: 0.5 })
+              }}
+            >
+              50%
+            </Button>
+            <Button
+              variant={machineState.matches("form.ltvRatio.ltv75") ? "action" : "action-muted"}
+              onClick={() => {
+                machineSend({ type: "forceLtvRatio", value: 0.75 })
+              }}
+            >
+              75%
+            </Button>
             <Button variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}>
               Custom
             </Button>

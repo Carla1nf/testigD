@@ -13,20 +13,21 @@ import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayToken from "./display-token"
 
 const SelectToken = ({
+  amount,
+  selectedToken,
   tokens,
   defaultToken,
   onSelectToken,
   onAmountChange,
 }: {
+  amount: number | undefined
+  selectedToken: Token | undefined
   tokens?: Token[]
   defaultToken: Token
   onSelectToken: (token: Token | null) => void
   onAmountChange: (value: number) => void
 }) => {
   const [open, setOpen] = useState(false)
-  const [selectedAddress, setSelectedAddress] = useState(defaultToken?.address ?? "") // selected token address
-  const [selectedToken, setSelectedToken] = useState<Token | null>(defaultToken) // the current token (why do we need the address AND the token in two different states?)
-  const [amount, setAmount] = useState<number | null>(null) // the numeric value (actually this is the amount)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -48,12 +49,10 @@ const SelectToken = ({
             onChange={(e) => {
               const value = parseFloat(e.target.value)
               if (value && value >= 0) {
-                setAmount(value)
                 if (onAmountChange) {
                   onAmountChange(value)
                 }
               } else {
-                setAmount(null)
                 if (onAmountChange) {
                   onAmountChange(0)
                 }
@@ -100,20 +99,14 @@ const SelectToken = ({
               <CommandItem
                 key={token.address}
                 value={token.address}
-                onSelect={(address) => {
+                onSelect={(selected) => {
                   // if we have a new token selected
-                  if (address !== selectedAddress) {
-                    setSelectedAddress(address)
-                    setSelectedToken(token)
-                    // notify the outside world
+                  if (selected !== selectedToken?.address) {
                     if (onSelectToken) {
                       onSelectToken(token)
                     }
                   } else {
                     // we have the same token selected, so, act like a toggle and use the default token instead
-                    setSelectedAddress(defaultToken.address ?? "")
-                    setSelectedToken(defaultToken)
-                    // notify the outside world
                     if (onSelectToken) {
                       onSelectToken(defaultToken)
                     }
@@ -121,10 +114,14 @@ const SelectToken = ({
                   setOpen(false)
                 }}
               >
-                <ShowWhenTrue when={selectedAddress ? getAddress(selectedAddress) === token.address : false}>
+                <ShowWhenTrue
+                  when={selectedToken?.address ? getAddress(selectedToken?.address) === token.address : false}
+                >
                   <Check className={cn("mr-2 h-4 w-4", "opacity-100")} />
                 </ShowWhenTrue>
-                <ShowWhenFalse when={selectedAddress ? getAddress(selectedAddress) === token.address : false}>
+                <ShowWhenFalse
+                  when={selectedToken?.address ? getAddress(selectedToken?.address) === token.address : false}
+                >
                   <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
                 </ShowWhenFalse>
 
