@@ -191,21 +191,16 @@ export const machine = createMachine(
               selecting: {
                 invoke: {
                   input: ({ context }) => ({ context }),
-                  src: fromPromise(async ({ input: { context } }) => {
-                    console.log("getting prie for", context.token)
-
-                    return fetchPrice({
+                  src: fromPromise(async ({ input: { context } }) =>
+                    fetchPrice({
                       event: { slug: chainIdToSlug(context.token.chainId), token: context.token },
                     })
-                  }),
+                  ),
                   onDone: {
                     target: "selected",
                     actions: ["setTokenPrice", "setTokenValue", "updateLTV", "raiseLTV", "validateForm"],
                   },
-                  onError: {
-                    target: "idle",
-                    // todo: alert the outside world thast the price wasnt available
-                  },
+                  onError: { target: "idle" },
                 },
               },
               selected: {
