@@ -50,7 +50,7 @@ export default function Create() {
   )
 
   const onSelectCollateralAmount0 = useCallback(
-    (value: number) => {
+    (value: number | undefined) => {
       machineSend({ type: "collateralAmount0", value })
     },
     [machineSend]
@@ -71,7 +71,7 @@ export default function Create() {
     [machineSend]
   )
   const onSelectTokenAmount = useCallback(
-    (value: number) => {
+    (value: number | undefined) => {
       machineSend({ type: "tokenAmount", value })
     },
     [machineSend]

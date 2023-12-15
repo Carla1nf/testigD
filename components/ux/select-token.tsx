@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { getAddress } from "viem"
 import { Input } from "../ui/input"
 import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
@@ -25,9 +25,11 @@ const SelectToken = ({
   tokens?: Token[]
   defaultToken: Token
   onSelectToken: (token: Token | null) => void
-  onAmountChange: (value: number) => void
+  onAmountChange: (value: number | undefined) => void
 }) => {
   const [open, setOpen] = useState(false)
+
+  const ref = useRef(null)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -43,18 +45,27 @@ const SelectToken = ({
         </PopoverTrigger>
         <div className="grow">
           <Input
+            ref={ref}
+            pattern="[0-9]*"
             variant="create"
             type="number"
-            value={amount ?? ""}
+            value={amount}
             onChange={(e) => {
               const value = parseFloat(e.target.value)
-              if (value && value >= 0) {
+
+              // fix the leading 0 issue on number inputs
+              if (ref.current) {
+                // @ts-ignore
+                ref.current.value = value.toString()
+              }
+
+              if (!Number.isNaN(value) && value >= 0) {
                 if (onAmountChange) {
                   onAmountChange(value)
                 }
               } else {
                 if (onAmountChange) {
-                  onAmountChange(0)
+                  onAmountChange(undefined)
                 }
               }
             }}

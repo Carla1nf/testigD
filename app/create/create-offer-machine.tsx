@@ -39,17 +39,17 @@ export const machine = createMachine(
     context: ({ input }: { input: any }) => {
       return {
         collateralToken0: input?.collateralToken0 ?? undefined,
-        collateralAmount0: 0,
+        collateralAmount0: undefined,
         collateralPrice0: 0,
         collateralValue0: 0, // value = amount * price
 
         collateralToken1: input?.collateralToken1 ?? undefined,
-        collateralAmount1: 0,
+        collateralAmount1: undefined,
         collateralPrice1: 0,
         collateralValue1: 0, // value = amount * price
 
         token: input?.token ?? undefined,
-        tokenAmount: 0,
+        tokenAmount: undefined,
         tokenPrice: 0,
         tokenValue: 0, // value = amount * price
 
@@ -408,7 +408,7 @@ export const machine = createMachine(
 
         // four fields per token
         token: Token | undefined
-        tokenAmount: number
+        tokenAmount: number | undefined
         tokenPrice: number
         tokenValue: number | undefined
 
@@ -422,9 +422,9 @@ export const machine = createMachine(
         | { type: "collateralToken0"; value: Token }
         | { type: "collateralToken1"; value: Token }
         // AMOUNTS
-        | { type: "collateralAmount0"; value: number }
-        | { type: "collateralAmount1"; value: number }
-        | { type: "tokenAmount"; value: number }
+        | { type: "collateralAmount0"; value: number | undefined }
+        | { type: "collateralAmount1"; value: number | undefined }
+        | { type: "tokenAmount"; value: number | undefined }
         // OTHER EVENTS
         | { type: "back" }
         | { type: "next" }
@@ -446,8 +446,6 @@ export const machine = createMachine(
       setCollateralToken0: assign({
         collateralToken0: ({ event }) => {
           if (event && "value" in event) {
-            console.log("event", event)
-
             return parseToken(event.value)
           }
           return undefined
@@ -463,8 +461,6 @@ export const machine = createMachine(
       }),
       setToken: assign({
         token: ({ event }) => {
-          console.log("actions->setToken->event", event)
-
           if (event && "value" in event) {
             return parseToken(event.value)
           }
@@ -559,7 +555,6 @@ export const machine = createMachine(
       }),
       raiseLTV: raise(({ context }) => {
         const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 2))
-        // console.log("raiseLTV->ratio", ratio)
         switch (ratio) {
           case 25: {
             return { type: "ltv.25" as const }
