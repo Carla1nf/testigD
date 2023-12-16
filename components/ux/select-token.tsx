@@ -51,7 +51,7 @@ const SelectToken = ({
             type="number"
             value={amount}
             onChange={(e) => {
-              const value = parseFloat(e.target.value)
+              const value = parseFloat(e.target.value || "0")
 
               // fix the leading 0 issue on number inputs
               if (ref.current) {

@@ -67,6 +67,25 @@ export const machine = createMachine(
       form: {
         description: "Form can be filled out in any order",
         states: {
+          mode: {
+            initial: "borrow",
+            states: {
+              borrow: {
+                on: {
+                  mode: {
+                    target: "lend",
+                  },
+                },
+              },
+              lend: {
+                on: {
+                  mode: {
+                    target: "borrow",
+                  },
+                },
+              },
+            },
+          },
           ltvRatio: {
             initial: "ltvcustom",
             states: {
@@ -402,9 +421,9 @@ export const machine = createMachine(
 
         // four fields per token
         collateralToken1: Token | undefined
-        collateralValue1: number | undefined
+        collateralAmount1: number | undefined
         collateralPrice1: number
-        collateralAmount1: number
+        collateralValue1: number | undefined
 
         // four fields per token
         token: Token | undefined
@@ -438,6 +457,7 @@ export const machine = createMachine(
         | { type: "ltv.75" }
         | { type: "ltv.custom" }
         | { type: "forceLtvRatio"; value: number }
+        | { type: "mode"; value: "lend" | "borrow" }
     },
   },
   {

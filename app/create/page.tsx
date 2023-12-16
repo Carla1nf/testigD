@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
 import { useCallback, useEffect, useMemo } from "react"
 import { machine } from "./create-offer-machine"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
 
 export default function Create() {
   const currentChain = useCurrentChain()
@@ -56,12 +58,6 @@ export default function Create() {
     [machineSend]
   )
 
-  // console.log("MACHINE ")
-  // console.log("collateralToken0", machineState.context.collateralToken0)
-  // console.log("collateralAmount0", machineState.context.collateralAmount0)
-  // console.log("collateralPrice0", machineState.context.collateralPrice0)
-  // console.log("collateralValue0", machineState.context.collateralValue0)
-
   const onSelectToken = useCallback(
     (token: Token | null) => {
       if (token) {
@@ -84,12 +80,34 @@ export default function Create() {
         Let&apos;s keep this simple for now, we will just create a form and hook it up to the xstate machine
       </p>
 
+      <Tabs
+        defaultValue="borrow"
+        className="w-full mb-4"
+        onValueChange={(value: any) => {
+          machineSend({ type: "mode", value })
+        }}
+      >
+        <TabsList className="">
+          <TabsTrigger value="borrow" className="px-8">
+            Borrow
+          </TabsTrigger>
+          <TabsTrigger value="lend" className="px-8">
+            Lend
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Form */}
       <div className="bg-[#252324] p-4 max-w-[570px] flex flex-col gap-6">
         {/* Collateral token 0 */}
         <div className="">
           <div className="flex justify-between items-center">
-            <Label variant="create">Your Collateral Token</Label>
+            <ShowWhenTrue when={machineState.matches("form.mode.borrow")}>
+              <Label variant="create">Your Collateral Token</Label>
+            </ShowWhenTrue>
+            <ShowWhenTrue when={machineState.matches("form.mode.lend")}>
+              <Label variant="create">Wanted Collateral Token</Label>
+            </ShowWhenTrue>
             <TokenValuation
               token={machineState.context.collateralToken0}
               price={machineState.context.collateralPrice0}
@@ -111,7 +129,12 @@ export default function Create() {
         {/* Wanted borrow token */}
         <div className="">
           <div className="flex justify-between items-center">
-            <Label variant="create">Wanted Borrow Token</Label>
+            <ShowWhenTrue when={machineState.matches("form.mode.borrow")}>
+              <Label variant="create">Wanted Borrow Token</Label>
+            </ShowWhenTrue>
+            <ShowWhenTrue when={machineState.matches("form.mode.lend")}>
+              <Label variant="create">Your Lending Token</Label>
+            </ShowWhenTrue>
             <TokenValuation
               token={machineState.context.token}
               price={machineState.context.tokenPrice}
