@@ -3,16 +3,17 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
 import SelectToken from "@/components/ux/select-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { dollars } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { machine } from "./create-offer-machine"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { waitFor } from "xstate"
 
 export default function Create() {
   const currentChain = useCurrentChain()
@@ -21,6 +22,8 @@ export default function Create() {
 
   // CREATE BORROW MACHINE
   const [machineState, machineSend] = useMachine(machine)
+  const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
+  const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (ftm && machineState.context.collateralToken0 === undefined) {
@@ -160,6 +163,7 @@ export default function Create() {
             <Button
               variant={machineState.matches("form.ltvRatio.ltv25") ? "action" : "action-muted"}
               onClick={() => {
+                setLtvCustomInputValue("")
                 machineSend({ type: "forceLtvRatio", value: 0.25 })
               }}
             >
@@ -168,6 +172,7 @@ export default function Create() {
             <Button
               variant={machineState.matches("form.ltvRatio.ltv50") ? "action" : "action-muted"}
               onClick={() => {
+                setLtvCustomInputValue("")
                 machineSend({ type: "forceLtvRatio", value: 0.5 })
               }}
             >
@@ -176,20 +181,46 @@ export default function Create() {
             <Button
               variant={machineState.matches("form.ltvRatio.ltv75") ? "action" : "action-muted"}
               onClick={() => {
+                setLtvCustomInputValue("")
                 machineSend({ type: "forceLtvRatio", value: 0.75 })
               }}
             >
               75%
             </Button>
-            <Button variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}>
+            <Button
+              variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}
+              onClick={() => {
+                setLtvCustomInputValue("")
+                if (ltvCustomInputRef && ltvCustomInputRef.current) {
+                  ltvCustomInputRef.current.focus()
+                }
+              }}
+            >
               Custom
             </Button>
             <div>
               <Input
+                ref={ltvCustomInputRef}
                 variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}
                 className="text-center"
                 placeholder="0"
-                value={machineState.context.ltvRatio?.toFixed(2)}
+                value={ltvCustomInputValue}
+                onFocus={() => {
+                  machineSend({ type: "ltv.custom" })
+                }}
+                onBlur={() => {
+                  const value = parseFloat(ltvCustomInputValue || "0")
+                  if (!Number.isNaN(value)) {
+                    machineSend({ type: "forceLtvRatio", value: value / 100 })
+                  }
+                }}
+                onChange={(e) => {
+                  setLtvCustomInputValue(e.target.value)
+                  const value = parseFloat(e.target.value || "0")
+                  if (!Number.isNaN(value)) {
+                    machineSend({ type: "forceLtvRatio", value: value / 100 })
+                  }
+                }}
               />
             </div>
           </div>

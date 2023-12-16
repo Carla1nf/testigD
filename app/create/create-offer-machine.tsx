@@ -457,6 +457,7 @@ export const machine = createMachine(
         | { type: "ltv.75" }
         | { type: "ltv.custom" }
         | { type: "forceLtvRatio"; value: number }
+        | { type: "caclulateLtvRatio" }
         | { type: "mode"; value: "lend" | "borrow" }
     },
   },
