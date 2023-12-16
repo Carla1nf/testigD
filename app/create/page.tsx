@@ -9,7 +9,7 @@ import SelectToken from "@/components/ux/select-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { dollars } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
-import { cn } from "@/lib/utils"
+import { cn, fixedDecimals } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { machine } from "./create-offer-machine"
@@ -24,6 +24,23 @@ export default function Create() {
   const [machineState, machineSend] = useMachine(machine)
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
+   * This leads to circular logic so we need to detect which sceanrio is happening and react accordingly.
+   *
+   * If the machine has just recalculated ltvRatio and the input is not focused, update ltvCustomInputValue
+   */
+  useEffect(() => {
+    if (
+      ltvCustomInputRef &&
+      ltvCustomInputRef.current &&
+      machineState.context.ltvRatio !== parseFloat(ltvCustomInputValue) &&
+      !ltvCustomInputRef.current.matches(":focus")
+    ) {
+      setLtvCustomInputValue(fixedDecimals(machineState?.context?.ltvRatio ?? 0, 4).toString())
+    }
+  }, [machineState.context.ltvRatio, ltvCustomInputRef.current])
 
   useEffect(() => {
     if (ftm && machineState.context.collateralToken0 === undefined) {
