@@ -82,23 +82,23 @@ export default function Create() {
 
       <Tabs
         defaultValue="borrow"
-        className="w-full mb-4"
+        className=""
         onValueChange={(value: any) => {
           machineSend({ type: "mode", value })
         }}
       >
-        <TabsList className="">
-          <TabsTrigger value="borrow" className="px-8">
+        <TabsList className="bg-[#252324] rounded-b-none gap-2">
+          <TabsTrigger value="borrow" className="px-12">
             Borrow
           </TabsTrigger>
-          <TabsTrigger value="lend" className="px-8">
+          <TabsTrigger value="lend" className="px-12">
             Lend
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
       {/* Form */}
-      <div className="bg-[#252324] p-4 max-w-[570px] flex flex-col gap-6">
+      <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-6 rounded-b-lg">
         {/* Collateral token 0 */}
         <div className="">
           <div className="flex justify-between items-center">
@@ -258,7 +258,7 @@ const TokenValuation = ({
   }
 
   return (
-    <p className={cn("text-[10px] text-[#9F9F9F]", className)}>
+    <p className={cn("text-[10px] text-[#9F9F9F] mr-1", className)}>
       {amount} {token.symbol} @ {dollars({ value: price })} = {dollars({ value })}
     </p>
   )
