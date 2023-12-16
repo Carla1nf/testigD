@@ -57,6 +57,7 @@ export const machine = createMachine(
         durationDays: undefined,
         interestPercent: undefined,
         numberOfPayments: undefined,
+        estimatedApr: 0, // calculated from interestPercent and numberOfPayments
         ltvRatio: 0, // the calculated LTV ratio of collateral (value) / token (value)
         // the exact LTV match of either 25/50/75/Custom which is used to select buttons,
         // we will move this to a state once I know how to raise events from within an action
@@ -317,7 +318,7 @@ export const machine = createMachine(
                   numberOfPayments: {
                     target: "hasValue",
                     guard: "isValidNumberOfPayments",
-                    actions: ["setNumberOfPayments", "validateForm"],
+                    actions: ["setNumberOfPayments", "calculateEsitmatedApr", "validateForm"],
                     description: "Must be an integer value between 0 and 10",
                   },
                 },
@@ -327,7 +328,7 @@ export const machine = createMachine(
                   numberOfPayments: {
                     target: "hasValue",
                     guard: "isValidNumberOfPayments",
-                    actions: ["setNumberOfPayments", "validateForm"],
+                    actions: ["setNumberOfPayments", "calculateEsitmatedApr", "validateForm"],
                     description: "Must be an integer value between 0 and 10",
                   },
                 },
@@ -342,7 +343,7 @@ export const machine = createMachine(
                   durationDays: {
                     target: "hasValue",
                     guard: "isValidDurationDays",
-                    actions: ["setDurationDays", "validateForm"],
+                    actions: ["setDurationDays", "calculateEsitmatedApr", "validateForm"],
                     description: "Must be an integer between 0 and 365",
                   },
                 },
@@ -352,7 +353,7 @@ export const machine = createMachine(
                   durationDays: {
                     target: "hasValue",
                     guard: "isValidDurationDays",
-                    actions: ["setDurationDays", "validateForm"],
+                    actions: ["setDurationDays", "calculateEsitmatedApr", "validateForm"],
                     description: "Must be an integer between 0 and 365",
                   },
                 },
@@ -368,7 +369,7 @@ export const machine = createMachine(
                   interestPercent: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: ["setInterestPercent", "validateForm"],
+                    actions: ["setInterestPercent", "calculateEsitmatedApr", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -435,6 +436,7 @@ export const machine = createMachine(
         interestPercent: number | undefined
         numberOfPayments: number | undefined
         ltvRatio: number | undefined
+        estimatedApr: number
       }
       events:
         | { type: "token"; value: Token }
@@ -574,6 +576,7 @@ export const machine = createMachine(
           return 0
         },
       }),
+
       raiseLTV: raise(({ context }) => {
         const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 4))
         switch (ratio) {
@@ -597,16 +600,38 @@ export const machine = createMachine(
         const amount = Number(fixedDecimals(event?.output ?? 0, 2))
         return { type: "tokenAmount", value: amount }
       }),
-      setNumberOfPayments: ({ context, event }) => {},
-      setDurationDays: ({ context, event }) => {},
-      setInterestPercent: ({ context, event }) => {},
+      calculateEsitmatedApr: assign({
+        estimatedApr: ({ context }) => {
+          if (context?.durationDays && context?.interestPercent) {
+            const apr = ((Number(context.interestPercent) / Number(context.durationDays)) * 365) / 100
+            return Number(apr)
+          }
+          return 0
+        },
+      }),
+      // @ts-ignore
+      setNumberOfPayments: assign({ numberOfPayments: ({ event }) => Number(event?.value ?? 0) }),
+      // @ts-ignore
+      setDurationDays: assign({ durationDays: ({ event }) => Number(event?.value ?? 0) }),
+      // @ts-ignore
+      setInterestPercent: assign({ interestPercent: ({ event }) => Number(event?.value ?? 0) }),
       updateChartValues: ({ context, event }) => {},
       validateForm: ({ context, event }) => {},
     },
     actors: {},
     guards: {
-      isFormComplete: ({ context, event }, params) => {
-        return false
+      isFormComplete: ({ context }, params) => {
+        return Boolean(
+          context.collateralToken0 &&
+            context.collateralAmount0 &&
+            // context.collateralAmount1 &&
+            // context.collateralToken1 &&
+            context.token &&
+            context.tokenAmount &&
+            context.durationDays &&
+            context.interestPercent &&
+            context.numberOfPayments
+        )
       },
       isValidToken: ({ context, event }, params) => {
         if ("value" in event) {
