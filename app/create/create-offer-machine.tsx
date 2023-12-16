@@ -578,7 +578,7 @@ export const machine = createMachine(
       }),
 
       raiseLTV: raise(({ context }) => {
-        const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 4))
+        const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 3))
         switch (ratio) {
           case 25: {
             return { type: "ltv.25" as const }
