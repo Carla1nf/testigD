@@ -1,5 +1,5 @@
 import { Token, tokenSchema } from "@/lib/tokens"
-import { fixedDecimals } from "@/lib/utils"
+import { fixedDecimals, roundIfClose } from "@/lib/utils"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { getAddress } from "viem"
 import { assign, createMachine, fromPromise, raise } from "xstate"
@@ -568,13 +568,13 @@ export const machine = createMachine(
           if (context?.collateralValue0 && context?.tokenValue) {
             const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
             const ltvValue = totalCollateralValue / context.tokenValue
-            return Number(1 / ltvValue) * 100
+            return roundIfClose(Number(1 / ltvValue) * 100, 0.05)
           }
           return 0
         },
       }),
       raiseLTV: raise(({ context }) => {
-        const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 2))
+        const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 4))
         switch (ratio) {
           case 25: {
             return { type: "ltv.25" as const }

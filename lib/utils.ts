@@ -32,6 +32,17 @@ export const dynamicClampIncrement = (value1: number, value2: number): number =>
   return maxIncrement // Largest range, use the maximum increment of 50
 }
 
+export const roundIfClose = (num: number, roundingDecimals: number): number => {
+  const nearestInteger = Math.round(num)
+  const difference = Math.abs(num - nearestInteger)
+
+  if (difference <= roundingDecimals) {
+    return nearestInteger
+  } else {
+    return num
+  }
+}
+
 /**
  * Clamps the given value to the next higher multiple of the increment.
  * @param value - The value to clamp.
