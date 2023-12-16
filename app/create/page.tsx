@@ -215,10 +215,13 @@ export default function Create() {
                   }
                 }}
                 onChange={(e) => {
-                  setLtvCustomInputValue(e.target.value)
-                  const value = parseFloat(e.target.value || "0")
-                  if (!Number.isNaN(value)) {
-                    machineSend({ type: "forceLtvRatio", value: value / 100 })
+                  const re = /^[0-9]*\.?[0-9]*$/
+                  if (e.target.value === "" || re.test(e.target.value)) {
+                    setLtvCustomInputValue(e.target.value)
+                    const value = parseFloat(e.target.value || "0")
+                    if (!Number.isNaN(value)) {
+                      machineSend({ type: "forceLtvRatio", value: value / 100 })
+                    }
                   }
                 }}
               />
