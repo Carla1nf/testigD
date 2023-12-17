@@ -8,6 +8,7 @@ import { WagmiConfig, configureChains, createConfig } from "wagmi"
 import { fantom } from "wagmi/chains"
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc"
 import { publicProvider } from "wagmi/providers/public"
+import { PrimeReactProvider, PrimeReactContext } from "primereact/api"
 
 import {
   injectedWallet,
@@ -57,8 +58,10 @@ export default function Providers({ children }: { children: ReactNode }) {
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains} theme={darkTheme()}>
         <QueryClientProvider client={queryClient}>
-          <DeadlineNext>{children}</DeadlineNext>
-          <ReactQueryDevtools initialIsOpen={false} />
+          <PrimeReactProvider value={{ unstyled: true }}>
+            <DeadlineNext>{children}</DeadlineNext>
+            <ReactQueryDevtools initialIsOpen={false} />
+          </PrimeReactProvider>
         </QueryClientProvider>
       </RainbowKitProvider>
     </WagmiConfig>

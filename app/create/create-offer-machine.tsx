@@ -68,25 +68,6 @@ export const machine = createMachine(
       form: {
         description: "Form can be filled out in any order",
         states: {
-          mode: {
-            initial: "borrow",
-            states: {
-              borrow: {
-                on: {
-                  mode: {
-                    target: "lend",
-                  },
-                },
-              },
-              lend: {
-                on: {
-                  mode: {
-                    target: "borrow",
-                  },
-                },
-              },
-            },
-          },
           ltvRatio: {
             initial: "ltvcustom",
             states: {
@@ -460,7 +441,6 @@ export const machine = createMachine(
         | { type: "ltv.custom" }
         | { type: "forceLtvRatio"; value: number }
         | { type: "caclulateLtvRatio" }
-        | { type: "mode"; value: "lend" | "borrow" }
     },
   },
   {

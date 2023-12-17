@@ -12,10 +12,11 @@ import { dollars, percent } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, LucideMinus, LucidePlus } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
+import { InputNumber } from "primereact/inputnumber"
 
 const displatEstimatedAPr = (estimatedApr: number) => {
   return percent({
@@ -271,6 +272,7 @@ export default function Create() {
                 send={machineSend}
                 event="interestPercent"
                 initialValue={machineState.context.interestPercent}
+                minFractionDigits={2}
               />
             </div>
 
@@ -288,6 +290,7 @@ export default function Create() {
                 send={machineSend}
                 event="durationDays"
                 initialValue={machineState.context.durationDays}
+                minFractionDigits={0}
               />
             </div>
 
@@ -299,6 +302,7 @@ export default function Create() {
                 send={machineSend}
                 event="numberOfPayments"
                 initialValue={machineState.context.numberOfPayments}
+                minFractionDigits={0}
               />
             </div>
           </div>
@@ -408,83 +412,41 @@ const NumberInput = ({
   min,
   max,
   initialValue,
+  minFractionDigits,
 }: {
   send: any
   event: string
   min: number
   max: number
   initialValue: number | undefined
+  minFractionDigits: number
 }) => {
   const [inputValue, setInputValue] = useState(initialValue?.toString() ?? "")
-  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setInputValue(initialValue?.toString() ?? "")
   }, [initialValue])
 
   return (
-    <div className="flex flex-row gap-[6px]">
-      <Button
-        variant="action"
-        className="w-8 h-8"
-        onClick={() => {
-          const value = Number(inputValue) - 1
-          if (value < 0) {
-            return
-          }
-          setInputValue(value.toString())
-          send({ type: event, value })
-          inputRef.current!.value = value.toString()
-        }}
-      >
-        -
-      </Button>
-      <Input
-        ref={inputRef}
-        variant="create-secondary"
-        type="number"
-        min={min}
-        max={max}
-        className="text-center w-24 h-8"
-        placeholder="0"
-        onBlur={() => {
-          const value = parseInt(inputValue ?? 0)
-          if (!Number.isNaN(value)) {
-            send({ type: event, value })
-          }
-        }}
-        onChange={(e) => {
-          const re = /^[0-9]*\.?[0-9]*$/
-          if (e.target.value === "" || re.test(e.target.value)) {
-            const value = parseInt(e.target.value ?? 0)
-
-            if (value < min || value > max) {
-              return
-            }
-
-            setInputValue(e.target.value)
-            if (!Number.isNaN(value)) {
-              send({ type: event, value })
-            }
-          }
-        }}
-      />
-      <Button
-        variant="action"
-        className="w-8 h-8"
-        onClick={() => {
-          const value = Number(inputValue) + 1
-          if (value > max) {
-            return
-          }
-          setInputValue(value.toString())
-          send({ type: event, value })
-          inputRef.current!.value = value.toString()
-        }}
-      >
-        +
-      </Button>
-    </div>
+    <InputNumber
+      value={Number(inputValue)}
+      onValueChange={(e) => {
+        send({ type: event, value: e.target.value })
+      }}
+      buttonLayout="horizontal"
+      showButtons
+      min={min}
+      max={max}
+      incrementButtonIcon={<LucidePlus className="h-3 w-4 stroke-2" />}
+      decrementButtonIcon={<LucideMinus className="h-3 w-4 stroke-2" />}
+      pt={{
+        root: { className: "flex flex-row gap-2" },
+        input: { root: { className: "bg-[#352E49] px-1 py-1 max-w-[100px] rounded-md text-center" } },
+        decrementButton: { className: "order-first action-gradient px-2 py-2 rounded-md" },
+        incrementButton: { className: "order-last action-gradient px-2 rounded-md py-2" },
+      }}
+      minFractionDigits={minFractionDigits}
+    />
   )
 }
 

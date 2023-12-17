@@ -30,6 +30,7 @@
     "next": "14.0.3",
     "next-themes": "^0.2.1",
     "pluralize": "^8.0.0",
+    "primereact": "^10.2.1",
     "react": "^18",
     "react-dom": "^18",
     "react-no-ssr": "^1.1.0",
