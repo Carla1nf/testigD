@@ -34,17 +34,19 @@ export default function Create() {
   // MODE MACHINE
   const [modeState, modeSend] = useMachine(modeMachine)
 
+  // todo: define the createOfferTransaction function (via useQuery) and pass it into the state machine
+
   // CREATE BORROW MACHINE
   const [machineState, machineSend] = useMachine(machine)
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   // console.log("context", machineState.context)
-  console.log("machineState.value", machineState.value)
+  // console.log("machineState.value", machineState.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
-   * This leads to circular logic so we need to detect which sceanrio is happening and react accordingly.
+   * This leads to circular logic so we need to detect which scenario is happening and react accordingly.
    *
    * If the machine has just recalculated ltvRatio and the input is not focused, update ltvCustomInputValue
    */
@@ -57,7 +59,7 @@ export default function Create() {
     ) {
       setLtvCustomInputValue(fixedDecimals(machineState?.context?.ltvRatio ?? 0, 3).toString())
     }
-  }, [machineState.context.ltvRatio, ltvCustomInputRef.current])
+  }, [machineState.context.ltvRatio, ltvCustomInputValue])
 
   useEffect(() => {
     if (ftm && machineState.context.collateralToken0 === undefined) {
@@ -66,7 +68,7 @@ export default function Create() {
     if (usdc && machineState.context.token === undefined) {
       machineSend({ type: "token", value: usdc })
     }
-  }, [ftm, usdc, machineState.context.collateralToken0, machineSend])
+  }, [ftm, usdc, machineState.context.collateralToken0, machineSend, machineState.context.token])
 
   // TOKENS
   const tokens = useMemo(() => {
