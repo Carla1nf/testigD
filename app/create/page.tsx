@@ -521,7 +521,7 @@ export default function Create() {
                 {fixedDecimals(actualInterest, 3)} {machineState.context.token?.symbol}
               </div>
               <div className="text-[10px] text-[#9F9F9F] italic">
-                ({fixedDecimals(loanFee, 3)} {machineState.context.token?.symbol} fee)
+                ({fixedDecimals(loanFee, 6)} {machineState.context.token?.symbol} fee)
               </div>
             </div>
 
@@ -531,7 +531,7 @@ export default function Create() {
                 {displayEstimatedApr(machineState.context.estimatedApr)}
               </div>
               <div className="text-[10px] text-[#9F9F9F] italic">
-                {percent({ value: interestPerDay, decimalsWhenGteOne: 3, decimalsWhenLessThanOne: 3 })} per day
+                {percent({ value: interestPerDay, decimalsWhenGteOne: 6, decimalsWhenLessThanOne: 6 })} per day
               </div>
             </div>
 
