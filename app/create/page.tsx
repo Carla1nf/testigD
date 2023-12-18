@@ -531,7 +531,7 @@ export default function Create() {
                 {displayEstimatedApr(machineState.context.estimatedApr)}
               </div>
               <div className="text-[10px] text-[#9F9F9F] italic">
-                {percent({ value: interestPerDay, decimalsWhenGteOne: 6, decimalsWhenLessThanOne: 6 })} per day
+                {percent({ value: interestPerDay, decimalsWhenGteOne: 4, decimalsWhenLessThanOne: 4 })} per day
               </div>
             </div>
 
