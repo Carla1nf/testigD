@@ -389,8 +389,8 @@ export const machine = createMachine(
         invoke: {
           src: "checkingBorrowAllowance",
           input: ({ context, event }) => ({ context, event }),
-          onDone: [{ target: "creating" }],
           onError: [{ target: "approveBorrowAllowance" }],
+          onDone: [{ target: "creating" }],
         },
         on: {
           back: {
@@ -402,26 +402,23 @@ export const machine = createMachine(
         invoke: {
           src: "approveBorrowAllowance",
           input: ({ context, event }) => ({ context, event }),
-          onDone: [{ target: "creating" }],
           onError: [{ target: "approveBorrowAllowance" }],
+          onDone: [{ target: "creating" }],
         },
         on: {
           retry: { target: "checkingBorrowAllowance" },
-          back: {
-            target: "confirmation",
-          },
+          back: { target: "confirmation" },
         },
       },
       checkingLendAllowance: {
         invoke: {
           src: "checkingLendAllowance",
+          input: ({ context, event }) => ({ context, event }),
           onDone: { target: "creating" },
           onError: { target: "checkingLendAllowanceError" },
         },
         on: {
-          back: {
-            target: "confirmation",
-          },
+          back: { target: "confirmation" },
         },
       },
       checkingLendAllowanceError: {
@@ -430,11 +427,23 @@ export const machine = createMachine(
           back: { target: "confirmation" },
         },
       },
-
+      approveLendingAllowance: {
+        invoke: {
+          src: "approveLendingAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onDone: [{ target: "creating" }],
+          onError: [{ target: "approveLendingAllowance" }],
+        },
+        on: {
+          retry: { target: "checkingLendAllowance" },
+          back: { target: "confirmation" },
+        },
+      },
       creating: {
         invoke: {
-          src: "createOfferTransaction",
-          id: "createOfferTransaction",
+          src: "createBorrowOffer",
+          id: "createBorrowOffer",
+          input: ({ context, event }) => ({ context, event }),
           onDone: [{ target: "created" }],
           onError: [{ target: "error" }],
         },
@@ -443,11 +452,14 @@ export const machine = createMachine(
         },
       },
       created: {
-        type: "final",
+        on: {
+          again: { target: "confirmation" },
+        },
       },
       error: {
         on: {
           retry: { target: "creating" },
+          back: { target: "confirmation" },
         },
       },
     },
@@ -490,6 +502,7 @@ export const machine = createMachine(
         | { type: "next" }
         | { type: "retry" }
         | { type: "confirm"; mode: "lend" | "borrow" }
+        | { type: "again"; mode: "lend" | "borrow" }
         | { type: "durationDays"; value: number }
         | { type: "interestPercent"; value: number }
         | { type: "numberOfPayments"; value: number }
@@ -656,7 +669,7 @@ export const machine = createMachine(
       validateForm: ({ context, event }) => {},
     },
     actors: {
-      createOfferTransaction: fromPromise(async () => {
+      createBorrowOffer: fromPromise(async () => {
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             resolve(true)

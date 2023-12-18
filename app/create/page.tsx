@@ -23,6 +23,7 @@ import { useConfig } from "wagmi"
 import { readContract, writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
+import debitaAbi from "../../abis/debita.json"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
 import { toDecimals } from "@/lib/erc20"
@@ -159,9 +160,105 @@ export default function Create() {
             }, 30 * 1000) // slow networks? should be ok to read token in 30 seconds max, maybe adjust per chain later
           })
         }),
+        createBorrowOffer: fromPromise(async ({ input: { context, event } }) => {
+          // console.log("context", context)
+
+          /**
+           * 
+           * ORIGINAL V1 CODE
+           * 
+              const {
+                data: dataCollateral,
+                write: createCollateralOffer,
+                isSuccess: SuccessCreating_Collateral,
+                isLoading: isLoading_Collateral,
+                isError: isError_Collateral,
+              } = useContractWrite({
+                address: DEBITA_CONTRACT,
+                functionName: "createCollateralOffer",
+                abi: DEBITA_ABI,
+                args: [
+                  params.address[1],
+                  params.address[2] == "" ? [params.address[0]] : [params.address[0], params.address[2]],
+                  params.address[2] == "" ? [`${collateral_1}`] : [`${collateral_1}`, `${collateral_2}`],
+                  `${_lenderAmount}`,
+                  Number(params.interest) * 10,
+                  timelap,
+                  params.payments,
+                  [],
+                  {
+                    gasLimit: "2000000",
+                    value:
+                      params.address[0] == "0x0000000000000000000000000000000000000000" ||
+                      params.address[2] == "0x0000000000000000000000000000000000000000"
+                        ? `${formatNumber(
+                            getWEI([params.address[0], params.address[2]], [params.collateral_1, params.collateral_2]) * 10 ** 18,
+                          )}`
+                        : "0",
+                  },
+                ],
+              })
+           * 
+           */
+          try {
+            const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+            const collateral1 = context.collateralAmount1
+              ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
+              : BigInt(0)
+            const _wantedLenderToken = context.token.address
+            const collateralTokens = context.collateralToken1
+              ? [context.collateralToken0.address, context.collateralToken1.address]
+              : [context.collateralToken0.address]
+            const collateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
+            const _wantedLenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+            const _interest = BigInt((context.interestPercent * 100) / 10)
+            const _timelap = (86400 * context.durationDays) / context.numberOfPayments
+            const _paymentCount = BigInt(context.numberOfPayments)
+            const _whitelist: any[] = []
+            const value =
+              context.collateralToken0.address === ZERO_ADDRESS
+                ? collateral0
+                : BigInt(0) + context.collateralToken1.address === ZERO_ADDRESS
+                ? collateral1
+                : BigInt(0)
+
+            const { request } = await config.publicClient.simulateContract({
+              address: DEBITA_ADDRESS,
+              functionName: "createCollateralOffer",
+              abi: debitaAbi,
+              args: [
+                _wantedLenderToken,
+                collateralTokens,
+                collateralAmount,
+                _wantedLenderAmount,
+                _interest,
+                _timelap,
+                _paymentCount,
+                _whitelist,
+              ],
+              account: address,
+              value, // todo: test with FTM to see if value cones across properly
+              gas: BigInt(2000000),
+            })
+
+            const executed = await writeContract(request)
+            console.log("createBorrowOffer", executed)
+
+            if (executed) {
+              return Promise.resolve(executed)
+            }
+
+            return Promise.reject({ error: "createBorrowOffer->failed" })
+
+            // return allowance0
+          } catch (error: any) {
+            return Promise.reject({ error: error.message })
+          }
+        }),
       },
     })
   )
+
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
@@ -481,11 +578,13 @@ export default function Create() {
           machineState.matches("approveBorrowAllowance") ||
           machineState.matches("checkingLendAllowance") ||
           machineState.matches("checkingLendAllowanceError") ||
-          machineState.matches("creating")
+          machineState.matches("creating") ||
+          machineState.matches("created") ||
+          machineState.matches("error")
         }
       >
         <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          <div className="mb-4">
+          <div className="">
             <div className="flex flex-row justify-between items-center">
               <div className="flex flex-row gap-2 items-center">
                 <div className="text-xl font-bold">
@@ -497,7 +596,7 @@ export default function Create() {
               <DebitaIcon className="h-11 w-11 flex-basis-1" />
             </div>
 
-            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
+            {/* <hr className="h-px mt-4 bg-[#4D4348] border-0" /> */}
           </div>
 
           <div className="grid grid-cols-2 gap-x-16 gap-y-4">
@@ -603,7 +702,6 @@ export default function Create() {
                 <AlertTitle>Action required</AlertTitle>
                 <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
               </Alert>
-
               <div className="mt-8 flex justify-between">
                 <Button variant="secondary" className="px-12" onClick={back}>
                   Back
@@ -623,7 +721,6 @@ export default function Create() {
                 <AlertTitle>Action required</AlertTitle>
                 <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
               </Alert>
-
               <div className="mt-8 flex justify-between">
                 <Button variant="secondary" className="px-12" onClick={back}>
                   Back
@@ -635,45 +732,33 @@ export default function Create() {
               </div>
             </div>
           </ShowWhenTrue>
-        </div>
-      </ShowWhenTrue>
 
-      <ShowWhenTrue when={machineState.matches("created")}>
-        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          <div className="mb-4">
-            <div className="flex flex-row justify-between items-center">
-              <div className="flex flex-row gap-2 items-center">
-                <div className="text-xl font-bold">
-                  <ShowWhenTrue when={modeState.matches("borrow")}>Created Borrow Offer</ShowWhenTrue>
-                  <ShowWhenTrue when={modeState.matches("lend")}>Created Lend Offer</ShowWhenTrue>
-                </div>
-                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
+          <ShowWhenTrue when={machineState.matches("created")}>
+            <div className="px-4">
+              <Alert variant="success">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>
+                  {" "}
+                  Your offer has been created, please wait and you will be redirected shortly.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button
+                  variant="action"
+                  className="px-12"
+                  onClick={() => {
+                    alert("not implemented yet")
+                  }}
+                >
+                  View Offer
+                </Button>
               </div>
-              <DebitaIcon className="h-11 w-11 flex-basis-1" />
             </div>
-
-            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
-          </div>
-
-          <Alert variant="success">
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Success</AlertTitle>
-            <AlertDescription>
-              Your offer has been created, please wait and you will be redirected shortly.
-            </AlertDescription>
-          </Alert>
-
-          <div className="mt-8 p-4 flex justify-end">
-            <Button
-              variant="action"
-              className="px-12"
-              onClick={() => {
-                alert("not implemented yet")
-              }}
-            >
-              View Offer
-            </Button>
-          </div>
+          </ShowWhenTrue>
         </div>
       </ShowWhenTrue>
 
