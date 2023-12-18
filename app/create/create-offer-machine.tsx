@@ -380,13 +380,15 @@ export const machine = createMachine(
       },
       creating: {
         invoke: {
-          src: "createOffer",
-          id: "createOffer",
+          src: "createOfferTransaction",
+          id: "createOfferTransaction",
           onDone: [{ target: "created" }],
           onError: [{ target: "error" }],
         },
       },
-      created: {},
+      created: {
+        type: "final",
+      },
       error: {
         on: {
           retry: { target: "creating" },
@@ -395,7 +397,7 @@ export const machine = createMachine(
     },
     types: {} as {
       context: {
-        // four fiuelds per token
+        // four fields per token
         collateralToken0: Token | undefined
         collateralAmount0: number | undefined
         collateralPrice0: number
@@ -440,7 +442,6 @@ export const machine = createMachine(
         | { type: "ltv.75" }
         | { type: "ltv.custom" }
         | { type: "forceLtvRatio"; value: number }
-        | { type: "caclulateLtvRatio" }
     },
   },
   {
@@ -598,7 +599,15 @@ export const machine = createMachine(
       updateChartValues: ({ context, event }) => {},
       validateForm: ({ context, event }) => {},
     },
-    actors: {},
+    actors: {
+      createOfferTransaction: fromPromise(async () => {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(true)
+          }, 5 * 1000)
+        })
+      }),
+    },
     guards: {
       isFormComplete: ({ context }, params) => {
         return Boolean(

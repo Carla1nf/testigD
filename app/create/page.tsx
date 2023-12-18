@@ -1,6 +1,6 @@
 "use client"
 
-import { DebitaIcon } from "@/components/icons"
+import { DebitaIcon, SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,11 +12,12 @@ import { dollars, percent } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
-import { CheckCircle2, LucideMinus, LucidePlus } from "lucide-react"
+import { AlertCircle, CheckCircle2, LucideMinus, LucidePlus, XCircle } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
 import { InputNumber } from "primereact/inputnumber"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -38,7 +39,8 @@ export default function Create() {
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
-  console.log("context", machineState.context)
+  // console.log("context", machineState.context)
+  console.log("machineState.value", machineState.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
@@ -418,6 +420,115 @@ export default function Create() {
               }}
             >
               Confirm
+            </Button>
+          </div>
+        </div>
+      </ShowWhenTrue>
+
+      <ShowWhenTrue when={machineState.matches("creating")}>
+        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
+          <div className="mb-4">
+            <div className="flex flex-row justify-between items-center">
+              <div className="flex flex-row gap-2 items-center">
+                <div className="text-xl font-bold">
+                  <ShowWhenTrue when={modeState.matches("borrow")}>Confirming Borrow Offer</ShowWhenTrue>
+                  <ShowWhenTrue when={modeState.matches("lend")}>Confirming Lend Offer</ShowWhenTrue>
+                </div>
+                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
+              </div>
+              <DebitaIcon className="h-11 w-11 flex-basis-1" />
+            </div>
+
+            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
+          </div>
+
+          <Alert variant="info">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Action required</AlertTitle>
+            <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
+          </Alert>
+
+          <div className="mt-8 p-4 flex justify-end">
+            <Button variant="action" className="px-12">
+              Confirming
+              <SpinnerIcon className="ml-2 animate-spin-slow" />
+            </Button>
+          </div>
+        </div>
+      </ShowWhenTrue>
+
+      <ShowWhenTrue when={machineState.matches("created")}>
+        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
+          <div className="mb-4">
+            <div className="flex flex-row justify-between items-center">
+              <div className="flex flex-row gap-2 items-center">
+                <div className="text-xl font-bold">
+                  <ShowWhenTrue when={modeState.matches("borrow")}>Created Borrow Offer</ShowWhenTrue>
+                  <ShowWhenTrue when={modeState.matches("lend")}>Created Lend Offer</ShowWhenTrue>
+                </div>
+                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
+              </div>
+              <DebitaIcon className="h-11 w-11 flex-basis-1" />
+            </div>
+
+            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
+          </div>
+
+          <Alert variant="success">
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertTitle>Success</AlertTitle>
+            <AlertDescription>
+              Your offer has been created, please wait and you will be redirected shortly.
+            </AlertDescription>
+          </Alert>
+
+          <div className="mt-8 p-4 flex justify-end">
+            <Button
+              variant="action"
+              className="px-12"
+              onClick={() => {
+                alert("not implemented yet")
+              }}
+            >
+              View Offer
+            </Button>
+          </div>
+        </div>
+      </ShowWhenTrue>
+
+      <ShowWhenTrue when={machineState.matches("error")}>
+        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
+          <div className="mb-4">
+            <div className="flex flex-row justify-between items-center">
+              <div className="flex flex-row gap-2 items-center">
+                <div className="text-xl font-bold">
+                  <ShowWhenTrue when={modeState.matches("borrow")}>Creating Borrow Offer</ShowWhenTrue>
+                  <ShowWhenTrue when={modeState.matches("lend")}>Creating Lend Offer</ShowWhenTrue>
+                </div>
+                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
+              </div>
+              <DebitaIcon className="h-11 w-11 flex-basis-1" />
+            </div>
+
+            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
+          </div>
+
+          <Alert variant="warning">
+            <XCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>There was an error creating your offer, click the button to try again.</AlertDescription>
+          </Alert>
+
+          <div className="mt-8 p-4 flex justify-center">
+            <Button
+              variant="error"
+              className="px-12 gap-2"
+              onClick={() => {
+                machineSend({ type: "retry" })
+              }}
+            >
+              <XCircle className="h-5 w-5" />
+              Create Offer Failed - Retry?
             </Button>
           </div>
         </div>

@@ -11,14 +11,14 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
         error:
-          "border-error-foreground/50 text-error-foreground dark:border-error/50 [&>svg]:text-error-foreground bg-error",
+          "border-error-foreground/50 text-error-foreground dark:border-error/50 [&>svg]:text-error-foreground bg-error/75",
         warning:
-          "border-warning-foreground/50 text-warning-foreground dark:border-warning/50 [&>svg]:text-warning-foreground bg-warning",
+          "border-warning-foreground/50 text-warning-foreground dark:border-warning/50 [&>svg]:text-warning-foreground bg-warning/75",
         alert:
-          "border-alert-foreground/50 text-alert-foreground dark:border-alert/50 [&>svg]:text-alert-foreground bg-alert",
+          "border-alert-foreground/50 text-alert-foreground dark:border-alert/50 [&>svg]:text-alert-foreground bg-alert/75",
         success:
-          "border-success-foreground/50 text-success-foreground dark:border-success/50 [&>svg]:text-success-foreground bg-success",
-        info: "border-info-foreground/50 text-info-foreground dark:border-info/50 [&>svg]:text-info-foreground bg-info",
+          "border-success-foreground/50 text-success-foreground dark:border-success/50 [&>svg]:text-success-foreground bg-success/75",
+        info: "border-info-foreground/50 text-info-foreground dark:border-info/50 [&>svg]:text-info-foreground bg-info/75",
       },
     },
     defaultVariants: {
