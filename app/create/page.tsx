@@ -8,21 +8,25 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import SelectToken from "@/components/ux/select-token"
+import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
+import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
+import { ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import { AlertCircle, CheckCircle2, LucideMinus, LucidePlus, XCircle } from "lucide-react"
 import { InputNumber } from "primereact/inputnumber"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useConfig } from "wagmi"
+import { readContract, writeContract } from "wagmi/actions"
+import { fromPromise } from "xstate"
+import erc20Abi from "../../abis/erc20.json"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
-import { DEBITA_ADDRESS } from "@/lib/contracts"
-import debitaAbi from "../../../abis/debita.json"
-import erc20Abi from "../../../abis/erc20.json"
-import { useConfig, useContractRead } from "wagmi"
-import { readContract } from "wagmi/actions"
+import { toDecimals } from "@/lib/erc20"
+import pluralize from "pluralize"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -33,6 +37,7 @@ const displayEstimatedApr = (estimatedApr: number) => {
 }
 export default function Create() {
   const config = useConfig()
+  const { address } = useControlledAddress()
   const currentChain = useCurrentChain()
   const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
@@ -70,27 +75,97 @@ export default function Create() {
   //   }
   // }
 
-  // // check if we have the allowance to spend the lender token
-  // const { data: currentLendingTokenAllowance } = useContractRead({
-  //   address: collateralData?.lending?.address ?? "",
-  //   functionName: "allowance",
-  //   abi: erc20Abi,
-  //   args: [address, DEBITA_ADDRESS],
-  // })
-
-  // const allowance = (await readContract({
-  //   address: OWNERSHIP_ADDRESS,
-  //   abi: allowance,
-  //   functionName: "tokenOfOwnerByIndex",
-  //   args: [address, index],
-  // })) as number
-
   // CREATE BORROW MACHINE
-  const [machineState, machineSend] = useMachine(machine)
+  const [machineState, machineSend] = useMachine(
+    machine.provide({
+      actors: {
+        checkingBorrowAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.collateralToken0.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true })
+          }
+
+          try {
+            const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+
+            const currentAllowance = (await readContract({
+              address: context.collateralToken0.address,
+              functionName: "allowance",
+              abi: erc20Abi,
+              args: [address, DEBITA_ADDRESS],
+            })) as bigint
+
+            if (BigInt(currentAllowance) >= amountRequired) {
+              return Promise.resolve({ currentAllowance, amountRequired })
+            } else {
+              return Promise.reject({ currentAllowance, amountRequired })
+            }
+            // return allowance0
+          } catch (error) {}
+
+          // collateralToken1 of collateralToken1
+          // not implemented yet
+
+          // Throw an error if not able to get the allowance in a short time
+          return new Promise((reject) => {
+            setTimeout(() => {
+              reject({ error: "timeout" })
+            }, 30 * 1000) // slow networks? should be ok to read token in 30 seconds max, maybe adjust per chain later
+          })
+        }),
+        approveBorrowAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.collateralToken0.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true })
+          }
+
+          try {
+            const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+
+            const { request } = await config.publicClient.simulateContract({
+              address: context.collateralToken0.address,
+              functionName: "approve",
+              abi: erc20Abi,
+              args: [DEBITA_ADDRESS, amountRequired],
+              account: address,
+            })
+
+            const executed = await writeContract(request)
+            // console.log("approveBorrowAllowance", executed)
+
+            if (executed) {
+              return Promise.resolve(executed)
+            } else {
+              return Promise.reject({ error: "approveBorrowAllowance->failed" })
+            }
+            // return allowance0
+          } catch (error: any) {
+            return Promise.reject({ error: error.message })
+          }
+
+          // collateralToken1 of collateralToken1
+          // not implemented yet
+
+          // Throw an error if not able to get the allowance in a short time
+          return new Promise((reject) => {
+            setTimeout(() => {
+              reject({ error: "timeout" })
+            }, 30 * 1000) // slow networks? should be ok to read token in 30 seconds max, maybe adjust per chain later
+          })
+        }),
+      },
+    })
+  )
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
-  console.log("context", machineState.context)
+  // console.log("context", machineState.context)
   console.log("machineState.value", machineState.value)
 
   /**
@@ -160,6 +235,10 @@ export default function Create() {
     },
     [machineSend]
   )
+
+  const back = useCallback(() => {
+    machineSend({ type: "back" })
+  }, [machineSend])
 
   // quick calcs - move to machine later
   const numberOfPayments = Number(machineState.context.numberOfPayments)
@@ -385,7 +464,26 @@ export default function Create() {
         </div>
       </ShowWhenTrue>
 
-      <ShowWhenTrue when={machineState.matches("confirmation")}>
+      {/* I have changed my mind on this view
+
+      My initial plan was to have different views per state but now I want to keep the confirmation values constantly visible to he user
+      so they can back out at any time or make changes.
+
+      We will use the `borrow` page pattern of changing the buttons per state instead of the whole form, it will
+      feel a LOT more interactive and less jarring for the user.
+      
+      
+      */}
+      <ShowWhenTrue
+        when={
+          machineState.matches("confirmation") ||
+          machineState.matches("checkingBorrowAllowance") ||
+          machineState.matches("approveBorrowAllowance") ||
+          machineState.matches("checkingLendAllowance") ||
+          machineState.matches("checkingLendAllowanceError") ||
+          machineState.matches("creating")
+        }
+      >
         <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
           <div className="mb-4">
             <div className="flex flex-row justify-between items-center">
@@ -407,27 +505,20 @@ export default function Create() {
               <Label variant="create">Payments</Label>
               <div className="font-bold text-base text-[#D0D0D0]">
                 <ShowWhenTrue when={numberOfPayments === 1}>
-                  There is a single payment due after {durationDays} days.
+                  There is a single payment due after {durationDays} {pluralize("day", durationDays)}.
                 </ShowWhenTrue>
                 <ShowWhenFalse when={numberOfPayments === 1}>
-                  There are {numberOfPayments} payments due every {daysPerPayment} days over {Number(durationDays)}{" "}
-                  days.
+                  There are {numberOfPayments} {pluralize("payment", numberOfPayments)} due every{" "}
+                  {!Number.isInteger(daysPerPayment) ? fixedDecimals(daysPerPayment, 2) : daysPerPayment}{" "}
+                  {pluralize("day", daysPerPayment)} over a {Number(durationDays)} day period.
                 </ShowWhenFalse>
               </div>
             </div>
 
-            {/* <div className="border border-white/10 rounded-sm p-2">
-              <Label variant="create">Total Interest </Label>
-              <div className="font-bold text-base text-[#D0D0D0] mb-1">
-                {totalLoanInterest} {machineState.context.token?.symbol}
-              </div>
-            </div> */}
-
             <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">Interest</Label>
-
               <div className="font-bold text-base text-[#D0D0D0] mb-1">
-                {actualInterest} {machineState.context.token?.symbol}
+                {fixedDecimals(actualInterest, 3)} {machineState.context.token?.symbol}
               </div>
               <div className="text-[10px] text-[#9F9F9F] italic">
                 ({fixedDecimals(loanFee, 3)} {machineState.context.token?.symbol} fee)
@@ -436,7 +527,7 @@ export default function Create() {
 
             <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">Estimated APR (%)</Label>
-              <div className="font-bold text-base text-[#D0D0D0]">
+              <div className="font-bold text-base text-[#D0D0D0] mb-1">
                 {displayEstimatedApr(machineState.context.estimatedApr)}
               </div>
               <div className="text-[10px] text-[#9F9F9F] italic">
@@ -475,92 +566,75 @@ export default function Create() {
             </div>
           </div>
 
-          <div className="mt-8 p-4 flex justify-between">
-            <Button
-              variant="secondary"
-              className="px-12"
-              onClick={() => {
-                machineSend({ type: "back" })
-              }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="action"
-              className="px-12"
-              onClick={() => {
-                machineSend({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
-              }}
-            >
-              Confirm
-            </Button>
-          </div>
-        </div>
-      </ShowWhenTrue>
-
-      <ShowWhenTrue when={machineState.matches("checkingBorrowAllowance")}>
-        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col  gap-8 rounded-b-lg">
-          <div className="mb-4 min-h-[320px]">
-            <div className="flex flex-row justify-between items-center">
-              <div className="flex flex-row gap-2 items-center">
-                <div className="text-xl font-bold">Confirm Borrow Offer</div>
-                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
-              </div>
-              <DebitaIcon className="h-11 w-11 flex-basis-1" />
+          {/* We will show different buttons depending on the state */}
+          <ShowWhenTrue when={machineState.matches("confirmation")}>
+            <div className="mt-8 p-4 flex justify-between">
+              <Button variant="secondary" className="px-12" onClick={back}>
+                Back
+              </Button>
+              <Button
+                variant="action"
+                className="px-12"
+                onClick={() => {
+                  machineSend({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
+                }}
+              >
+                Confirm
+              </Button>
             </div>
+          </ShowWhenTrue>
 
-            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
-          </div>
-
-          <div className="mt-8 p-4 flex justify-between">
-            <Button
-              variant="secondary"
-              className="px-12"
-              onClick={() => {
-                console.log("sending back event")
-
-                machineSend({ type: "back" })
-              }}
-            >
-              Back
-            </Button>
-            <Button variant="muted" className="px-12 cursor-none">
-              Checking Allowance
-              <SpinnerIcon className="ml-2 animate-spin-slow" />
-            </Button>
-          </div>
-        </div>
-      </ShowWhenTrue>
-
-      <ShowWhenTrue when={machineState.matches("creating")}>
-        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          <div className="mb-4 min-h-[320px]">
-            <div className="flex flex-row justify-between items-center">
-              <div className="flex flex-row gap-2 items-center">
-                <div className="text-xl font-bold">
-                  <ShowWhenTrue when={modeState.matches("borrow")}>Confirming Borrow Offer</ShowWhenTrue>
-                  <ShowWhenTrue when={modeState.matches("lend")}>Confirming Lend Offer</ShowWhenTrue>
-                </div>
-                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
-              </div>
-              <DebitaIcon className="h-11 w-11 flex-basis-1" />
+          <ShowWhenTrue when={machineState.matches("checkingBorrowAllowance")}>
+            <div className="mt-8 p-4 flex justify-between">
+              <Button variant="secondary" className="px-12" onClick={back}>
+                Back
+              </Button>
+              <Button variant="muted" className="pl-4 cursor-none">
+                Checking Allowance
+                <SpinnerIcon className="ml-2 animate-spin-slow" />
+              </Button>
             </div>
+          </ShowWhenTrue>
 
-            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
-          </div>
+          <ShowWhenTrue when={machineState.matches("approveBorrowAllowance")}>
+            <div className="px-4 mt-4">
+              <Alert variant="info">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Action required</AlertTitle>
+                <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
+              </Alert>
 
-          <Alert variant="info">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Action required</AlertTitle>
-            <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
-          </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button variant="muted" className="pl-4 cursor-none">
+                  Approving Allowance
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
 
-          <div className="mt-8 p-4 flex justify-end">
-            <Button variant="action" className="px-12">
-              Confirming
-              <SpinnerIcon className="ml-2 animate-spin-slow" />
-            </Button>
-          </div>
+          <ShowWhenTrue when={machineState.matches("creating")}>
+            <div className="px-4">
+              <Alert variant="info">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Action required</AlertTitle>
+                <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
+              </Alert>
+
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button variant="action" className="px-12">
+                  Confirming
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
         </div>
       </ShowWhenTrue>
 

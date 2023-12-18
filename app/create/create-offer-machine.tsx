@@ -385,6 +385,33 @@ export const machine = createMachine(
           },
         },
       },
+      checkingBorrowAllowance: {
+        invoke: {
+          src: "checkingBorrowAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onDone: [{ target: "creating" }],
+          onError: [{ target: "approveBorrowAllowance" }],
+        },
+        on: {
+          back: {
+            target: "confirmation",
+          },
+        },
+      },
+      approveBorrowAllowance: {
+        invoke: {
+          src: "approveBorrowAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onDone: [{ target: "creating" }],
+          onError: [{ target: "approveBorrowAllowance" }],
+        },
+        on: {
+          retry: { target: "checkingBorrowAllowance" },
+          back: {
+            target: "confirmation",
+          },
+        },
+      },
       checkingLendAllowance: {
         invoke: {
           src: "checkingLendAllowance",
@@ -403,29 +430,16 @@ export const machine = createMachine(
           back: { target: "confirmation" },
         },
       },
-      checkingBorrowAllowance: {
-        invoke: {
-          src: "checkingBorrowAllowance",
-          onDone: [{ target: "creating" }],
-          onError: [{ target: "checkingBorrowAllowanceError" }],
-        },
-        on: {
-          back: {
-            target: "confirmation",
-          },
-        },
-      },
-      checkingBorrowAllowanceError: {
-        on: {
-          retry: { target: "checkingBorrowAllowance" },
-        },
-      },
+
       creating: {
         invoke: {
           src: "createOfferTransaction",
           id: "createOfferTransaction",
           onDone: [{ target: "created" }],
           onError: [{ target: "error" }],
+        },
+        on: {
+          back: { target: "confirmation" },
         },
       },
       created: {
@@ -646,7 +660,7 @@ export const machine = createMachine(
         return new Promise((resolve, reject) => {
           setTimeout(() => {
             resolve(true)
-          }, 5 * 1000)
+          }, 50000 * 1000)
         })
       }),
     },

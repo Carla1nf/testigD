@@ -56,3 +56,13 @@ export const tokenDecimals = async ({ address }: { address: `0x${string}` }) => 
 export const fromDecimals = (amount: bigint, decimals: number) => {
   return Number(formatUnits(amount, decimals))
 }
+
+/**
+ * convert a number into the bigInt version with decimal places
+ * @param amount
+ * @param decimals
+ * @returns
+ */
+export const toDecimals = (amount: number, decimals: number) => {
+  return BigInt(amount * 10 ** decimals)
+}
