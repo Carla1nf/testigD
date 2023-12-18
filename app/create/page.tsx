@@ -1,6 +1,7 @@
 "use client"
 
 import { DebitaIcon, SpinnerIcon } from "@/components/icons"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,11 +14,15 @@ import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
 import { AlertCircle, CheckCircle2, LucideMinus, LucidePlus, XCircle } from "lucide-react"
+import { InputNumber } from "primereact/inputnumber"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
-import { InputNumber } from "primereact/inputnumber"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { DEBITA_ADDRESS } from "@/lib/contracts"
+import debitaAbi from "../../../abis/debita.json"
+import erc20Abi from "../../../abis/erc20.json"
+import { useConfig, useContractRead } from "wagmi"
+import { readContract } from "wagmi/actions"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -27,6 +32,7 @@ const displayEstimatedApr = (estimatedApr: number) => {
   })
 }
 export default function Create() {
+  const config = useConfig()
   const currentChain = useCurrentChain()
   const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
@@ -36,13 +42,56 @@ export default function Create() {
 
   // todo: define the createOfferTransaction function (via useQuery) and pass it into the state machine
 
+  // const cancelOffer = async () => {
+  //   try {
+  //     const { request } = await config.publicClient.simulateContract({
+  //       address: DEBITA_ADDRESS,
+  //       functionName: "cancelCollateralOffer",
+  //       abi: debitaAbi,
+  //       args: [id],
+  //       account: address,
+  //       gas: BigInt(900000),
+  //     })
+  //     // console.log("cancelLenderOffer→request", request)
+
+  //     const executed = await writeContract(request)
+  //     console.log("cancelLenderOffer→executed", executed)
+
+  //     toast({
+  //       variant: "success",
+  //       title: "Offer Cancelled",
+  //       description: "You have cancelled the offer.",
+  //       // tx: executed,
+  //     })
+  //     return executed
+  //   } catch (error) {
+  //     console.log("cancelLenderOffer→error", error)
+  //     throw error
+  //   }
+  // }
+
+  // // check if we have the allowance to spend the lender token
+  // const { data: currentLendingTokenAllowance } = useContractRead({
+  //   address: collateralData?.lending?.address ?? "",
+  //   functionName: "allowance",
+  //   abi: erc20Abi,
+  //   args: [address, DEBITA_ADDRESS],
+  // })
+
+  // const allowance = (await readContract({
+  //   address: OWNERSHIP_ADDRESS,
+  //   abi: allowance,
+  //   functionName: "tokenOfOwnerByIndex",
+  //   args: [address, index],
+  // })) as number
+
   // CREATE BORROW MACHINE
   const [machineState, machineSend] = useMachine(machine)
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
-  // console.log("context", machineState.context)
-  // console.log("machineState.value", machineState.value)
+  console.log("context", machineState.context)
+  console.log("machineState.value", machineState.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
@@ -120,6 +169,7 @@ export default function Create() {
   const totalLoanInterest = loanAmount * (Number(machineState.context.interestPercent) / 100)
   const loanFee = totalLoanInterest * 0.06
   const actualInterest = totalLoanInterest - loanFee
+  const interestPerDay = actualInterest / durationDays / 100
 
   return (
     <div>
@@ -380,7 +430,7 @@ export default function Create() {
                 {actualInterest} {machineState.context.token?.symbol}
               </div>
               <div className="text-[10px] text-[#9F9F9F] italic">
-                ({loanFee} {machineState.context.token?.symbol} fee)
+                ({fixedDecimals(loanFee, 3)} {machineState.context.token?.symbol} fee)
               </div>
             </div>
 
@@ -388,6 +438,9 @@ export default function Create() {
               <Label variant="create">Estimated APR (%)</Label>
               <div className="font-bold text-base text-[#D0D0D0]">
                 {displayEstimatedApr(machineState.context.estimatedApr)}
+              </div>
+              <div className="text-[10px] text-[#9F9F9F] italic">
+                {percent({ value: interestPerDay, decimalsWhenGteOne: 3, decimalsWhenLessThanOne: 3 })} per day
               </div>
             </div>
 
@@ -397,9 +450,27 @@ export default function Create() {
             </div>
 
             <div className="border border-white/10 rounded-sm p-2">
+              <Label variant="create">Collateral Value</Label>
+              <div className="font-bold text-base text-[#D0D0D0]">
+                {dollars({
+                  value: machineState.context.collateralValue0 + Number(machineState?.context?.collateralValue1),
+                })}
+              </div>
+            </div>
+
+            <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">LTV Ratio</Label>
               <div className="font-bold text-base text-[#D0D0D0]">
                 {fixedDecimals(Number(machineState.context.ltvRatio), 2)}
+              </div>
+            </div>
+
+            <div className="border border-white/10 rounded-sm p-2">
+              <Label variant="create">Loan Value</Label>
+              <div className="font-bold text-base text-[#D0D0D0]">
+                {dollars({
+                  value: Number(machineState?.context?.tokenValue),
+                })}
               </div>
             </div>
           </div>
@@ -418,7 +489,7 @@ export default function Create() {
               variant="action"
               className="px-12"
               onClick={() => {
-                machineSend({ type: "confirm" })
+                machineSend({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
               }}
             >
               Confirm
@@ -427,9 +498,43 @@ export default function Create() {
         </div>
       </ShowWhenTrue>
 
+      <ShowWhenTrue when={machineState.matches("checkingBorrowAllowance")}>
+        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col  gap-8 rounded-b-lg">
+          <div className="mb-4 min-h-[320px]">
+            <div className="flex flex-row justify-between items-center">
+              <div className="flex flex-row gap-2 items-center">
+                <div className="text-xl font-bold">Confirm Borrow Offer</div>
+                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
+              </div>
+              <DebitaIcon className="h-11 w-11 flex-basis-1" />
+            </div>
+
+            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
+          </div>
+
+          <div className="mt-8 p-4 flex justify-between">
+            <Button
+              variant="secondary"
+              className="px-12"
+              onClick={() => {
+                console.log("sending back event")
+
+                machineSend({ type: "back" })
+              }}
+            >
+              Back
+            </Button>
+            <Button variant="muted" className="px-12 cursor-none">
+              Checking Allowance
+              <SpinnerIcon className="ml-2 animate-spin-slow" />
+            </Button>
+          </div>
+        </div>
+      </ShowWhenTrue>
+
       <ShowWhenTrue when={machineState.matches("creating")}>
         <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          <div className="mb-4">
+          <div className="mb-4 min-h-[320px]">
             <div className="flex flex-row justify-between items-center">
               <div className="flex flex-row gap-2 items-center">
                 <div className="text-xl font-bold">

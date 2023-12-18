@@ -370,12 +370,54 @@ export const machine = createMachine(
       },
       confirmation: {
         on: {
-          confirm: {
-            target: "creating",
-          },
+          confirm: [
+            {
+              guard: ({ event }) => event.mode === "lend",
+              target: "checkingLendAllowance",
+            },
+            {
+              guard: ({ event }) => event.mode === "borrow",
+              target: "checkingBorrowAllowance",
+            },
+          ],
           back: {
             target: "#createOffer.form.history",
           },
+        },
+      },
+      checkingLendAllowance: {
+        invoke: {
+          src: "checkingLendAllowance",
+          onDone: { target: "creating" },
+          onError: { target: "checkingLendAllowanceError" },
+        },
+        on: {
+          back: {
+            target: "confirmation",
+          },
+        },
+      },
+      checkingLendAllowanceError: {
+        on: {
+          retry: { target: "checkingLendAllowance" },
+          back: { target: "confirmation" },
+        },
+      },
+      checkingBorrowAllowance: {
+        invoke: {
+          src: "checkingBorrowAllowance",
+          onDone: [{ target: "creating" }],
+          onError: [{ target: "checkingBorrowAllowanceError" }],
+        },
+        on: {
+          back: {
+            target: "confirmation",
+          },
+        },
+      },
+      checkingBorrowAllowanceError: {
+        on: {
+          retry: { target: "checkingBorrowAllowance" },
         },
       },
       creating: {
@@ -433,7 +475,7 @@ export const machine = createMachine(
         | { type: "back" }
         | { type: "next" }
         | { type: "retry" }
-        | { type: "confirm" }
+        | { type: "confirm"; mode: "lend" | "borrow" }
         | { type: "durationDays"; value: number }
         | { type: "interestPercent"; value: number }
         | { type: "numberOfPayments"; value: number }
