@@ -18,7 +18,7 @@ import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
 import { InputNumber } from "primereact/inputnumber"
 
-const displatEstimatedAPr = (estimatedApr: number) => {
+const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
     value: estimatedApr ?? 0,
     decimalsWhenGteOne: 2,
@@ -107,6 +107,15 @@ export default function Create() {
     },
     [machineSend]
   )
+
+  // quick calcs - move to machine later
+  const numberOfPayments = Number(machineState.context.numberOfPayments)
+  const durationDays = Number(machineState.context.durationDays)
+  const daysPerPayment = durationDays / numberOfPayments
+  const loanAmount = Number(machineState.context.tokenAmount)
+  const totalLoanInterest = loanAmount * (Number(machineState.context.interestPercent) / 100)
+  const loanFee = totalLoanInterest * 0.06
+  const actualInterest = totalLoanInterest - loanFee
 
   return (
     <div>
@@ -279,7 +288,7 @@ export default function Create() {
             <div className="flex flex-col justify-between">
               <Label variant="create">Estimated APR (%)</Label>
               <div className="text-[#9F9F9F] text-lg font-bold">
-                {displatEstimatedAPr(machineState.context.estimatedApr)}
+                {displayEstimatedApr(machineState.context.estimatedApr)}
               </div>
             </div>
             <div className="">
@@ -343,29 +352,38 @@ export default function Create() {
             <div className="border border-white/10 rounded-sm p-2 col-span-2">
               <Label variant="create">Payments</Label>
               <div className="font-bold text-base text-[#D0D0D0]">
-                <ShowWhenTrue when={machineState.context.numberOfPayments === 1}>
-                  There is a single payment due after {machineState.context.durationDays} days.
+                <ShowWhenTrue when={numberOfPayments === 1}>
+                  There is a single payment due after {durationDays} days.
                 </ShowWhenTrue>
-                <ShowWhenFalse when={machineState.context.numberOfPayments === 1}>
-                  There are {machineState.context.numberOfPayments} payments due every{" "}
-                  {fixedDecimals(
-                    machineState.context.durationDays ?? 0 / (machineState.context.numberOfPayments ?? 0),
-                    2
-                  )}{" "}
+                <ShowWhenFalse when={numberOfPayments === 1}>
+                  There are {numberOfPayments} payments due every {daysPerPayment} days over {Number(durationDays)}{" "}
                   days.
                 </ShowWhenFalse>
               </div>
             </div>
 
+            {/* <div className="border border-white/10 rounded-sm p-2">
+              <Label variant="create">Total Interest </Label>
+              <div className="font-bold text-base text-[#D0D0D0] mb-1">
+                {totalLoanInterest} {machineState.context.token?.symbol}
+              </div>
+            </div> */}
+
             <div className="border border-white/10 rounded-sm p-2">
-              <Label variant="create">Total interest</Label>
-              <div className="font-bold text-base text-[#D0D0D0]">{machineState.context.numberOfPayments} Days</div>
+              <Label variant="create">Interest</Label>
+
+              <div className="font-bold text-base text-[#D0D0D0] mb-1">
+                {actualInterest} {machineState.context.token?.symbol}
+              </div>
+              <div className="text-[10px] text-[#9F9F9F] italic">
+                ({loanFee} {machineState.context.token?.symbol} fee)
+              </div>
             </div>
 
             <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">Estimated APR (%)</Label>
               <div className="font-bold text-base text-[#D0D0D0]">
-                {displatEstimatedAPr(machineState.context.estimatedApr)}
+                {displayEstimatedApr(machineState.context.estimatedApr)}
               </div>
             </div>
 
@@ -376,7 +394,9 @@ export default function Create() {
 
             <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">LTV Ratio</Label>
-              <div className="font-bold text-base text-[#D0D0D0]">{machineState.context.ltvRatio}</div>
+              <div className="font-bold text-base text-[#D0D0D0]">
+                {fixedDecimals(Number(machineState.context.ltvRatio), 2)}
+              </div>
             </div>
           </div>
 
