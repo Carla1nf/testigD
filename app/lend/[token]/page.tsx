@@ -79,7 +79,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
           suppressHydrationWarning
         >
-          <thead className="text-white" suppressHydrationWarning>
+          <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
             <tr
               className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
               suppressHydrationWarning
@@ -124,23 +124,23 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
       className="hover:bg-[#383838] cursor-pointer"
     >
-      <td className="p-3 text-left">
+      <td className="p-4 text-left">
         {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}
       </td>
-      <td className="p-3 text-left">
+      <td className="p-4 text-left">
         <div className="flex flex-col gap-2">
           {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : null}
           {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
         </div>
       </td>
 
-      <td className="p-3 text-center">{ltv(collateralData?.ltv)}</td>
-      {/* <td className="p-3 text-center ">
+      <td className="p-4 text-center">{ltv(collateralData?.ltv)}</td>
+      {/* <td className="p-4 text-center ">
         <div>
           {event.lendingAmount} {lenderToken?.symbol}
         </div>
       </td>
-      <td className="p-3 text-center">
+      <td className="p-4 text-center">
         <div className="flex flex-col gap-2">
           {collateralToken0 ? (
             <div>
@@ -154,9 +154,9 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
           ) : null}
         </div>
       </td> */}
-      <td className="p-3 text-center">{collateralData?.numberOfLoanDays} Days</td>
-      <td className="p-3 text-center">{Number(collateralData?.paymentCount ?? 0)}</td>
-      <td className="p-3 text-center">
+      <td className="p-4 text-center">{collateralData?.numberOfLoanDays} Days</td>
+      <td className="p-4 text-center ">{Number(collateralData?.paymentCount ?? 0)}</td>
+      <td className="p-4 text-center">
         {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
       </td>
     </tr>

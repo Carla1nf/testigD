@@ -23,9 +23,9 @@ const DisplayToken = ({
         height={size ?? 24}
         chainSlug="fantom"
         symbol={token.symbol}
-        className="mr-[2px]"
+        className="mr-[2px] "
       />
-      {amount ? <span className="text-white">{formatNumber({ value: amount, decimals })}</span> : null}
+      {amount ? <span className="text-white font-semibold">{formatNumber({ value: amount, decimals })}</span> : null}
       {token.symbol}
     </div>
   )

@@ -17,6 +17,7 @@ module.exports = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        backgroundImage: "radial-gradient(var(--tw-gradient-stops))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
@@ -88,6 +89,8 @@ module.exports = {
         },
       },
       animation: {
+        "enter-page": "",
+        "enter-token": "",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "spin-slow": "spin 2.2s linear infinite",

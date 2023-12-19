@@ -15,9 +15,9 @@ const DaysHours = ({ deadline }: { deadline: number }) => {
   }
 
   return (
-    <>
-      {days} <span className="text-xs">DAYS</span> {hours} <span className="text-xs">HOURS </span>
-    </>
+    <span className={`${days > 5 ? "text-green-300" : `${days == 0 && hours == 0 ? "text-yellow-300" : "text-red-300"}`}`}>
+      {days} <span className={`text-xs `}>DAYS</span> {hours} <span className="text-xs">HOURS </span>
+    </span>
   )
 }
 

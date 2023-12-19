@@ -73,7 +73,7 @@ const DashboardUserTableItem = ({
     const status = loanStatus(Number(data.loan.deadlineNext))
 
     return (
-      <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0" key={data.loanId}>
+      <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={data.loanId}>
         <td className="p-3">
           {data?.loan?.collaterals?.length === 1 ? <DisplayToken token={data?.loan?.collaterals[0]} size={24} /> : null}
           {data?.loan?.collaterals?.length === 2 ? (
@@ -88,17 +88,17 @@ const DashboardUserTableItem = ({
         </td>
         <td className="p-3">{Number(data.loanId)}</td>
         <td className="p-3">
-          <DaysHours deadline={Number(data.loan.deadline)} />
+          <DaysHours deadline={Number(data.loan.deadlineNext)} />
         </td>
         <td className="p-3">
           {" "}
           {Number(data.loan.paymentsPaid)}/{Number(data.loan.paymentCount)}
         </td>
-        <td className="p-3">
+        <td className="p-3 font-semibold">
           {data.loan.paymentCount === data.loan.paymentsPaid || data.loan.executed ? (
-            <div className="text-yellow-500">Ended</div>
+            <div className="text-yellow-400">Ended</div>
           ) : (
-            <div className={status.className}>{status.displayText}</div>
+            <div className={`${status.className} ${status.displayText == 'LIVE' ? "text-green-300" : "text-red-400"}`}>{status.displayText}</div>
           )}
         </td>
       </tr>

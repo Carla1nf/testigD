@@ -52,7 +52,7 @@ const DashboardUserTable = () => {
               return (
                 <tr
                   className={cn(
-                    "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left",
+                    "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left text-white opacity-60 font-medium text-sm",
                     responsiveClass
                   )}
                   key={index}

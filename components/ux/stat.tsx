@@ -17,7 +17,7 @@ const Stat = ({
   return (
     <>
       {/* desktop - left align design */}
-      <div className="overflow-hidden dashboard-item-gradient py-2 px-4 rounded-lg  flex-row justify-center items-center border border-white/5 h-full hidden md:flex">
+      <div className="overflow-hidden dashboard-item-gradient py-2 px-4 rounded-lg  flex-row justify-center items-center h-full hidden md:flex shadow-lg">
         <div className="pr-4">{Icon}</div>
         <div className="text-left grow">
           <div className="text-xs md:font-bold">{title}</div>

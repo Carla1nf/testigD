@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" type="image/svg+xml" href="/files/icon/debita-icon.svg" />
       </head>
-      <body className={cn("bg-background font-sans antialiased h-[calc(100dvh)]", fontSans.variable)}>
+      <body className={cn("bg-background font-sans antialiased overflow-x-hidden h-[calc(100dvh)]", fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Providers>
             <>

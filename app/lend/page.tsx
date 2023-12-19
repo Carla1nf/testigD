@@ -43,7 +43,7 @@ export default function Lend() {
             <Stat
               value={dollars({ value: stats.marketSize, decimals: 0 })}
               title={"Market Size"}
-              Icon={<MarketSizeIcon className="w-10 h-10 fill-white" />}
+              Icon={<MarketSizeIcon className="w-10 h-10 fill-white"/>}
             />
             <Stat
               value={dollars({ value: stats.totalLiquidityLent, decimals: 0 })}
@@ -60,7 +60,7 @@ export default function Lend() {
           className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
           suppressHydrationWarning
         >
-          <thead className="text-white" suppressHydrationWarning>
+          <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
             <tr
               className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
               suppressHydrationWarning
@@ -83,17 +83,17 @@ export default function Lend() {
                     router.push(`/lend/${offer.token.address}`)
                   }}
                   key={`${offer.token.symbol}_${offer.token.address}`}
-                  className="hover:bg-[#383838] cursor-pointer"
+                  className="hover:bg-[#383838] cursor-pointer "
                 >
-                  <td className="p-2 text-left px-4 items-center">
+                  <td className="p-4 text-left px-4 items-center">
                     {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
                   </td>
-                  <td className="p-2 text-center px-4 items-center">{offer.events.length}</td>
-                  <td className="p-2 text-center px-4 items-center">{dollars({ value: offer.liquidityOffer })}</td>
-                  <td className="p-2 text-center px-4 items-center">
+                  <td className="p-4 text-center px-4 items-center ">{offer.events.length}</td>
+                  <td className="p-4 text-center px-4 items-center">{dollars({ value: offer.liquidityOffer })}</td>
+                  <td className="p-4 text-center px-4 items-center">
                     {dollars({ value: offer?.price ?? 0, decimals: 2 })}
                   </td>
-                  <td className="p-2 text-center px-4 items-center">
+                  <td className="p-4 text-center px-4 items-center">
                     {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
                   </td>
                 </tr>
