@@ -415,24 +415,18 @@ export const machine = createMachine(
           src: "checkingLendAllowance",
           input: ({ context, event }) => ({ context, event }),
           onDone: { target: "creating" },
-          onError: { target: "checkingLendAllowanceError" },
+          onError: { target: "approveLendAllowance" },
         },
         on: {
           back: { target: "confirmation" },
         },
       },
-      checkingLendAllowanceError: {
-        on: {
-          retry: { target: "checkingLendAllowance" },
-          back: { target: "confirmation" },
-        },
-      },
-      approveLendingAllowance: {
+      approveLendAllowance: {
         invoke: {
-          src: "approveLendingAllowance",
+          src: "approveLendAllowance",
           input: ({ context, event }) => ({ context, event }),
+          onError: [{ target: "checkingLendAllowance" }],
           onDone: [{ target: "creating" }],
-          onError: [{ target: "approveLendingAllowance" }],
         },
         on: {
           retry: { target: "checkingLendAllowance" },
@@ -441,8 +435,8 @@ export const machine = createMachine(
       },
       creating: {
         invoke: {
-          src: "createBorrowOffer",
-          id: "createBorrowOffer",
+          src: "creatingOffer",
+          id: "creatingOffer",
           input: ({ context, event }) => ({ context, event }),
           onDone: [{ target: "created" }],
           onError: [{ target: "error" }],
@@ -454,6 +448,7 @@ export const machine = createMachine(
       created: {
         on: {
           again: { target: "confirmation" },
+          back: { target: "confirmation" },
         },
       },
       error: {

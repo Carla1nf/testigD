@@ -46,36 +46,6 @@ export default function Create() {
   // MODE MACHINE
   const [modeState, modeSend] = useMachine(modeMachine)
 
-  // todo: define the createOfferTransaction function (via useQuery) and pass it into the state machine
-
-  // const cancelOffer = async () => {
-  //   try {
-  //     const { request } = await config.publicClient.simulateContract({
-  //       address: DEBITA_ADDRESS,
-  //       functionName: "cancelCollateralOffer",
-  //       abi: debitaAbi,
-  //       args: [id],
-  //       account: address,
-  //       gas: BigInt(900000),
-  //     })
-  //     // console.log("cancelLenderOffer→request", request)
-
-  //     const executed = await writeContract(request)
-  //     console.log("cancelLenderOffer→executed", executed)
-
-  //     toast({
-  //       variant: "success",
-  //       title: "Offer Cancelled",
-  //       description: "You have cancelled the offer.",
-  //       // tx: executed,
-  //     })
-  //     return executed
-  //   } catch (error) {
-  //     console.log("cancelLenderOffer→error", error)
-  //     throw error
-  //   }
-  // }
-
   // CREATE BORROW MACHINE
   const [machineState, machineSend] = useMachine(
     machine.provide({
@@ -86,36 +56,23 @@ export default function Create() {
 
           // collateralAmount0 of collateralToken0
           if (context.collateralToken0.address === ZERO_ADDRESS) {
-            return Promise.resolve({ nativeToken: true })
+            return Promise.resolve({ nativeToken: true, mode: "borrow" })
           }
 
-          try {
-            const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
 
-            const currentAllowance = (await readContract({
-              address: context.collateralToken0.address,
-              functionName: "allowance",
-              abi: erc20Abi,
-              args: [address, DEBITA_ADDRESS],
-            })) as bigint
+          const currentAllowance = (await readContract({
+            address: context.collateralToken0.address,
+            functionName: "allowance",
+            abi: erc20Abi,
+            args: [address, DEBITA_ADDRESS],
+          })) as bigint
 
-            if (BigInt(currentAllowance) >= amountRequired) {
-              return Promise.resolve({ currentAllowance, amountRequired })
-            } else {
-              return Promise.reject({ currentAllowance, amountRequired })
-            }
-            // return allowance0
-          } catch (error) {}
+          if (BigInt(currentAllowance) >= amountRequired) {
+            return Promise.resolve({ currentAllowance, amountRequired, mode: "borrow" })
+          }
 
-          // collateralToken1 of collateralToken1
-          // not implemented yet
-
-          // Throw an error if not able to get the allowance in a short time
-          return new Promise((reject) => {
-            setTimeout(() => {
-              reject({ error: "timeout" })
-            }, 30 * 1000) // slow networks? should be ok to read token in 30 seconds max, maybe adjust per chain later
-          })
+          throw "not enough allowance"
         }),
         approveBorrowAllowance: fromPromise(async ({ input: { context } }) => {
           // We need to know if we have enough allowance to create the offer
@@ -123,47 +80,43 @@ export default function Create() {
 
           // collateralAmount0 of collateralToken0
           if (context.collateralToken0.address === ZERO_ADDRESS) {
-            return Promise.resolve({ nativeToken: true })
+            return Promise.resolve({ nativeToken: true, mode: "borrow" })
           }
 
-          try {
-            const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
 
-            const { request } = await config.publicClient.simulateContract({
-              address: context.collateralToken0.address,
-              functionName: "approve",
-              abi: erc20Abi,
-              args: [DEBITA_ADDRESS, amountRequired],
-              account: address,
-            })
-
-            const executed = await writeContract(request)
-            // console.log("approveBorrowAllowance", executed)
-
-            if (executed) {
-              return Promise.resolve(executed)
-            } else {
-              return Promise.reject({ error: "approveBorrowAllowance->failed" })
-            }
-            // return allowance0
-          } catch (error: any) {
-            return Promise.reject({ error: error.message })
-          }
-
-          // collateralToken1 of collateralToken1
-          // not implemented yet
-
-          // Throw an error if not able to get the allowance in a short time
-          return new Promise((reject) => {
-            setTimeout(() => {
-              reject({ error: "timeout" })
-            }, 30 * 1000) // slow networks? should be ok to read token in 30 seconds max, maybe adjust per chain later
+          const { request } = await config.publicClient.simulateContract({
+            address: context.collateralToken0.address,
+            functionName: "approve",
+            abi: erc20Abi,
+            args: [DEBITA_ADDRESS, amountRequired],
+            account: address,
           })
-        }),
-        createBorrowOffer: fromPromise(async ({ input: { context, event } }) => {
-          // console.log("context", context)
 
-          /**
+          const executed = await writeContract(request)
+          // console.log("approveBorrowAllowance", executed)
+
+          return { ...executed, mode: "borrow" }
+        }),
+        creatingOffer: fromPromise(async ({ input }) => {
+          console.log("creatingOffer")
+          console.log("input", input)
+          const { context, event } = input
+
+          console.log("context", context)
+          console.log("event", event)
+
+          const mode = event.output.mode === "borrow" ? "borrow" : "lend"
+          console.log("mode", mode)
+
+          //  value used in both modes
+          const _interest = BigInt((context.interestPercent * 100) / 10)
+          const _timelap = (86400 * context.durationDays) / context.numberOfPayments
+          const _paymentCount = BigInt(context.numberOfPayments)
+          const _whitelist: any[] = []
+
+          if (mode === "borrow") {
+            /**
            * 
            * ORIGINAL V1 CODE
            * 
@@ -200,60 +153,206 @@ export default function Create() {
               })
            * 
            */
-          try {
-            const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-            const collateral1 = context.collateralAmount1
-              ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
-              : BigInt(0)
-            const _wantedLenderToken = context.token.address
-            const collateralTokens = context.collateralToken1
-              ? [context.collateralToken0.address, context.collateralToken1.address]
-              : [context.collateralToken0.address]
-            const collateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
-            const _wantedLenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
-            const _interest = BigInt((context.interestPercent * 100) / 10)
-            const _timelap = (86400 * context.durationDays) / context.numberOfPayments
-            const _paymentCount = BigInt(context.numberOfPayments)
-            const _whitelist: any[] = []
-            const value =
-              context.collateralToken0.address === ZERO_ADDRESS
-                ? collateral0
-                : BigInt(0) + context.collateralToken1.address === ZERO_ADDRESS
-                ? collateral1
+            try {
+              const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+              const collateral1 = context.collateralAmount1
+                ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
                 : BigInt(0)
+              const _wantedLenderToken = context.token.address
+              const collateralTokens = context.collateralToken1
+                ? [context.collateralToken0.address, context.collateralToken1.address]
+                : [context.collateralToken0.address]
+              const collateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
+              const _wantedLenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
-            const { request } = await config.publicClient.simulateContract({
-              address: DEBITA_ADDRESS,
-              functionName: "createCollateralOffer",
-              abi: debitaAbi,
-              args: [
-                _wantedLenderToken,
-                collateralTokens,
-                collateralAmount,
-                _wantedLenderAmount,
-                _interest,
-                _timelap,
-                _paymentCount,
-                _whitelist,
-              ],
-              account: address,
-              value, // todo: test with FTM to see if value cones across properly
-              gas: BigInt(2000000),
-            })
+              //  Process collateral value
+              let value: bigint = context.collateralToken0.address === ZERO_ADDRESS ? BigInt(collateral0) : BigInt(0)
+              if (context?.collateralToken1?.address === ZERO_ADDRESS) {
+                value += BigInt(collateral1)
+              }
 
-            const executed = await writeContract(request)
-            console.log("createBorrowOffer", executed)
+              const { request } = await config.publicClient.simulateContract({
+                address: DEBITA_ADDRESS,
+                functionName: "createCollateralOffer",
+                abi: debitaAbi,
+                args: [
+                  _wantedLenderToken,
+                  collateralTokens,
+                  collateralAmount,
+                  _wantedLenderAmount,
+                  _interest,
+                  _timelap,
+                  _paymentCount,
+                  _whitelist,
+                ],
+                account: address,
+                value, // todo: test with FTM to see if value cones across properly
+                gas: BigInt(2000000),
+              })
 
-            if (executed) {
-              return Promise.resolve(executed)
+              const executed = await writeContract(request)
+              console.log("createCollateralOffer", executed)
+
+              if (executed) {
+                return Promise.resolve({ ...executed, mode: "borrow" })
+              }
+
+              throw "createCollateralOffer->failed"
+
+              // return allowance0
+            } catch (error: any) {
+              console.log("error", error)
+
+              return Promise.reject({ error: error.message })
             }
-
-            return Promise.reject({ error: "createBorrowOffer->failed" })
-
-            // return allowance0
-          } catch (error: any) {
-            return Promise.reject({ error: error.message })
           }
+
+          if (mode === "lend") {
+            /**
+             * 
+             * ORIGINAL V1 CODE
+             * 
+              const {
+                  data: dataLender,
+                  write: createLenderOffer,
+                  isSuccess: SuccessCreating_Lender,
+                  isLoading: isLoading_Lending,
+                  isError: isError_Lending,
+                } = useContractWrite({
+                  address: DEBITA_CONTRACT,
+                  functionName: "createLenderOption",
+                  abi: DEBITA_ABI,
+                  args: [
+                    params.address[1],
+                    params.address[2] == "" ? [params.address[0]] : [params.address[0], params.address[2]],
+                    params.address[2] == "" ? [`${collateral_1}`] : [`${collateral_1}`, `${collateral_2}`],
+                    `${_lenderAmount}`,
+                    Number(params.interest) * 10,
+                    timelap,
+                    params.payments,
+                    [],
+                    {
+                      gasLimit: "2000000",
+                      value: params.address[1] == "0x0000000000000000000000000000000000000000" ? `${_lenderAmount}` : "0",
+                    },
+                  ],
+                })
+            * 
+            */
+            try {
+              const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+              const collateral1 = context.collateralAmount1
+                ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
+                : BigInt(0)
+              const _LenderToken = context.token.address
+              const _wantedCollateralTokens = context.collateralToken1
+                ? [context.collateralToken0.address, context.collateralToken1.address]
+                : [context.collateralToken0.address]
+              const _wantedCollateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
+              const _LenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+
+              // calculate value
+              const value = context.token.address === ZERO_ADDRESS ? _LenderAmount : BigInt(0)
+
+              console.log("_LenderAmount", _LenderAmount)
+
+              console.log("value", value)
+              console.log("_interest", _interest)
+              console.log("_timelap", _timelap)
+              console.log("_paymentCount", _paymentCount)
+              console.log("_whitelist", _whitelist)
+
+              const { request } = await config.publicClient.simulateContract({
+                address: DEBITA_ADDRESS,
+                functionName: "createLenderOption",
+                abi: debitaAbi,
+                args: [
+                  _LenderToken,
+                  _wantedCollateralTokens,
+                  _wantedCollateralAmount,
+                  _LenderAmount,
+                  _interest,
+                  _timelap,
+                  _paymentCount,
+                  _whitelist,
+                ],
+                account: address,
+                value,
+                gas: BigInt(2000000),
+              })
+
+              const executed = await writeContract(request)
+              console.log("createLenderOption", executed)
+
+              if (executed) {
+                return Promise.resolve({ ...executed, mode: "lend" })
+              }
+
+              throw "createLenderOption->failed"
+
+              // return allowance0
+            } catch (error: any) {
+              console.log("createLenderOption->error", error)
+
+              return Promise.reject({ error: error.message, mode: "lend" })
+            }
+          }
+        }),
+        checkingLendAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.collateralToken0.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true, mode: "lend" })
+          }
+
+          // console.log("context", context)
+
+          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+
+          // console.log("amountRequired", amountRequired)
+
+          const currentAllowance = (await readContract({
+            address: context.collateralToken0.address,
+            functionName: "allowance",
+            abi: erc20Abi,
+            args: [address, DEBITA_ADDRESS],
+          })) as bigint
+
+          // console.log("currentAllowance", currentAllowance)
+
+          if (BigInt(currentAllowance) >= amountRequired) {
+            return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
+          }
+
+          throw "not enough allowance"
+
+          // return allowance0
+        }),
+        approveLendAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.collateralToken0.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true, mode: "lend" })
+          }
+
+          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+
+          const { request } = await config.publicClient.simulateContract({
+            address: context.collateralToken0.address,
+            functionName: "approve",
+            abi: erc20Abi,
+            args: [DEBITA_ADDRESS, amountRequired],
+            account: address,
+          })
+
+          const executed = await writeContract(request)
+          // console.log("approveLendAllowance", executed)
+
+          return Promise.resolve({ ...executed, mode: "lend" })
         }),
       },
     })
@@ -354,22 +453,25 @@ export default function Create() {
         Let&apos;s keep this simple for now, we will just create a form and hook it up to the xstate machine
       </p>
 
-      <Tabs
-        defaultValue="borrow"
-        className=""
-        onValueChange={() => {
-          modeSend({ type: "mode" })
-        }}
-      >
-        <TabsList className="bg-[#252324] rounded-b-none gap-2">
-          <TabsTrigger value="borrow" className="px-12">
-            Borrow
-          </TabsTrigger>
-          <TabsTrigger value="lend" className="px-12">
-            Lend
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* We can only switch modes when the filling out the form or confirming the offer */}
+      <ShowWhenTrue when={machineState.matches("form") || machineState.matches("confirmation")}>
+        <Tabs
+          defaultValue={modeState.value as "lend" | "borrow"}
+          className=""
+          onValueChange={() => {
+            modeSend({ type: "mode" })
+          }}
+        >
+          <TabsList className="bg-[#252324] rounded-b-none gap-2">
+            <TabsTrigger value="borrow" className="px-12">
+              Borrow
+            </TabsTrigger>
+            <TabsTrigger value="lend" className="px-12">
+              Lend
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </ShowWhenTrue>
 
       {/* Form */}
       <ShowWhenTrue when={machineState.matches("form")}>
@@ -577,7 +679,7 @@ export default function Create() {
           machineState.matches("checkingBorrowAllowance") ||
           machineState.matches("approveBorrowAllowance") ||
           machineState.matches("checkingLendAllowance") ||
-          machineState.matches("checkingLendAllowanceError") ||
+          machineState.matches("approveLendAllowance") ||
           machineState.matches("creating") ||
           machineState.matches("created") ||
           machineState.matches("error")
@@ -683,7 +785,9 @@ export default function Create() {
             </div>
           </ShowWhenTrue>
 
-          <ShowWhenTrue when={machineState.matches("checkingBorrowAllowance")}>
+          <ShowWhenTrue
+            when={machineState.matches("checkingBorrowAllowance") || machineState.matches("checkingLendAllowance")}
+          >
             <div className="mt-8 p-4 flex justify-between">
               <Button variant="secondary" className="px-12" onClick={back}>
                 Back
@@ -695,7 +799,9 @@ export default function Create() {
             </div>
           </ShowWhenTrue>
 
-          <ShowWhenTrue when={machineState.matches("approveBorrowAllowance")}>
+          <ShowWhenTrue
+            when={machineState.matches("approveBorrowAllowance") || machineState.matches("approveLendAllowance")}
+          >
             <div className="px-4 mt-4">
               <Alert variant="info">
                 <AlertCircle className="h-4 w-4" />
@@ -709,6 +815,37 @@ export default function Create() {
                 <Button variant="muted" className="pl-4 cursor-none">
                   Approving Allowance
                   <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue
+            when={
+              machineState.matches("checkingBorrowAllowanceError") || machineState.matches("checkingLendAllowanceError")
+            }
+          >
+            <div className="px-4">
+              <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  There was an error approving your allowance, click the button to try again.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button
+                  variant="error"
+                  className="px-12 gap-2"
+                  onClick={() => {
+                    machineSend({ type: "retry" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5" />
+                  Approve Allowance Failed - Retry?
                 </Button>
               </div>
             </div>
@@ -759,44 +896,33 @@ export default function Create() {
               </div>
             </div>
           </ShowWhenTrue>
-        </div>
-      </ShowWhenTrue>
 
-      <ShowWhenTrue when={machineState.matches("error")}>
-        <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          <div className="mb-4">
-            <div className="flex flex-row justify-between items-center">
-              <div className="flex flex-row gap-2 items-center">
-                <div className="text-xl font-bold">
-                  <ShowWhenTrue when={modeState.matches("borrow")}>Creating Borrow Offer</ShowWhenTrue>
-                  <ShowWhenTrue when={modeState.matches("lend")}>Creating Lend Offer</ShowWhenTrue>
-                </div>
-                <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
+          <ShowWhenTrue when={machineState.matches("error")}>
+            <div className="px-4">
+              <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  There was an error creating your offer, click the button to try again.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button
+                  variant="error"
+                  className="px-12 gap-2"
+                  onClick={() => {
+                    machineSend({ type: "retry" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5" />
+                  Create Offer Failed - Retry?
+                </Button>
               </div>
-              <DebitaIcon className="h-11 w-11 flex-basis-1" />
             </div>
-
-            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
-          </div>
-
-          <Alert variant="warning">
-            <XCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>There was an error creating your offer, click the button to try again.</AlertDescription>
-          </Alert>
-
-          <div className="mt-8 p-4 flex justify-center">
-            <Button
-              variant="error"
-              className="px-12 gap-2"
-              onClick={() => {
-                machineSend({ type: "retry" })
-              }}
-            >
-              <XCircle className="h-5 w-5" />
-              Create Offer Failed - Retry?
-            </Button>
-          </div>
+          </ShowWhenTrue>
         </div>
       </ShowWhenTrue>
     </div>
