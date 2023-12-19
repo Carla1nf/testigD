@@ -6,15 +6,15 @@ import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
 import useCurrentChain from "./useCurrentChain"
 
-export const useLendingMarket = () => {
+export const useBorrowMarket = () => {
   const { data } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
 
   const query: any = useQuery({
-    queryKey: ["lending-market-divided-offers", currentChain.slug, data?.borrow?.length],
+    queryKey: ["borrow-market-divided-offers", currentChain.slug, data?.lend?.length],
     queryFn: async () => {
-      // todo: why do we reference the borrow data in the lending market?
-      const dividedOffers = processLenderOfferCreated(data?.borrow ?? [])
+      // todo: why do we reference the lend data in the borrow market?
+      const dividedOffers = processLenderOfferCreated(data?.lend ?? [])
       const offers: LenderOfferTokenData[] = Array.from(dividedOffers.values())
 
       for (let i = 0; i < offers.length; i++) {
@@ -37,7 +37,7 @@ export const useLendingMarket = () => {
   })
 
   return {
-    borrow: data?.borrow, // why the flip here? investigate
+    lend: data?.lend, // todo: why the flip here? investigate
     offers: query?.data?.offers ?? undefined,
   }
 }
