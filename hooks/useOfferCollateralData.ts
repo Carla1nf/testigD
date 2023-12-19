@@ -88,13 +88,16 @@ export const useOfferCollateralData = (address: Address | undefined, index: numb
 
       const ratio = totalCollateralValue / lending.valueUsd
       const ltv = (1 / ratio) * 100
+      const numberOfLoanDays = Number(parsedData.timelap) / 86400
+      const apr = ((Number(parsedData.interest) / Number(numberOfLoanDays)) * 365) / 1000 // percentages are 0.134 for 13.4%
 
       return {
         collaterals,
         interest: Number(parsedData.interest) / 1000,
         lending,
         ltv,
-        numberOfLoanDays: Number(parsedData.timelap) / 86400,
+        apr,
+        numberOfLoanDays,
         owner: parsedData.owner,
         paymentCount: parsedData.paymentCount,
         ratio,

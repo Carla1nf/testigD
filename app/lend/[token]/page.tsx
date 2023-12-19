@@ -92,6 +92,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
               <th className="p-3 text-center">Time</th>
               <th className="p-3 text-center">Payments</th>
               <th className="p-3 text-center">Interest (%)</th>
+              <th className="p-3 text-center">Effective APR (%)</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
@@ -133,31 +134,14 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
           {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
         </div>
       </td>
-
       <td className="p-3 text-center">{ltv(collateralData?.ltv)}</td>
-      {/* <td className="p-3 text-center ">
-        <div>
-          {event.lendingAmount} {lenderToken?.symbol}
-        </div>
-      </td>
-      <td className="p-3 text-center">
-        <div className="flex flex-col gap-2">
-          {collateralToken0 ? (
-            <div>
-              {collateral0.amount} {collateralToken0?.symbol}
-            </div>
-          ) : null}
-          {collateralToken1 ? (
-            <div>
-              {collateral1.amount} {collateralToken1?.symbol}
-            </div>
-          ) : null}
-        </div>
-      </td> */}
       <td className="p-3 text-center">{collateralData?.numberOfLoanDays} Days</td>
       <td className="p-3 text-center">{Number(collateralData?.paymentCount ?? 0)}</td>
       <td className="p-3 text-center">
         {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+      </td>
+      <td className="p-3 text-center">
+        {percent({ value: collateralData?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
       </td>
     </tr>
   )

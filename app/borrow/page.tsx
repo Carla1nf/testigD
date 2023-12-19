@@ -1,25 +1,23 @@
 "use client"
 
-import useCurrentChain from "@/hooks/useCurrentChain"
+import { AvailableIcon, MarketSizeIcon, TotalLentIcon } from "@/components/icons"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
+import DisplayNetwork from "@/components/ux/display-network"
+import DisplayToken from "@/components/ux/display-token"
+import Stat from "@/components/ux/stat"
 import { useBorrowMarket } from "@/hooks/useBorrowMarket"
 import { useBorrowingMarketStats } from "@/hooks/useBorrowingMarketStats"
-import { useRouter } from "next/navigation"
-import DisplayNetwork from "@/components/ux/display-network"
-import { useMemo } from "react"
-import Breadcrumbs from "@/components/ux/breadcrumbs"
-import Stat from "@/components/ux/stat"
+import useCurrentChain from "@/hooks/useCurrentChain"
 import { dollars, percent } from "@/lib/display"
-import { AvailableIcon, MarketSizeIcon, TotalLentIcon } from "@/components/icons"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
-import DisplayToken from "@/components/ux/display-token"
+import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 
 export default function Borrow() {
   const stats = useBorrowingMarketStats()
   const { offers } = useBorrowMarket()
   const currentChain = useCurrentChain()
   const router = useRouter()
-
-  console.log("offers", offers)
 
   const breadcrumbs = useMemo(
     () => [<DisplayNetwork currentChain={currentChain} size={18} key="network" />],
