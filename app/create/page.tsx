@@ -255,7 +255,6 @@ export default function Create() {
               const value = context.token.address === ZERO_ADDRESS ? _LenderAmount : BigInt(0)
 
               console.log("_LenderAmount", _LenderAmount)
-
               console.log("value", value)
               console.log("_interest", _interest)
               console.log("_timelap", _timelap)
@@ -303,24 +302,16 @@ export default function Create() {
           // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
 
           // collateralAmount0 of collateralToken0
-          if (context.collateralToken0.address === ZERO_ADDRESS) {
+          if (context.token.address === ZERO_ADDRESS) {
             return Promise.resolve({ nativeToken: true, mode: "lend" })
           }
-
-          // console.log("context", context)
-
-          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-
-          // console.log("amountRequired", amountRequired)
-
+          const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
           const currentAllowance = (await readContract({
-            address: context.collateralToken0.address,
+            address: context.token.address,
             functionName: "allowance",
             abi: erc20Abi,
             args: [address, DEBITA_ADDRESS],
           })) as bigint
-
-          // console.log("currentAllowance", currentAllowance)
 
           if (BigInt(currentAllowance) >= amountRequired) {
             return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
@@ -335,14 +326,14 @@ export default function Create() {
           // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
 
           // collateralAmount0 of collateralToken0
-          if (context.collateralToken0.address === ZERO_ADDRESS) {
+          if (context.token.address === ZERO_ADDRESS) {
             return Promise.resolve({ nativeToken: true, mode: "lend" })
           }
 
-          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+          const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
 
           const { request } = await config.publicClient.simulateContract({
-            address: context.collateralToken0.address,
+            address: context.token.address,
             functionName: "approve",
             abi: erc20Abi,
             args: [DEBITA_ADDRESS, amountRequired],
