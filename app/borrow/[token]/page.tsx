@@ -56,13 +56,13 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             />
             <Stat
               value={dollars({ value: stats.waitingToBeLent })}
-              title={"Waiting to be borrowed"}
+              title={"Available to borrow"}
               titleSmall={"Available"}
               Icon={<HourGlassIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
             />
             <Stat
               value={percent({ value: stats.mediumInterest, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
-              title={"Medium Interest %"}
+              title={"Average Interest"}
               titleSmall={"Avg Int %"}
               Icon={<PercentIcon className="w-6 h-6 md:w-10 md:h-10" />}
             />
