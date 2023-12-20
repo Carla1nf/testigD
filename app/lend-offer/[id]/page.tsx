@@ -33,6 +33,7 @@ import { lendOfferMachine } from "./lend-offer-machine"
 
 import { useToast } from "@/components/ui/use-toast"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
+import { balanceOf } from "@/lib/erc20"
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -169,7 +170,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         return true
       }
 
-      console.log("collateral0", collateral0)
+      // console.log("collateral0", collateral0)
 
       const { request } = await config.publicClient.simulateContract({
         address: (collateral0?.address ?? "") as Address,
@@ -204,6 +205,28 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
   const userAcceptOffer = async () => {
     try {
+      // Check the user has enough in wallet to perform the loan
+      if (collateral0) {
+        const collateralBalance0 = await balanceOf({
+          address: collateral0?.address as Address,
+          account: address as Address,
+        })
+        if (collateral0 && collateralBalance0 < collateral0?.amountRaw) {
+          throw `Insufficient ${collateral0Token?.symbol} balance`
+        }
+      }
+
+      // Check the user has enough in wallet to perform the loan
+      if (collateral1) {
+        const collateralBalance1 = await balanceOf({
+          address: collateral1?.address as Address,
+          account: address as Address,
+        })
+        if (collateral1 && collateralBalance1 < collateral1?.amountRaw) {
+          throw `Insufficient ${collateral1Token?.symbol} balance`
+        }
+      }
+
       const value = getAcceptLendingOfferValue(data)
       const { request } = await config.publicClient.simulateContract({
         address: DEBITA_ADDRESS,
@@ -223,7 +246,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
       toast({
         variant: "success",
         title: "Offer Accepted",
-        description: "You have accepted the offer.",
+        description: `You have accepted the offer, the borrowed ${borrowingToken?.symbol} is now in your wallet.`,
         // tx: executed,
       })
       return executed
@@ -360,9 +383,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
       {/* Page header */}
       <div className="@container mb-8 space-y-4">
         <Breadcrumbs items={breadcrumbs} />
-        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-          Borrow ID #{Number(id)}
-        </h1>
+        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Offer #{Number(id)}</h1>
       </div>
 
       {/* Page content */}
@@ -445,7 +466,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
             <div className="flex justify-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
-                You are borrowing from
+                You are borrowing {borrowingToken?.symbol} from
                 <PersonIcon className="w-6 h-6" />
                 {shortAddress(data?.owner)}
               </div>
@@ -458,13 +479,8 @@ export default function LendOffer({ params }: { params: { id: string } }) {
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="flex flex-col gap-3">
-                <div>
-                  Collateral
-                  <span className="text-white/50 text-xs italic ml-2">
-                    {dollars({ value: data?.totalCollateralValue ?? 0 })}
-                  </span>
-                </div>
-                <div className="-ml-[2px]">
+                <div>Provide Collateral</div>
+                <div className="-ml-[px]">
                   {collateral0 && collateral0Token ? (
                     <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
                   ) : null}
@@ -472,20 +488,21 @@ export default function LendOffer({ params }: { params: { id: string } }) {
                     <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
                   ) : null}
                 </div>
+                <div className="text-white/50 text-xs italic">
+                  Collateral value: {dollars({ value: data?.totalCollateralValue ?? 0 })}
+                </div>
               </div>
               <div className="flex flex-col gap-3">
-                <div>
-                  Borrowing
-                  <span className="text-white/50 text-xs italic ml-2">
-                    {dollars({ value: borrowing?.valueUsd ?? 0 })}
-                  </span>
-                </div>
+                <div>To Borrow</div>
 
                 {borrowing && borrowingToken ? (
-                  <div className="-ml-[2px]">
+                  <div className="-ml-[4px]">
                     <DisplayToken size={32} token={borrowingToken} amount={borrowing.amount} className="text-xl" />
                   </div>
                 ) : null}
+                <div className="text-white/50 text-xs italic">
+                  Borrow value: {dollars({ value: borrowing?.valueUsd ?? 0 })}
+                </div>
               </div>
             </div>
             <hr className="h-px my-8 bg-[#4D4348] border-0" />
