@@ -2,9 +2,10 @@
 
 import { AvailableIcon, MarketSizeIcon, TotalLentIcon } from "@/components/icons"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
+import Spinner from "@/components/ux/spin"
 import Stat from "@/components/ux/stat"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
@@ -43,7 +44,7 @@ export default function Lend() {
             <Stat
               value={dollars({ value: stats.marketSize, decimals: 0 })}
               title={"Market Size"}
-              Icon={<MarketSizeIcon className="w-10 h-10 fill-white"/>}
+              Icon={<MarketSizeIcon className="w-10 h-10 fill-white" />}
             />
             <Stat
               value={dollars({ value: stats.totalLiquidityLent, decimals: 0 })}
@@ -57,7 +58,7 @@ export default function Lend() {
       {/* Render token table (top level)  */}
       <ShowWhenTrue when={Array.isArray(offers) && offers.length > 0}>
         <table
-          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
+          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table animate-enter-div"
           suppressHydrationWarning
         >
           <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
@@ -72,7 +73,7 @@ export default function Lend() {
               <th className="p-3 px-4 text-center">Avg Interest</th>
             </tr>
           </thead>
-          <tbody className="flex-1 sm:flex-none">
+          <tbody className="flex-1 sm:flex-none animate-enter-div">
             {offers?.map((offer: any) => {
               if (!offer.token) {
                 return null
@@ -102,6 +103,9 @@ export default function Lend() {
           </tbody>
         </table>
       </ShowWhenTrue>
+      <ShowWhenFalse when={Array.isArray(offers) && offers.length > 0}>
+       <Spinner/>
+      </ShowWhenFalse>
     </>
   )
 }

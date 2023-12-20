@@ -122,7 +122,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         router.push(`/borrow-offer/${event.id}`)
       }}
       key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
-      className="hover:bg-[#383838] cursor-pointer"
+      className="hover:bg-[#383838] cursor-pointer animate-enter-token"
     >
       <td className="p-4 text-left">
         {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}

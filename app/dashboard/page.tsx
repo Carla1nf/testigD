@@ -22,8 +22,8 @@ export default function Dashboard() {
         <TokenImage width={36} height={36} symbol={"FTM"} chainSlug={"fantom"} />
         Fantom Network
       </div>
-      <div className="flex flex-col-2 gap-16">
-        <div className="w-3/4 flex flex-col gap-8">
+      <div className="flex flex-col-2 gap-16 animate-enter-div">
+        <div className="w-3/4 flex flex-col gap-8 ">
           <DashboardResume lending={userOffersLending} collateral={userOffersCollateral} />
           <DashboardUserTable />
         </div>

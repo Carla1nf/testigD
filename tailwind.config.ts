@@ -75,6 +75,15 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
+        "entrance-div": {
+          from: {"scale": "0.8", "opacity": "0"},
+          to: {"scale": "1", "opacity": "1"}
+        },
+        // translate x - 100 to 0
+        "entrance-token": {
+          from: {"transform": "translateX(-60%)", "opacity": "0"},
+          to: {"transform": "translateX(0)", "opacity": "1"}
+        },
         "accordion-down": {
           from: { height: 0 },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -88,9 +97,9 @@ module.exports = {
           to: { transform: "rotate(180deg)" },
         },
       },
-      animation: {
-        "enter-page": "",
-        "enter-token": "",
+      animation: { 
+        "enter-token": "entrance-token 0.5s",
+        "enter-div": "entrance-div 0.3s ease-out",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "spin-slow": "spin 2.2s linear infinite",

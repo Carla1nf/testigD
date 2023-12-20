@@ -62,7 +62,7 @@ const DashboardActiveOffersTable = ({
           className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
           suppressHydrationWarning
         >
-          <thead className="text-white" suppressHydrationWarning>
+          <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
             <tr
               className={cn(
                 "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-xs"
@@ -116,14 +116,14 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
   const collateralToken1 = findTokenByAddress("fantom", lender.wantedCollateralTokens[1])
 
   return (
-    <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0" key={item.id}>
+    <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={item.id}>
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
         {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
         {collateralToken1 ? <DisplayToken token={collateralToken1} size={24} /> : null}
       </td>
       {/* Lending */}
-      <td className="p-3 align-top text-center">
+      <td className="p-3 w-10 align-top text-center">
         {lenderToken ? <DisplayToken token={lenderToken} size={24} /> : null}
       </td>
       <td className="p-3 align-top text-center">{percent({ value: Number(lender.interest) })}</td>
