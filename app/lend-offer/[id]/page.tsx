@@ -128,9 +128,16 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
-  // check if we have the allowance to spend the borrow token
-  const { data: currentLendingTokenAllowance } = useContractRead({
-    address: (borrowing?.address ?? "") as Address,
+  // check if we have the allowance to spend the collateral token
+  const { data: currentCollateral0TokenAllowance } = useContractRead({
+    address: (collateral0?.address ?? "") as Address,
+    functionName: "allowance",
+    abi: erc20Abi,
+    args: [address, DEBITA_ADDRESS],
+  })
+
+  const { data: currentCollateral1TokenAllowance } = useContractRead({
+    address: (collateral1?.address ?? "") as Address,
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, DEBITA_ADDRESS],
@@ -296,20 +303,48 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
     if (!isOwnerConnected) {
       lendMachineSend({ type: "not.owner" })
-      if (currentLendingTokenAllowance === undefined) {
-        return
+
+      // dual collateral mode
+      if (collateral0 && collateral1) {
+        // do they have the required allowance to pay for the offer?
+        if (currentCollateral0TokenAllowance === undefined) {
+          return
+        }
+        if (currentCollateral1TokenAllowance === undefined) {
+          return
+        }
+        if (
+          Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0) &&
+          Number(currentCollateral1TokenAllowance) >= Number(collateral1?.amountRaw ?? 0)
+        ) {
+          lendMachineSend({ type: "user.has.allowance" })
+          return
+        }
+
+        if (!lendMachineState.matches("isNotOwner.notEnoughAllowance")) {
+          lendMachineSend({ type: "user.not.has.allowance" })
+          return
+        }
       }
 
-      // do they have the required allowance to pay for the offer?
-      if (Number(currentLendingTokenAllowance) >= Number(borrowing?.amount ?? 0)) {
-        lendMachineSend({ type: "user.has.allowance" })
-      } else if (!lendMachineState.matches("isNotOwner.notEnoughAllowance")) {
-        lendMachineSend({ type: "user.not.has.allowance" })
+      // single collateral mode
+      if (collateral0 && !collateral1) {
+        // do they have the required allowance to pay for the offer?
+        if (currentCollateral0TokenAllowance === undefined) {
+          return
+        }
+        if (Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0)) {
+          lendMachineSend({ type: "user.has.allowance" })
+          return
+        }
+        if (!lendMachineState.matches("isNotOwner.notEnoughAllowance")) {
+          lendMachineSend({ type: "user.not.has.allowance" })
+        }
       }
     }
-  }, [isOwnerConnected, currentLendingTokenAllowance])
+  }, [isOwnerConnected, currentCollateral0TokenAllowance])
 
-  // console.log("state", borrowMachineState.value)
+  // console.log("state", lendMachineState.value)
 
   // BREADCRUMBS
   // CONFIG
@@ -546,7 +581,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
             <div className="mt-8 flex justify-center">
               <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
                 <>
-                  {/* Show the Increase Allowance button when the user doesnt not have enough allowance */}
+                  {/* Show the Increase Allowance button when the user doesn't not have enough allowance */}
                   <ShowWhenTrue when={lendMachineState.matches("isNotOwner.notEnoughAllowance")}>
                     <Button
                       variant={"action"}
