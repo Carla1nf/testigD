@@ -13,7 +13,8 @@ import { findInternalTokenByAddress } from "@/lib/tokens"
 import { PercentIcon } from "lucide-react"
 import Link from "next/link"
 import { useMemo } from "react"
-import { TableRow } from "./page"
+import TableRow from "./table-row"
+import { useBorrowMarket } from "@/hooks/useBorrowMarket"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
   const currentChain = useCurrentChain()

@@ -15,7 +15,7 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOfferLenderData } from "@/hooks/useOfferLenderData"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
-import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
+import { dollars, ltv, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
 import { fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
@@ -122,9 +122,9 @@ export default function LendOffer({ params }: { params: { id: string } }) {
   const collateral0Token = collateral0 ? collateral0?.token : undefined
   const collateral1Token = collateral1 ? collateral0?.token : undefined
 
-  const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, borrowingToken?.address)
-  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address)
-  const collateral1Prices = useHistoricalTokenPrices(currentChain.slug, collateral1Token?.address)
+  const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, borrowingToken?.address as Address)
+  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address as Address)
+  const collateral1Prices = useHistoricalTokenPrices(currentChain.slug, collateral1Token?.address as Address)
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
@@ -426,14 +426,14 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         <div className="flex flex-col gap-8">
           <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
             <div className="grid grid-cols-3 gap-8">
-              <Stat value={ltv(data?.ltv)} title={"LTV"} Icon={null} />
+              <Stat value={ltv(Number(data?.ltv))} title={"LTV"} Icon={null} />
               <Stat
-                value={dollars({ value: borrowing?.valueUsd })}
+                value={dollars({ value: Number(borrowing?.valueUsd) })}
                 title={"Borrowing"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
               <Stat
-                value={dollars({ value: data?.totalCollateralValue })}
+                value={dollars({ value: Number(data?.totalCollateralValue) })}
                 title={"Collateral"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
@@ -503,7 +503,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are borrowing {borrowingToken?.symbol} from
                 <PersonIcon className="w-6 h-6" />
-                {shortAddress(data?.owner)}
+                {shortAddress(data?.owner as Address)}
               </div>
             </div>
           </ShowWhenTrue>
@@ -556,7 +556,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Whitelist</div>
-                <div className="text-base">{data?.whitelist?.length > 0 ? "Yes" : "No"}</div>
+                <div className="text-base">{yesNo(data?.whitelist?.length)}</div>
               </div>
             </div>
 

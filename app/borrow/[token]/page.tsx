@@ -7,17 +7,15 @@ import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
 import { useBorrowMarket } from "@/hooks/useBorrowMarket"
-import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
-import { useOfferLenderData } from "@/hooks/useOfferLenderData"
 import { useSpecificBorrowMarketStats } from "@/hooks/useSpecificBorrowMarketStats"
-import { dollars, ltv, percent } from "@/lib/display"
+import { dollars, percent } from "@/lib/display"
 import { filterOffersByToken } from "@/lib/filters"
-import { Token, findInternalTokenByAddress } from "@/lib/tokens"
+import { findInternalTokenByAddress } from "@/lib/tokens"
 import { PercentIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useMemo } from "react"
+import TableRow from "./table-row"
 
 export default function SpecificLend({ params }: { params: { token: string } }) {
   const currentChain = useCurrentChain()
@@ -102,48 +100,5 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
         </table>
       </ShowWhenTrue>
     </>
-  )
-}
-
-const TableRow = ({ event, token }: { event: any; token?: Token }) => {
-  const router = useRouter()
-  const { address } = useControlledAddress()
-  const { data: data } = useOfferLenderData(address, event.id)
-
-  const collateral0 = data?.collaterals[0]
-  const collateral1 = data?.collaterals[1]
-  const collateralToken0 = collateral0?.token
-  const collateralToken1 = collateral1?.token
-  // const lenderToken = collateralData?.lender?.token
-
-  // console.log("data", data)
-
-  return (
-    <tr
-      onClick={() => {
-        router.push(`/lend-offer/${event.id}`)
-      }}
-      key={`${data?.borrowing?.token?.symbol}_${event.id}`}
-      className="hover:bg-[#383838] cursor-pointer"
-    >
-      <td className="p-3 text-left">
-        {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}
-      </td>
-      <td className="p-3 text-left">
-        <div className="flex flex-col gap-2">
-          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : null}
-          {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
-        </div>
-      </td>
-      <td className="p-3 text-center">{ltv(Number(data?.ltv))}</td>
-      <td className="p-3 text-center">{data?.numberOfLoanDays} Days</td>
-      <td className="p-3 text-center">{Number(data?.paymentCount ?? 0)}</td>
-      <td className="p-3 text-center">
-        {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
-      </td>
-      <td className="p-3 text-center">
-        {percent({ value: data?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
-      </td>
-    </tr>
   )
 }

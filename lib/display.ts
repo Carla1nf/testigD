@@ -69,12 +69,12 @@ export function loanStatus(deadlineNext: number) {
 
   if (daysInSeconds <= 0) {
     return {
-      displayText: "DEFAULT",
+      displayText: "Defaulted",
       className: "text-red-500",
     }
   }
   return {
-    displayText: "LIVE",
+    displayText: "Live",
     className: "text-green-500",
   }
 }
@@ -119,3 +119,5 @@ export const thresholdLow = (value: number, threshold: number, alternative: stri
   if (value < threshold) return alternative
   return value.toFixed(decimals)
 }
+
+export const yesNo = (value: any) => (Boolean(value) ? "Yes" : "No")
