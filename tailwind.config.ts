@@ -20,6 +20,7 @@ module.exports = {
         backgroundImage: "radial-gradient(var(--tw-gradient-stops))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        debitaPink: "#BF4967",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

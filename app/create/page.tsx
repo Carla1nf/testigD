@@ -109,7 +109,7 @@ export default function Create() {
   )
 
   return (
-    <div>
+    <div className="animate-enter-div">
       <h1 className="">Create</h1>
       <p className="mb-16">
         Let&apos;s keep this simple for now, we will just create a form and hook it up to the xstate machine

@@ -419,11 +419,11 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
             </ChartWrapper>
           </div>
         </div>
-        <div className="space-y-8 max-w-xl w-full">
+        <div className="space-y-8 max-w-xl w-full justify-self xl:ml-14">
           {/* Owners can cancel the offer */}
           <ShowWhenTrue when={borrowMachineState.matches("isOwner")}>
-            <div className="grid grid-cols-2 justify-between gap-8">
-              <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+            <div className="grid grid-cols-2 justify-between gap-8 mt-1">
+              <div className="bg-[#21232B] border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are the Owner
                 <PersonIcon className="w-6 h-6" />
                 {/* {shortAddress(collateralData?.owner)} */}
@@ -473,8 +473,8 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
           {/* Non owners can see who the owner is */}
           <ShowWhenTrue when={borrowMachineState.matches("isNotOwner")}>
-            <div className="flex justify-between gap-8">
-              <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+            <div className="flex justify-between gap-8 mt-1">
+              <div className="bg-[#21232B] border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are lending to
                 <PersonIcon className="w-6 h-6" />
                 {shortAddress(collateralData?.owner)}

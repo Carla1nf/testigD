@@ -122,14 +122,19 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         router.push(`/borrow-offer/${event.id}`)
       }}
       key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
-      className="hover:bg-[#383838] cursor-pointer animate-enter-token"
+      className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b border-[#383838]/50"
     >
       <td className="p-4 text-left">
         {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}
       </td>
       <td className="p-4 text-left">
         <div className="flex flex-col gap-2">
-          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : null}
+          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : 
+  <div className="animate-pulse flex space-x-4">
+    <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>
+   
+  </div>
+}
           {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
         </div>
       </td>
