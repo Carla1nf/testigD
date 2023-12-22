@@ -5,17 +5,14 @@ export const machine = createMachine(
     id: "loan",
     initial: "isViewer",
     states: {
-      isViewer: {
-        on: {
-          "is.debt.owner": {
-            target: "isDebtOwner",
-          },
-          "is.collateral.owner": {
-            target: "isCollateralOwner",
-          },
+      isViewer: {},
+      debtOwner: {
+        initial: "hasPayments",
+        states: {
+          hasPayments: {},
         },
       },
-      isDebtOwner: {
+      collateralOwner: {
         states: {
           claim: {
             initial: "notAvailable",
@@ -115,11 +112,16 @@ export const machine = createMachine(
         },
         type: "parallel",
       },
-      isCollateralOwner: {
-        initial: "hasPayments",
-        states: {
-          hasPayments: {},
-        },
+    },
+    on: {
+      "is.debt.owner": {
+        target: ".debtOwner",
+      },
+      "is.viewer": {
+        target: ".isViewer",
+      },
+      "is.collateral.owner": {
+        target: ".collateralOwner",
       },
     },
     types: {
@@ -131,6 +133,7 @@ export const machine = createMachine(
         | { type: "loan.has.defaulted" }
         | { type: "owner.already.claimed.collateral" }
         | { type: "is.debt.owner" }
+        | { type: "is.viewer" }
         | { type: "is.collateral.owner" },
     },
   },

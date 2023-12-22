@@ -5,10 +5,13 @@ import DisplayNetwork from "@/components/ux/display-network"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useConfig } from "wagmi"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { machine } from "./loan-machine"
 import { useLoanData } from "@/hooks/useLoanData"
+import { ZERO_ADDRESS } from "@/services/constants"
+import { createActor } from "xstate"
+import { useMachine } from "@xstate/react"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -25,7 +28,10 @@ export default function Loan({ params }: { params: { id: string } }) {
   const { address } = useControlledAddress()
   const { data: loan } = useLoanData(id)
 
+  const [loanState, loanSend] = useMachine(machine, {})
+
   console.log("loan", loan)
+  console.log("loanState.value", loanState.value)
 
   // step one, render all the content (visible by both parties or other users via url params)
 
@@ -35,7 +41,16 @@ export default function Loan({ params }: { params: { id: string } }) {
     return [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
   }, [currentChain])
 
-  // handle error when no data found..
+  useEffect(() => {
+    // users can change wallets so let's stay on top of that
+    if (loan?.collateralOwner === address) {
+      loanSend({ type: "is.collateral.owner" })
+    } else if (loan?.lenderOwner === address) {
+      loanSend({ type: "is.debt.owner" })
+    } else {
+      loanSend({ type: "is.viewer" })
+    }
+  }, [address, loan])
 
   // RENDERING
   return (
