@@ -2,10 +2,20 @@
 
 import TotalLiquidityLent from "@/components/total-liquidity-lent"
 import { Button } from "@/components/ui/button"
+import DisplayToken from "@/components/ux/display-token"
+import useCurrentChain from "@/hooks/useCurrentChain"
+import { useLendingMarket } from "@/hooks/useLendingMarket"
+import { dollars, percent } from "@/lib/display"
+
 
 // import styles from "./styles.module.css";
 
-export default async function Home() {
+export default function Home() {
+
+
+  const { offers } = useLendingMarket()
+
+  
   return (
     <div>
     <div className="bg-gradient-radial font-sans w-screen bg-[radial-gradient(50.40%_43.55%_at_50.56%_40.29%,rgba(84,64,114,0.3)_10%,rgba(33,33,33,1)_100%)] h-[70vh]">
@@ -47,17 +57,74 @@ export default async function Home() {
     </div>
 
    </div>
-  <div className=" flex justify-center gap-5   ">
+   <div className=" flex justify-center gap-5">
   <div className=" w-[600px] bg-gradient-to-t from-background to-gray-500/10 h-96 rounded-xl" >
-   <div className="p-8 font-bold text-2xl"> Time-liquidiation </div>
-   <div className="p-8 text-gray-300 -mt-10">Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit, nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class orci augue convallis.</div>
+   <div className="p-8 font-bold text-2xl"> Time-based liquidiation </div>
+   <div className="p-8 text-gray-400 -mt-10">Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit, nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class orci augue convallis.</div>
+   <div className="flex justify-center gap-5" >
+    <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+    <div className=" h-40 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+    <div className=" h-28 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+
+   </div>
    </div>
 
    <div className=" w-[600px] bg-gradient-to-t from-background to-gray-500/10 h-96 rounded-xl" >
-   <div className="p-8 font-bold text-2xl"> Time-liquidiation </div>
-   <div className="p-8 text-gray-300 -mt-10">Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit, nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class orci augue convallis. </div>
+   <div className="p-8 font-bold text-2xl"> Use any Token as Collateral </div>
+   <div className="p-8 text-gray-400 -mt-10">Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit, nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class orci augue convallis.</div>
+   <div className="flex justify-center gap-5" >
+    <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+    <div className=" h-40 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+    <div className=" h-28 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+
    </div>
+   </div>
+
+
+
+
   </div>
+
+
+
+  <div className="grid grid-rows-2 ml-14 mt-28">
+    <div className=" p-5 font-bold text-2xl flex items-center gap-10 ">
+    <div>Most traded tokens </div>
+    <div className=" bg-black/20 rounded-xl"> <TotalLiquidityLent/> </div>
+
+    </div>
+    <div className="flex flex-col">
+      <div className="flex font-bold border-b-2 border-gray-400/5 -mt-5 text-gray-500 text-sm text-center">
+       <div className="p-3 w-48 ">TOKEN</div>
+       <div className="p-3 w-72">LIQUIDITY</div>
+       <div className="p-3 w-72">OFFERS</div>
+       <div className="p-3 w-72">INTEREST</div>
+
+
+      </div>
+    {offers?.map((offer: any, index: number) => {
+              return(
+                <div className="hover:bg-[#383838] rounded-2xl flex"> 
+                <div className="p-5"> {index + 1}.  </div> 
+                <td className="p-4 text-left px-4 items-center w-36">
+                    {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
+                  </td>
+
+                  <td className="p-4 w-72 text-center font-semibold">{dollars({ value: offer.liquidityOffer })}</td>
+                  <td className="p-4 w-72 text-center px-4 items-center font-semibold">{offer.events.length}</td>
+                  <td className="p-4 w-72 text-center px-4 items-center font-semibold">
+                    {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+                  </td>
+
+                  <Button className="bg-black/30 text-white self-center text-xs"  variant="secondary">Borrow</Button>
+                 <Button className="bg-black/30 text-white self-center ml-5 text-xs" variant="secondary">Lend</Button>
+                  </div>
+              )
+              })}
+    </div>
+
+  </div>
+  
 
 
     </div>
