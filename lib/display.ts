@@ -70,7 +70,7 @@ export function loanStatus(deadlineNext: number) {
   if (daysInSeconds <= 0) {
     return {
       displayText: "Defaulted",
-      className: "text-red-500",
+      className: "text-amber-500",
     }
   }
   return {

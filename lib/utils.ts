@@ -23,6 +23,9 @@ export const dynamicClampIncrement = (value1: number, value2: number): number =>
   const maxIncrement = 50
   const range = Math.abs(value1 - value2)
 
+  if (range <= 0.05) return 0.075
+  if (range <= 0.1) return 0.125
+  if (range <= 0.25) return 0.3
   if (range <= 0.5) return 0.5
   if (range <= 1) return 1 // Smallest range, use an increment of 1
   if (range <= 10) return 5 // Small range, use an increment of 5

@@ -111,6 +111,25 @@ export const useLoanData = (id: number) => {
       const numberOfLoanDays = Number(parsedData.timelap) / 86400
       // const apr = ((Number(parsedData.interest) / Number(numberOfLoanDays)) * 365) / 1000 // percentages are 0.134 for 13.4%
 
+      // Each payment
+      const eachPayment = fromDecimals(parsedData.paymentAmount, lenderToken?.decimals ?? 18)
+
+      // Debt left
+      const debtLeftRaw = parsedData.paymentAmount * (parsedData.paymentCount - parsedData.paymentsPaid)
+      const debtLeft = fromDecimals(debtLeftRaw, lenderToken?.decimals ?? 18)
+
+      // <SingleExtra type={"Large"}>
+      //   <div style={{ marginLeft: "10px" }}>Debt Left</div>
+      //   <Datas data={"Time"}>
+      //     {(
+      //       (Number(params.data.paymentAmount._hex) *
+      //         (Number(params.data.paymentCount._hex) - Number(params.data.paymentsPaid._hex))) /
+      //       10 ** 18
+      //     ).toFixed(2)}
+      //     <div style={{ opacity: "0.6" }}>{nameLending}</div>
+      //   </Datas>
+      // </SingleExtra>
+
       return {
         // apr,
         // interest: Number(parsedData.interest) / 1000,
@@ -119,8 +138,11 @@ export const useLoanData = (id: number) => {
         collaterals,
         claimableDebt,
         cooldown: parsedData.cooldown,
+        debtLeft,
+        debtLeftRaw,
         deadline: parsedData.deadline,
         deadlineNext: parsedData.deadlineNext,
+        eachPayment,
         executed: parsedData.executed,
         id,
         lender,
@@ -128,7 +150,7 @@ export const useLoanData = (id: number) => {
         lending,
         ltv,
         numberOfLoanDays,
-        paymentAmount: parsedData.paymentAmount,
+        paymentAmountRaw: parsedData.paymentAmount,
         paymentCount: parsedData.paymentCount,
         paymentsPaid: parsedData.paymentsPaid,
         ratio,

@@ -12,9 +12,9 @@ import { useLoanData } from "@/hooks/useLoanData"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { createActor, fromPromise } from "xstate"
 import { useMachine } from "@xstate/react"
-import { dollars, shortAddress } from "@/lib/display"
+import { dollars, loanStatus, shortAddress, thresholdLow } from "@/lib/display"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
-import { fixedDecimals } from "@/lib/utils"
+import { cn, fixedDecimals } from "@/lib/utils"
 import DaysHours from "@/components/ux/deadline-datetime"
 import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
@@ -26,6 +26,8 @@ import TokenImage from "@/components/ux/token-image"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { SpinnerIcon } from "@/components/icons"
+import pluralize from "pluralize"
+import DisplayToken from "@/components/ux/display-token"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -53,10 +55,14 @@ export default function Loan({ params }: { params: { id: string } }) {
   console.log("loanState.value", loanState.value)
   console.log("loan", loan)
 
+  const lending = loan?.lending
+  const lendingToken = lending ? lending?.token : undefined
   const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.lending?.address)
   const collateral0 = loan?.collaterals[0] ?? undefined
-  const collateral1 = loan?.collaterals[1] ?? undefined
+  const collateral0Token = collateral0 ? collateral0?.token : undefined
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0?.address)
+  const collateral1 = loan?.collaterals[1] ?? undefined
+  const collateral1Token = collateral1 ? collateral0?.token : undefined
   const collateral1Prices = useHistoricalTokenPrices(currentChain.slug, collateral1?.address)
 
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
@@ -96,6 +102,7 @@ export default function Loan({ params }: { params: { id: string } }) {
   const displayDebtValue = dollars({ value: loan?.lending?.amount })
   const displayLtv = loan?.ltv.toFixed(2)
   const displayDeadlineValue = Number(loan?.deadline) ?? 0
+  const displayLoanStatus = loanStatus(Number(loan?.deadlineNext))
 
   // CHARTING
   // DATA STRUCTURE
@@ -241,7 +248,108 @@ export default function Loan({ params }: { params: { id: string } }) {
           </ShowWhenTrue>
         </div>
         <div className="space-y-8 max-w-xl w-full">
-          <div></div>
+          {/* Form Panel */}
+          <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
+            <div className="text-xl mb-4 font-bold">Loan</div>
+            {/* Status row */}
+            <div className="grid grid-cols-2 justify-between gap-8 mb-8">
+              <div className="flex flex-col">
+                <div className="">Status</div>
+                <div className={cn(displayLoanStatus.className, "font-bold text-lg")}>
+                  {displayLoanStatus.displayText}
+                </div>
+              </div>
+
+              <div>
+                <div>Next Payment</div>
+                <DaysHours deadline={loan?.deadline} className={cn(displayLoanStatus.className, "font-bold text-lg")} />
+              </div>
+            </div>
+            {/* Tokens row */}
+            <div className="grid grid-cols-2 justify-between gap-8">
+              <div className="flex flex-col gap-3">
+                <div>
+                  Collateral
+                  <span className="text-white/50 text-xs italic ml-2">
+                    {dollars({ value: loan?.totalCollateralValue ?? 0 })}
+                  </span>
+                </div>
+                <div className="-ml-[2px]">
+                  {collateral0 && collateral0Token ? (
+                    <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
+                  ) : null}
+                  {collateral1 && collateral1Token ? (
+                    <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div>
+                  Debt
+                  <span className="text-white/50 text-xs italic ml-2">
+                    {dollars({ value: loan?.lending?.valueUsd ?? 0 })}
+                  </span>
+                </div>
+
+                {lending && lendingToken ? (
+                  <div className="-ml-[2px]">
+                    <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <hr className="h-px my-8 bg-[#4D4348] border-0" />
+
+            {/* Payment details row */}
+            <div className="grid grid-cols-3 justify-between gap-6 text-sm">
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Payments Every</div>
+                <div className="text-base">
+                  {Number(loan?.numberOfLoanDays ?? 0)} {pluralize("day", Number(loan?.numberOfLoanDays ?? 0))}
+                </div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Payments Paid</div>
+                <div className="text-base">{Number(loan?.paymentsPaid)}</div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2 px-4">
+                <div className="text-[#DCB5BC]">Total Payments</div>
+                <div className="text-base">{Number(loan?.paymentCount ?? 0)}</div>
+              </div>
+            </div>
+
+            {/* Loan details row */}
+            <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
+              <div className="border border-[#41353B] rounded-sm p-2 px-4">
+                <div className="text-[#DCB5BC]">Each Payment</div>
+                <div className="text-base">
+                  <DisplayToken
+                    size={20}
+                    token={lendingToken}
+                    amount={loan?.eachPayment}
+                    className=""
+                    displayOrder="AmountNameIcon"
+                  />
+                </div>
+              </div>
+              <div className="border border-[#41353B] rounded-sm p-2">
+                <div className="text-[#DCB5BC]">Debt Left</div>
+                <div className="text-base">
+                  <DisplayToken
+                    size={20}
+                    token={lendingToken}
+                    amount={loan?.debtLeft}
+                    className=""
+                    displayOrder="AmountNameIcon"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="mt-8 flex justify-center">Buttons</div>
+          </div>
         </div>
       </div>
     </>
