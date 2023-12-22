@@ -115,10 +115,11 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
 
   // @ts-ignore todo: ignored to help build, come back and check this is still true
   const lenderToken = findTokenByAddress("fantom", lender.lenderToken)
-  // @ts-ignore
-  const collateralToken0 = findTokenByAddress("fantom", lender.wantedCollateralTokens[0])
-  // @ts-ignore
-  const collateralToken1 = findTokenByAddress("fantom", lender.wantedCollateralTokens[1])
+
+  const collateral0 = lender?.collaterals[0] ?? undefined
+  const collateralToken0 = collateral0 ? findTokenByAddress("fantom", collateral0.address) : undefined
+  const collateral1 = lender?.collaterals[1] ?? undefined
+  const collateralToken1 = collateral1 ? findTokenByAddress("fantom", collateral1.address) : undefined
 
   return (
     <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0" key={item.id}>
