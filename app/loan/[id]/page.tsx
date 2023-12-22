@@ -12,6 +12,7 @@ import { useLoanData } from "@/hooks/useLoanData"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { createActor } from "xstate"
 import { useMachine } from "@xstate/react"
+import { shortAddress } from "@/lib/display"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -30,8 +31,8 @@ export default function Loan({ params }: { params: { id: string } }) {
 
   const [loanState, loanSend] = useMachine(machine, {})
 
-  console.log("loan", loan)
   console.log("loanState.value", loanState.value)
+  console.log("loan", loan)
 
   // step one, render all the content (visible by both parties or other users via url params)
 
@@ -43,10 +44,12 @@ export default function Loan({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     // users can change wallets so let's stay on top of that
-    if (loan?.collateralOwner === address) {
-      loanSend({ type: "is.collateral.owner" })
-    } else if (loan?.lenderOwner === address) {
-      loanSend({ type: "is.debt.owner" })
+    if (loan?.lender === address) {
+      loanSend({ type: "is.lender" })
+      // now fill in the other details
+    } else if (loan?.borrower === address) {
+      loanSend({ type: "is.borrower" })
+      // now fill in the other details
     } else {
       loanSend({ type: "is.viewer" })
     }
@@ -65,7 +68,13 @@ export default function Loan({ params }: { params: { id: string } }) {
 
       {/* Page content */}
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
-        <div className="flex flex-col gap-8"></div>
+        <div className="flex flex-col gap-8">
+          {/* Display Debt/Collateral owners */}
+          <div className="flex space-between gap-8">
+            <div>Lender {shortAddress(loan?.lender)}</div>
+            <div>Borrower {shortAddress(loan?.borrower)}</div>
+          </div>
+        </div>
         <div className="space-y-8 max-w-xl w-full">
           <div></div>
         </div>

@@ -45,20 +45,20 @@ export const useLoanData = (id: number) => {
 
       const parsedData = LoanDataReceivedSchema.parse(loanData)
 
-      const collateralOwnerID = parsedData?.collateralOwnerID ?? undefined
-      const collateralOwner = await readContract({
+      const borrowerId = parsedData?.collateralOwnerID ?? undefined
+      const borrower = await readContract({
         address: OWNERSHIP_ADDRESS,
         abi: ownershipsAbi,
         functionName: "ownerOf",
-        args: [collateralOwnerID],
+        args: [borrowerId],
       })
 
-      const lenderOwnerId = parsedData?.LenderOwnerId ?? undefined
-      const lenderOwner = await readContract({
+      const lenderId = parsedData?.LenderOwnerId ?? undefined
+      const lender = await readContract({
         address: OWNERSHIP_ADDRESS,
         abi: ownershipsAbi,
         functionName: "ownerOf",
-        args: [lenderOwnerId],
+        args: [lenderId],
       })
 
       // gets the tokens from the loan
@@ -106,16 +106,16 @@ export const useLoanData = (id: number) => {
       return {
         // apr,
         // interest: Number(parsedData.interest) / 1000,
-        collateralOwner,
-        collateralOwnerID,
+        borrower,
+        borrowerId,
         collaterals,
         cooldown: parsedData.cooldown,
         deadline: parsedData.deadline,
         deadlineNext: parsedData.deadlineNext,
         executed: parsedData.executed,
         id,
-        lenderOwner,
-        lenderOwnerId,
+        lender,
+        lenderId,
         lending,
         ltv,
         numberOfLoanDays,

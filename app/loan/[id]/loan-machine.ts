@@ -6,13 +6,13 @@ export const machine = createMachine(
     initial: "isViewer",
     states: {
       isViewer: {},
-      debtOwner: {
+      borrower: {
         initial: "hasPayments",
         states: {
           hasPayments: {},
         },
       },
-      collateralOwner: {
+      lender: {
         states: {
           claim: {
             initial: "notAvailable",
@@ -26,7 +26,7 @@ export const machine = createMachine(
               },
               available: {
                 on: {
-                  "owner.claim.lent.tokens": {
+                  "lender.claim.lent.tokens": {
                     target: "claimingLentTokens",
                   },
                 },
@@ -52,7 +52,7 @@ export const machine = createMachine(
               },
               errorClaimingLentTokens: {
                 on: {
-                  "owner.retry": {
+                  "lender.retry": {
                     target: "claimingLentTokens",
                   },
                 },
@@ -67,14 +67,14 @@ export const machine = createMachine(
                   "loan.has.defaulted": {
                     target: "defaulted",
                   },
-                  "owner.already.claimed.collateral": {
+                  "lender.already.claimed.collateral": {
                     target: "completed",
                   },
                 },
               },
               defaulted: {
                 on: {
-                  "owner.claim.collateral": {
+                  "lender.claim.collateral": {
                     target: "claimingCollateral",
                   },
                 },
@@ -84,7 +84,7 @@ export const machine = createMachine(
               },
               claimingCollateral: {
                 description:
-                  "The user defaulted so the owner doesn't get the lent tokens back.\nin this case, the owner can claim the collateral tokens, this is true if one or more payments has defaulted",
+                  "The borrower defaulted so the lender doesn't get the lent tokens back. in this case, the lender can claim the collateral tokens, this is true if one or more payments has defaulted",
                 invoke: {
                   src: "claimCollateral",
                   id: "claimColateral",
@@ -102,7 +102,7 @@ export const machine = createMachine(
               },
               errorClaimingCollateral: {
                 on: {
-                  "owner.retry": {
+                  "lender.retry": {
                     target: "claimingCollateral",
                   },
                 },
@@ -114,27 +114,27 @@ export const machine = createMachine(
       },
     },
     on: {
-      "is.debt.owner": {
-        target: ".debtOwner",
+      "is.borrower": {
+        target: ".borrower",
       },
       "is.viewer": {
         target: ".isViewer",
       },
-      "is.collateral.owner": {
-        target: ".collateralOwner",
+      "is.lender": {
+        target: ".lender",
       },
     },
     types: {
       events: {} as
-        | { type: "owner.retry" }
-        | { type: "owner.claim.collateral" }
-        | { type: "owner.claim.lent.tokens" }
         | { type: "loan.has.tokens.to.claim" }
         | { type: "loan.has.defaulted" }
-        | { type: "owner.already.claimed.collateral" }
-        | { type: "is.debt.owner" }
         | { type: "is.viewer" }
-        | { type: "is.collateral.owner" },
+        | { type: "is.borrower" }
+        | { type: "is.lender" }
+        | { type: "lender.claim.lent.tokens" }
+        | { type: "lender.retry" }
+        | { type: "lender.already.claimed.collateral" }
+        | { type: "lender.claim.collateral" },
     },
   },
   {
