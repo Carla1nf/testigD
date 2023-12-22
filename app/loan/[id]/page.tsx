@@ -12,7 +12,10 @@ import { useLoanData } from "@/hooks/useLoanData"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { createActor } from "xstate"
 import { useMachine } from "@xstate/react"
-import { shortAddress } from "@/lib/display"
+import { dollars, shortAddress } from "@/lib/display"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { fixedDecimals } from "@/lib/utils"
+import DaysHours from "@/components/ux/deadline-datetime"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -55,6 +58,13 @@ export default function Loan({ params }: { params: { id: string } }) {
     }
   }, [address, loan])
 
+  const displayCollateralValue = dollars({ value: loan?.totalCollateralValue })
+  const displayDebtValue = dollars({ value: loan?.lending?.amount })
+  const displayLtv = loan?.ltv.toFixed(2)
+  const displayDeadlineValue = Number(loan?.deadline) ?? 0
+
+  console.log("displayDeadlineValue", displayDeadlineValue)
+
   // RENDERING
   return (
     <>
@@ -70,9 +80,25 @@ export default function Loan({ params }: { params: { id: string } }) {
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
         <div className="flex flex-col gap-8">
           {/* Display Debt/Collateral owners */}
-          <div className="flex space-between gap-8">
+          <div className="flex space-between gap-8 mb-8">
             <div>Lender {shortAddress(loan?.lender)}</div>
             <div>Borrower {shortAddress(loan?.borrower)}</div>
+          </div>
+
+          {/* Loan Stats */}
+          <div className="flex justify-between gap-8 w-full">
+            <ShowWhenTrue when={loanState.matches("lender") || loanState.matches("viewer")}>
+              <LtvStat title="LTV" value={displayLtv} />
+              <DebtStat title="Debt" value={displayDebtValue} />
+              <CollateralStat title="Collateral" value={displayCollateralValue} />
+              <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} />
+            </ShowWhenTrue>
+            <ShowWhenTrue when={loanState.matches("borrower")}>
+              <LtvStat title="LTV" value={displayLtv} />
+              <DebtStat title="My Debt" value={displayDebtValue} />
+              <CollateralStat title="Collateral" value={displayCollateralValue} />
+              <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} />
+            </ShowWhenTrue>
           </div>
         </div>
         <div className="space-y-8 max-w-xl w-full">
@@ -80,5 +106,43 @@ export default function Loan({ params }: { params: { id: string } }) {
         </div>
       </div>
     </>
+  )
+}
+
+const LtvStat = ({ title, value }: { title: string; value: string }) => {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-sm text-[#757575]">{title}</div>
+      <div className="text-2xl font-bold">{value}</div>
+    </div>
+  )
+}
+
+const DebtStat = ({ title, value }: { title: string; value: string }) => {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-sm text-[#757575]">{title}</div>
+      <div className="text-2xl font-bold">{value}</div>
+    </div>
+  )
+}
+
+const CollateralStat = ({ title, value }: { title: string; value: string }) => {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-sm text-[#757575]">{title}</div>
+      <div className="text-2xl font-bold">{value}</div>
+    </div>
+  )
+}
+
+const DeadlineStat = ({ title, deadline }: { title: string; deadline: number }) => {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-sm text-[#757575]">{title}</div>
+      <div className="text-2xl font-bold">
+        <DaysHours deadline={deadline} />
+      </div>
+    </div>
   )
 }
