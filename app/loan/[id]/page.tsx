@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button"
 import TokenImage from "@/components/ux/token-image"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
-import { SpinnerIcon } from "@/components/icons"
+import { PersonIcon, SpinnerIcon } from "@/components/icons"
 import pluralize from "pluralize"
 import DisplayToken from "@/components/ux/display-token"
 /**
@@ -248,6 +248,20 @@ export default function Loan({ params }: { params: { id: string } }) {
           </ShowWhenTrue>
         </div>
         <div className="space-y-8 max-w-xl w-full">
+          <ShowWhenTrue when={loanState.matches("lender")}>
+            <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+              You are the lender
+              <PersonIcon className="w-6 h-6" />
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue when={loanState.matches("borrower")}>
+            <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+              You are the borrower
+              <PersonIcon className="w-6 h-6" />
+            </div>
+          </ShowWhenTrue>
+
           {/* Form Panel */}
           <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
             <div className="text-xl mb-4 font-bold">Loan</div>

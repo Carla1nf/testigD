@@ -28,14 +28,14 @@ const DisplayToken = ({
         width={size ?? 24}
         height={size ?? 24}
         chainSlug="fantom"
-        symbol={token.symbol}
+        symbol={token?.symbol}
         className="mr-[2px]"
       />
     ),
     Amount: displayOrder.includes("Amount") && amount !== undefined && (
       <span className="text-white">{formatNumber({ value: amount, decimals })}</span>
     ),
-    Name: displayOrder.includes("Name") && <span>{token.symbol}</span>,
+    Name: displayOrder.includes("Name") && <span>{token?.symbol}</span>,
   }
 
   const orderedComponents: ComponentKeys[] = displayOrder.split(/(?=[A-Z])/) as ComponentKeys[]
