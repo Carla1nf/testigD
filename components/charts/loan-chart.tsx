@@ -31,8 +31,6 @@ function getChartDimensions(windowWidth: number): { width: number; height: numbe
 const LoanDataSchema = z.object({
   historicalLender: z.array(z.number()),
   historicalCollateral: z.array(z.number()),
-  lastLender: z.number(),
-  lastCollateral: z.number(),
   timestamps: z.array(z.string().regex(/^\d{2}\/\d{2}\/\d{2}$/)),
 })
 

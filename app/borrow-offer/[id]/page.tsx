@@ -4,6 +4,7 @@ import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
 import { PersonIcon, PriceIcon, SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
@@ -14,6 +15,7 @@ import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
+import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
 import { fixedDecimals } from "@/lib/utils"
@@ -31,63 +33,30 @@ import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import { borrowOfferMachine } from "./borrow-offer-machine"
 
-import { useToast } from "@/components/ui/use-toast"
+// function getAcceptCollateralOfferValue(collateralData: any) {
+//   if (!collateralData) {
+//     return 0
+//   }
+//   const { collaterals } = collateralData
+//   if (!Array.isArray(collaterals)) {
+//     return 0
+//   }
+//   const hasFirstCollateral = collaterals.length > 0
+//   const hasSecondCollateral = collaterals.length > 1
+//   const isFirstAddressZero = hasFirstCollateral && collaterals[0]?.address === ZERO_ADDRESS
+//   const isSecondAddressZero = hasSecondCollateral && collaterals[1]?.address === ZERO_ADDRESS
 
-const calcPriceHistory = (prices: any, lendingAmount: number) => {
-  if (Array.isArray(prices)) {
-    return prices.map((item: any) => fixedDecimals(item.price * lendingAmount))
-  }
-  return []
-}
-
-const calcCollateralsPriceHistory = (prices0: any, amount0: number, prices1: any, amount1: number) => {
-  const calcs: any[] = []
-  if (Array.isArray(prices0) && prices0.length > 0) {
-    calcs.push(prices0.map((item: any) => fixedDecimals(item.price * amount0)))
-  }
-  if (Array.isArray(prices1) && prices1.length > 0) {
-    calcs.push(prices1.map((item: any) => fixedDecimals(item.price * amount1)))
-  }
-
-  if (calcs.length > 0) {
-    // merge the arrays to account for multiple collaterals
-    const merged = calcs[0].map((item: any, index: number) => {
-      if (calcs[1] && calcs[1][index]) {
-        return item + calcs[1][index]
-      }
-      return item
-    })
-
-    return merged
-  }
-
-  return []
-}
-
-function getAcceptCollateralOfferValue(collateralData: any) {
-  if (!collateralData) {
-    return 0
-  }
-  const { collaterals } = collateralData
-  if (!Array.isArray(collaterals)) {
-    return 0
-  }
-  const hasFirstCollateral = collaterals.length > 0
-  const hasSecondCollateral = collaterals.length > 1
-  const isFirstAddressZero = hasFirstCollateral && collaterals[0]?.address === ZERO_ADDRESS
-  const isSecondAddressZero = hasSecondCollateral && collaterals[1]?.address === ZERO_ADDRESS
-
-  if (isSecondAddressZero && isFirstAddressZero) {
-    return Number(collaterals[0].amountRaw) + Number(collaterals[1].amountRaw)
-  }
-  if (isFirstAddressZero) {
-    return Number(collaterals[0].amountRaw)
-  }
-  if (isSecondAddressZero) {
-    return Number(collaterals[1].amountRaw)
-  }
-  return 0
-}
+//   if (isSecondAddressZero && isFirstAddressZero) {
+//     return Number(collaterals[0].amountRaw) + Number(collaterals[1].amountRaw)
+//   }
+//   if (isFirstAddressZero) {
+//     return Number(collaterals[0].amountRaw)
+//   }
+//   if (isSecondAddressZero) {
+//     return Number(collaterals[1].amountRaw)
+//   }
+//   return 0
+// }
 
 function getAcceptLendingOfferValue(collateralData: any) {
   if (!collateralData) {
@@ -320,7 +289,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
 
   console.log("state", borrowMachineState.value)
 
-  // BREADCRUMS
+  // BREADCRUMBS
   // CONFIG
   const breadcrumbs = useMemo(() => {
     const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
@@ -355,8 +324,6 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       collateral1Prices,
       collateralData?.collaterals[1]?.amount ?? 0
     ),
-    lastLender: 100.3,
-    lastCollateral: 148.53,
     timestamps,
   }
 
