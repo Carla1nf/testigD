@@ -10,7 +10,7 @@ import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { machine } from "./loan-machine"
 import { useLoanData } from "@/hooks/useLoanData"
 import { ZERO_ADDRESS } from "@/services/constants"
-import { createActor } from "xstate"
+import { createActor, fromPromise } from "xstate"
 import { useMachine } from "@xstate/react"
 import { dollars, shortAddress } from "@/lib/display"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
@@ -24,7 +24,8 @@ import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
 import { Button } from "@/components/ui/button"
 import TokenImage from "@/components/ux/token-image"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { SpinnerIcon } from "@/components/icons"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -41,7 +42,13 @@ export default function Loan({ params }: { params: { id: string } }) {
   const { address } = useControlledAddress()
   const { data: loan } = useLoanData(id)
 
-  const [loanState, loanSend] = useMachine(machine, {})
+  const [loanState, loanSend] = useMachine(
+    machine.provide({
+      actors: {
+        claimLentTokens: fromPromise(() => Promise.resolve(true)),
+      },
+    })
+  )
 
   console.log("loanState.value", loanState.value)
   console.log("loan", loan)
@@ -61,15 +68,20 @@ export default function Loan({ params }: { params: { id: string } }) {
   }, [currentChain])
 
   useEffect(() => {
+    if (!loan) {
+      return
+    }
     // users can change wallets so let's stay on top of that
     if (loan?.lender === address) {
       loanSend({ type: "is.lender" })
       // now fill in the other details
 
-      console.log("loan.claimableDebt", loan.claimableDebt)
+      // fake unclaimed payments
+      // loanSend({ type: "loan.has.tokens.to.claim" })
+      // loanSend({ type: "lender.claim.lent.tokens" })
 
       // 1. how do we know there is a claim available and how much?
-      if (loan.claimableDebt > 0) {
+      if (loan?.claimableDebt > 0) {
         loanSend({ type: "loan.has.tokens.to.claim" })
       }
     } else if (loan?.borrower === address) {
@@ -141,7 +153,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             </ChartWrapper>
           </div>
 
-          {/* Lender unclaimed payments */}
+          {/* Lender unclaimed payments available */}
           <ShowWhenTrue when={loanState.matches("lender.claim.available")}>
             <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
               <div>Unclaimed payments</div>
@@ -154,8 +166,64 @@ export default function Loan({ params }: { params: { id: string } }) {
                   height={24}
                 />
               </div>
-              <Button variant="action" className="px-12">
+              <Button variant="action" className="px-8">
                 Claim debt
+              </Button>
+            </div>
+          </ShowWhenTrue>
+
+          {/* Lender claiming unclaimed payments */}
+          <ShowWhenTrue when={loanState.matches("lender.claim.claimingLentTokens")}>
+            <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
+              <div>Unclaimed payments</div>
+              <div className="flex gap-2 items-center">
+                <div>{dollars({ value: 0 })}</div>
+                <TokenImage
+                  symbol={loan?.lending?.token?.symbol}
+                  chainSlug={currentChain?.slug}
+                  width={24}
+                  height={24}
+                />
+              </div>
+              <Button variant="action" className="px-8">
+                Claiming debt
+                <SpinnerIcon className="ml-2 animate-spin-slow" />
+              </Button>
+            </div>
+          </ShowWhenTrue>
+
+          {/* Lender error claiming unclaimed payments */}
+          <ShowWhenTrue when={loanState.matches("lender.claim.errorClaimingLentTokens")}>
+            <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
+              <div>Unclaimed payments</div>
+              <div className="flex gap-2 items-center">
+                <div>{dollars({ value: 0 })}</div>
+                <TokenImage
+                  symbol={loan?.lending?.token?.symbol}
+                  chainSlug={currentChain?.slug}
+                  width={24}
+                  height={24}
+                />
+              </div>
+              <Button
+                variant="error"
+                className="px-8 gap-2"
+                onClick={() => {
+                  loanSend({ type: "lender.retry" })
+                }}
+              >
+                <XCircle className="h-5 w-5" /> Claim Failed - Retry?
+              </Button>
+            </div>
+          </ShowWhenTrue>
+
+          {/* Lender claimed unclaimed payments */}
+          <ShowWhenTrue when={loanState.matches("lender.claim.completed")}>
+            <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
+              <div>Unclaimed payments</div>
+              <Button variant="success" className="px-8 gap-2">
+                <CheckCircle className="w-5 h-5" />
+                Claimed
               </Button>
             </div>
           </ShowWhenTrue>
