@@ -61,6 +61,14 @@ export const useLoanData = (id: number) => {
         args: [lenderId],
       })
 
+      // get the amount of debt that the user has already repaid (if any)
+      const claimableDebt = await readContract({
+        address: DEBITA_ADDRESS,
+        abi: debitaAbi,
+        functionName: "claimeableDebt", // this is a typo in the contract, needs fixing in solidity
+        args: [id],
+      })
+
       // gets the tokens from the loan
 
       const collaterals = parsedData.collaterals.map((address, index) => {
@@ -109,6 +117,7 @@ export const useLoanData = (id: number) => {
         borrower,
         borrowerId,
         collaterals,
+        claimableDebt,
         cooldown: parsedData.cooldown,
         deadline: parsedData.deadline,
         deadlineNext: parsedData.deadlineNext,

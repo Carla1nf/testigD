@@ -23,6 +23,8 @@ import dayjs from "dayjs"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
 import { Button } from "@/components/ui/button"
 import TokenImage from "@/components/ux/token-image"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -63,6 +65,13 @@ export default function Loan({ params }: { params: { id: string } }) {
     if (loan?.lender === address) {
       loanSend({ type: "is.lender" })
       // now fill in the other details
+
+      console.log("loan.claimableDebt", loan.claimableDebt)
+
+      // 1. how do we know there is a claim available and how much?
+      if (loan.claimableDebt > 0) {
+        loanSend({ type: "loan.has.tokens.to.claim" })
+      }
     } else if (loan?.borrower === address) {
       loanSend({ type: "is.borrower" })
       // now fill in the other details
@@ -133,7 +142,7 @@ export default function Loan({ params }: { params: { id: string } }) {
           </div>
 
           {/* Lender unclaimed payments */}
-          <ShowWhenTrue when={loanState.matches("lender")}>
+          <ShowWhenTrue when={loanState.matches("lender.claim.available")}>
             <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
               <div>Unclaimed payments</div>
               <div className="flex gap-2 items-center">
@@ -149,6 +158,18 @@ export default function Loan({ params }: { params: { id: string } }) {
                 Claim debt
               </Button>
             </div>
+          </ShowWhenTrue>
+
+          {/* Alert */}
+          <ShowWhenTrue when={loanState.matches("borrower")}>
+            <Alert variant="warning" className="mt-4">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <AlertTitle>Please note</AlertTitle>
+              <AlertDescription>
+                if any payment is not paid according to the agreed terms, the lender reserves the right to claim the
+                collateral provided as security for the loan.
+              </AlertDescription>
+            </Alert>
           </ShowWhenTrue>
         </div>
         <div className="space-y-8 max-w-xl w-full">
