@@ -8,6 +8,7 @@ import dynamic from "next/dynamic"
 import { useMemo, useState } from "react"
 import { Address } from "wagmi"
 import { Button } from "../ui/button"
+import { SpinnerIcon } from "../icons"
 
 const DashboardUserTableItem = dynamic(() => import("../../components/ux/dashboard-user-table-item"), { ssr: false })
 
@@ -69,6 +70,7 @@ const DashboardUserTable = () => {
             })}
           </thead>
           <tbody className="flex-1 sm:flex-none">
+  
             {indexes.map((index) => {
               return <DashboardUserTableItem key={index} address={address as Address} index={index} status={status} />
             })}

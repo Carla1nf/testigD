@@ -89,12 +89,12 @@ export default function Lend() {
                   <td className="p-4 text-left px-4 items-center">
                     {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
                   </td>
-                  <td className="p-4 text-center px-4 items-center ">{offer.events.length}</td>
-                  <td className="p-4 text-center px-4 items-center">{dollars({ value: offer.liquidityOffer })}</td>
-                  <td className="p-4 text-center px-4 items-center">
+                  <td className="p-4 text-center px-4 items-center font-semibold">{offer.events.length}</td>
+                  <td className="p-4 text-center px-4 items-center  font-semibold">{dollars({ value: offer.liquidityOffer })}</td>
+                  <td className="p-4 text-center px-4 items-center  font-semibold">
                     {dollars({ value: offer?.price ?? 0, decimals: 2 })}
                   </td>
-                  <td className="p-4 text-center px-4 items-center">
+                  <td className="p-4 text-center px-4 items-center  font-semibold">
                     {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
                   </td>
                 </tr>

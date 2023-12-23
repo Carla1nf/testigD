@@ -73,7 +73,7 @@ const DashboardUserTableItem = ({
     const status = loanStatus(Number(data.loan.deadlineNext))
 
     return (
-      <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={data.loanId}>
+      <tr className="flex flex-col animate-enter-token flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={data.loanId}>
         <td className="p-3">
           {data?.loan?.collaterals?.length === 1 ? <DisplayToken token={data?.loan?.collaterals[0]} size={24} /> : null}
           {data?.loan?.collaterals?.length === 2 ? (

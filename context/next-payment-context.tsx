@@ -13,11 +13,15 @@ export function useManageNextPayment() {
 
 export function DeadlineNext({ children }: { children: React.ReactNode }) {
   const [next, setAvailable] = useState<number>(0)
+  // time now
+  const now = new Date().getTime();
   const manageNext = (nextDeadline: number) => {
-    if (next === 0) {
+    const stillActive = nextDeadline > (now / 1000);
+    if (next === 0 && stillActive) {
       setAvailable(nextDeadline)
     }
-    if (nextDeadline < next) {
+
+    if (nextDeadline < next && stillActive) {
       setAvailable(nextDeadline)
     }
   }

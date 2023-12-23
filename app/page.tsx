@@ -6,6 +6,7 @@ import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { dollars, percent } from "@/lib/display"
+import { useRouter } from "next/navigation"
 
 
 // import styles from "./styles.module.css";
@@ -14,6 +15,7 @@ export default function Home() {
 
 
   const { offers } = useLendingMarket()
+  const router = useRouter();
 
   
   return (
@@ -104,7 +106,7 @@ export default function Home() {
       </div>
     {offers?.map((offer: any, index: number) => {
               return(
-                <div className="hover:bg-[#383838] rounded-2xl flex"> 
+                <div className="hover:bg-[#383838] rounded flex"> 
                 <div className="p-5"> {index + 1}.  </div> 
                 <td className="p-4 text-left px-4 items-center w-36">
                     {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
@@ -116,8 +118,8 @@ export default function Home() {
                     {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
                   </td>
 
-                  <Button className="bg-black/30 text-white self-center text-xs"  variant="secondary">Borrow</Button>
-                 <Button className="bg-black/30 text-white self-center ml-5 text-xs" variant="secondary">Lend</Button>
+                  <Button  onClick={() => { router.push(`/borrow/${offer.token.address}`)}}  className="bg-black/30 text-white self-center text-xs"  variant="secondary">Borrow</Button>
+                 <Button onClick={() => { router.push(`/lend/${offer.token.address}`)}}  className="bg-black/30 text-white self-center ml-5 text-xs" variant="secondary">Lend</Button>
                   </div>
               )
               })}
@@ -125,7 +127,22 @@ export default function Home() {
 
   </div>
   
-
+  <div className="flex flex-col gap-10 ml-16 mt-28">
+   <div className="p-5 font-bold text-2xl">Debita Markets</div>
+   <div className="flex"> 
+   {["Fantom", "Base"].map((chain, index) => {
+    return(
+      <div className={`w-[350px] relative flex flex-col ml-5 rounded-md h-80 ${!index ? "hover:bg-slate-400/20" : ""}`}>
+        {!index ? <div className=" w-14 text-center absolute right-10 bg-green-300/50 rounded mt-5 text-green-200">Live</div> : <div className=" w-14 text-center absolute right-10 bg-yellow-300/50 rounded mt-5 text-yellow-200">Soon</div>}
+      <img height="90" width="90" className="p-4"  src={`${!index ? "/files/tokens/fantom/ftm-native.svg" : "/files/tokens/base/Base.svg"}`} />
+      <div className="p-4 font-bold text-xl -mt-3">{chain}</div>
+      <div className="p-4 font-semibold text-sm text-gray-400 -mt-3">Lorem ipsum dolor sit amet consectetur adipiscing elit, consequat potenti etiam at suspendisse blandit donec aptent, lectus venenatis bibendum facilisis accumsan euismod. Scelerisque penatibus potenti per mauris volutpat nam nullam</div>
+  
+      </div>
+    )
+   })}
+   </div>
+  </div>
 
     </div>
   )
