@@ -1,5 +1,13 @@
 import { Address } from "viem"
 
+import dayjs from "dayjs"
+import localizedFormat from "dayjs/plugin/localizedFormat"
+dayjs.extend(localizedFormat)
+
+export const formatFullDate = (unixTimestamp: number, format = "LLLL") => {
+  return dayjs(unixTimestamp * 1000).format(format)
+}
+
 type DollarsOptions = {
   value: number
   includeSymbol?: boolean

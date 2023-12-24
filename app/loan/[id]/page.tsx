@@ -17,7 +17,7 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useLoanData } from "@/hooks/useLoanData"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
-import { LoanStatus, dollars, loanStatus, shortAddress } from "@/lib/display"
+import { LoanStatus, dollars, formatFullDate, loanStatus, shortAddress } from "@/lib/display"
 import { cn } from "@/lib/utils"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
@@ -364,8 +364,9 @@ export default function Loan({ params }: { params: { id: string } }) {
                 <AlertCircle className="w-5 h-5 mr-2" />
                 <AlertTitle>Please note</AlertTitle>
                 <AlertDescription>
-                  This loan has defaulted. The lender will claim collateral and any payments already paid. It is too
-                  late to make a payment or recover collateral.
+                  This loan defaulted on {loan?.deadline ? formatFullDate(Number(loan?.deadline)) : ""}. The lender will
+                  claim collateral and any payments already paid. It is too late to make a payment or recover
+                  collateral.
                 </AlertDescription>
               </Alert>
             </ShowWhenTrue>
@@ -653,7 +654,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               {/* borrower - defaulted */}
 
               <ShowWhenTrue when={loanState.matches("borrower.hasDefaulted")}>
-                <Button variant="default" className="w-1/2" disabled>
+                <Button variant="muted" className="w-1/2" disabled>
                   Pay Debt
                 </Button>
               </ShowWhenTrue>
