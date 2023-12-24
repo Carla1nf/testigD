@@ -12,7 +12,7 @@ import { useLoanData } from "@/hooks/useLoanData"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { createActor, fromPromise } from "xstate"
 import { useMachine } from "@xstate/react"
-import { dollars, loanStatus, shortAddress, thresholdLow } from "@/lib/display"
+import { LoanStatus, dollars, loanStatus, shortAddress, thresholdLow } from "@/lib/display"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import { cn, fixedDecimals } from "@/lib/utils"
 import DaysHours from "@/components/ux/deadline-datetime"
@@ -143,13 +143,13 @@ export default function Loan({ params }: { params: { id: string } }) {
               <LtvStat title="LTV" value={displayLtv} />
               <DebtStat title="Debt" value={displayDebtValue} />
               <CollateralStat title="Collateral" value={displayCollateralValue} />
-              <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} />
+              <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} loanStatus={displayLoanStatus} />
             </ShowWhenTrue>
             <ShowWhenTrue when={loanState.matches("borrower")}>
               <LtvStat title="LTV" value={displayLtv} />
               <DebtStat title="My Debt" value={displayDebtValue} />
               <CollateralStat title="Collateral" value={displayCollateralValue} />
-              <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} />
+              <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} loanStatus={displayLoanStatus} />
             </ShowWhenTrue>
           </div>
 
@@ -397,12 +397,17 @@ const CollateralStat = ({ title, value }: { title: string; value: string }) => {
   )
 }
 
-const DeadlineStat = ({ title, deadline }: { title: string; deadline: number }) => {
+const DeadlineStat = ({ title, deadline, loanStatus }: { title: string; deadline: number; loanStatus: LoanStatus }) => {
   return (
     <div className="flex flex-col gap-1">
       <div className="text-sm text-[#757575]">{title}</div>
-      <div className="text-2xl font-bold">
-        <DaysHours deadline={deadline} />
+      <div className={cn("text-2xl font-bold")}>
+        <ShowWhenTrue when={loanStatus.state === "defaulted"}>
+          <span className="">Expired</span>
+        </ShowWhenTrue>
+        <ShowWhenTrue when={loanStatus.state === "live"}>
+          <DaysHours deadline={deadline} />
+        </ShowWhenTrue>
       </div>
     </div>
   )

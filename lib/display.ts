@@ -63,6 +63,11 @@ export function toHours(unixTimestamp: number) {
   return hours < 0 ? 0 : hours
 }
 
+export type LoanStatus = {
+  displayText: string
+  className: string
+  state: "live" | "defaulted"
+}
 export function loanStatus(deadlineNext: number) {
   const now = new Date().getTime()
   const daysInSeconds = deadlineNext * 1000 - now
@@ -71,11 +76,13 @@ export function loanStatus(deadlineNext: number) {
     return {
       displayText: "Defaulted",
       className: "text-amber-500",
+      state: "defaulted",
     }
   }
   return {
     displayText: "Live",
     className: "text-green-500",
+    state: "live",
   }
 }
 
