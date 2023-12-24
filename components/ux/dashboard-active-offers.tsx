@@ -87,15 +87,15 @@ const DashboardActiveOffersTable = ({
                 })
               : null}
             {status === "Borrowed"
-              ? collateral.map((item: any) => {
-                  return (
-                    <DashboardActiveOffersTableBorrowItem
-                      key={`td_${status}_${item.id}`}
-                      address={address as Address}
-                      item={item}
-                    />
-                  )
-                })
+              ? <> {collateral.map((item: any) => {
+                return (
+                  <DashboardActiveOffersTableBorrowItem
+                    key={`td_${status}_${item.id}`}
+                    address={address as Address}
+                    item={item}
+                  />
+                )
+              }) } </>
               : null}
           </tbody>
         </table>
