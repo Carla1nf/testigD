@@ -62,11 +62,11 @@ export const useLoanData = (id: number) => {
       })
 
       // get the amount of debt that the user has already repaid (if any)
-      const claimableDebt = await readContract({
+      const claimableDebtRaw = await readContract({
         address: DEBITA_ADDRESS,
         abi: debitaAbi,
         functionName: "claimeableDebt", // this is a typo in the contract, needs fixing in solidity
-        args: [id],
+        args: [lenderId],
       })
 
       // gets the tokens from the loan
@@ -124,6 +124,9 @@ export const useLoanData = (id: number) => {
       const now = new Date().getTime()
       const daysInSeconds = Number(parsedData?.deadlineNext) * 1000 - now
       const hasDefaulted = daysInSeconds <= 0
+      const hasRepaidLoan =
+        parsedData.paymentsPaid >= parsedData.paymentCount && !hasDefaulted && Number(debtLeft) === 0
+      const claimableDebt = fromDecimals(claimableDebtRaw, lenderToken?.decimals ?? 18)
 
       // <SingleExtra type={"Large"}>
       //   <div style={{ marginLeft: "10px" }}>Debt Left</div>
@@ -144,6 +147,7 @@ export const useLoanData = (id: number) => {
         borrowerId,
         collaterals,
         claimableDebt,
+        claimableDebtRaw,
         cooldown: parsedData.cooldown,
         debtLeft,
         debtLeftRaw,
@@ -152,6 +156,7 @@ export const useLoanData = (id: number) => {
         eachPayment,
         hasClaimedCollateral: parsedData.executed,
         hasLoanCompleted: parsedData.executed,
+        hasRepaidLoan,
         hasDefaulted,
         id,
         lender,

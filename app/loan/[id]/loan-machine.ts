@@ -17,6 +17,9 @@ export const machine = createMachine(
                   "loan.has.payment.due": {
                     target: "hasPaymentDue",
                   },
+                  "borrower.has.repaid.in.full": {
+                    target: "claimingCollateral",
+                  },
                 },
               },
               hasPaymentDue: {
@@ -24,6 +27,24 @@ export const machine = createMachine(
                   "borrower.check.payment.allowance": {
                     target: "checkingAllowance",
                   },
+                },
+              },
+              claimingCollateral: {
+                description:
+                  "The borrower defaulted so the lender doesn't get the lent tokens back. in this case, the lender can claim the collateral tokens, this is true if one or more payments has defaulted",
+                invoke: {
+                  src: "claimCollateralAsBorrower",
+                  id: "claimCollateralAsBorrower",
+                  onDone: [
+                    {
+                      target: "completedClaimingCollateral",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "errorClaimingCollateral",
+                    },
+                  ],
                 },
               },
               checkingAllowance: {
@@ -40,6 +61,16 @@ export const machine = createMachine(
                       target: "errorCheckingAllowance",
                     },
                   ],
+                },
+              },
+              completedClaimingCollateral: {
+                type: "final",
+              },
+              errorClaimingCollateral: {
+                on: {
+                  "borrower.retry.claim.collateral": {
+                    target: "claimingCollateral",
+                  },
                 },
               },
               payDebt: {
@@ -251,7 +282,9 @@ export const machine = createMachine(
         | { type: "is.borrower" }
         | { type: "is.viewer" }
         | { type: "is.lender" }
-        | { type: "has.already.claimed.collateral" },
+        | { type: "has.already.claimed.collateral" }
+        | { type: "borrower.has.repaid.in.full" }
+        | { type: "borrower.retry.claim.collateral" },
     },
   },
   {
@@ -270,6 +303,9 @@ export const machine = createMachine(
         /* ... */
       }),
       claimCollateralAsLender: createMachine({
+        /* ... */
+      }),
+      claimCollateralAsBorrower: createMachine({
         /* ... */
       }),
     },

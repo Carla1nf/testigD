@@ -73,7 +73,27 @@ export default function Loan({ params }: { params: { id: string } }) {
   const [loanState, loanSend] = useMachine(
     machine.provide({
       actors: {
-        claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
+        claimLentTokens: fromPromise(async () => {
+          try {
+            if (loan?.hasClaimedCollateral) {
+              throw "Collateral already claimed"
+            }
+
+            const { request } = await config.publicClient.simulateContract({
+              address: DEBITA_ADDRESS,
+              functionName: "claimDebt",
+              abi: debitaAbi,
+              args: [id],
+              account: address,
+              gas: BigInt(300000),
+            })
+
+            const result = await writeContract(request)
+            await refetchLoan()
+            return Promise.resolve(result)
+          } catch (error) {}
+          return Promise.reject()
+        }),
         claimCollateralAsLender: fromPromise(async () => {
           try {
             if (loan?.hasClaimedCollateral) {
@@ -164,23 +184,7 @@ export default function Loan({ params }: { params: { id: string } }) {
           } catch (error) {
             console.log(error)
           }
-
           return Promise.reject()
-          // useContractWrite({
-          //   address: DEBITA_CONTRACT,
-          //   functionName: "payDebt",
-          //   abi: DEBITA_ABI,
-          //   args: [
-          //     url.id,
-          //     {
-          //       gasLimit: 300000,
-          //       value:
-          //         params.data.LenderToken == "0x0000000000000000000000000000000000000000"
-          //           ? `${formatNumber(Number(params.data.paymentAmount._hex))}`
-          //           : 0,
-          //     },
-          //   ],
-          // })
         }),
       },
     })
@@ -236,8 +240,12 @@ export default function Loan({ params }: { params: { id: string } }) {
         loanSend({ type: "loan.has.defaulted" })
       }
 
-      // does the borrower have a payment due?
+      // Has the borrower repaid the loan in full?
+      if (loan?.hasRepaidLoan) {
+        loanSend({ type: "borrower.has.repaid.in.full" })
+      }
       if (loan?.paymentDue) {
+        // does the borrower have a payment due?
         loanSend({ type: "loan.has.payment.due" })
       }
 
@@ -323,7 +331,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
               <div>Unclaimed payments</div>
               <div className="flex gap-2 items-center">
-                <div>{dollars({ value: 0 })}</div>
+                <div>{dollars({ value: loan?.claimableDebt })}</div>
                 <TokenImage
                   symbol={loan?.lending?.token?.symbol}
                   chainSlug={currentChain?.slug}
@@ -348,7 +356,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
               <div>Unclaimed payments</div>
               <div className="flex gap-2 items-center">
-                <div>{dollars({ value: 0 })}</div>
+                <div>{dollars({ value: loan?.claimableDebt })}</div>
                 <TokenImage
                   symbol={loan?.lending?.token?.symbol}
                   chainSlug={currentChain?.slug}
@@ -368,7 +376,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
               <div>Unclaimed payments</div>
               <div className="flex gap-2 items-center">
-                <div>{dollars({ value: 0 })}</div>
+                <div>{dollars({ value: loan?.claimableDebt })}</div>
                 <TokenImage
                   symbol={loan?.lending?.token?.symbol}
                   chainSlug={currentChain?.slug}
@@ -401,7 +409,7 @@ export default function Loan({ params }: { params: { id: string } }) {
 
           {/* Borrower Alerts */}
           <ShowWhenTrue when={loanState.matches("borrower")}>
-            <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
+            <ShowWhenTrue when={displayLoanStatus.state === "defaulted" && !loan?.hasLoanCompleted}>
               <Alert variant="warning" className="">
                 <AlertCircle className="w-5 h-5 mr-2" />
                 <AlertTitle>Please note</AlertTitle>
@@ -427,9 +435,9 @@ export default function Loan({ params }: { params: { id: string } }) {
           {/* Lender Alerts */}
           <ShowWhenTrue when={loanState.matches("lender")}>
             <ShowWhenTrue when={loan?.hasLoanCompleted}>
-              <Alert variant="success" className="">
+              <Alert variant="info" className="">
                 <AlertCircle className="w-5 h-5 mr-2" />
-                <AlertTitle>Success</AlertTitle>
+                <AlertTitle>Completed</AlertTitle>
                 <AlertDescription>The loan has completed</AlertDescription>
               </Alert>
             </ShowWhenTrue>
