@@ -63,9 +63,6 @@ export const machine = createMachine(
               },
               errorCheckingAllowance: {
                 on: {
-                  "borrower.retry.check.allowance": {
-                    target: "checkingAllowance",
-                  },
                   "borrower.approve.allowance": {
                     target: "approvingAllowance",
                   },
@@ -249,7 +246,6 @@ export const machine = createMachine(
         | { type: "lender.claim.collateral" }
         | { type: "lender.retry.lent.tokens" }
         | { type: "lender.retry.claim.collateral" }
-        | { type: "borrower.retry.check.allowance" }
         | { type: "borrower.check.payment.allowance" }
         | { type: "loan.has.payment.due" }
         | { type: "borrower.pay.debt" }

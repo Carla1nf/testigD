@@ -24,11 +24,15 @@ import dayjs from "dayjs"
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import pluralize from "pluralize"
 import { useEffect, useMemo } from "react"
-import { useConfig, useContractRead } from "wagmi"
+import { Address, useConfig, useContractRead, useContractWrite } from "wagmi"
 import { fromPromise } from "xstate"
 import { machine } from "./loan-machine"
 import erc20Abi from "../../../abis/erc20.json"
+import debitaAbi from "../../../abis/debita.json"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
+import { readContract, writeContract } from "wagmi/actions"
+import { ZERO_ADDRESS } from "@/services/constants"
+import { balanceOf } from "@/lib/erc20"
 
 /**
  * This page shows the suer the FULL details of the loan
@@ -44,7 +48,7 @@ export default function Loan({ params }: { params: { id: string } }) {
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
-  const { data: loan } = useLoanData(id)
+  const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(id)
 
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
@@ -72,27 +76,75 @@ export default function Loan({ params }: { params: { id: string } }) {
         claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
         claimCollateral: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
         checkBorrowerHasPaymentAllowance: fromPromise(() => {
-          if (BigInt(lendingTokenAllowance ?? 0) > BigInt(loan?.paymentAmountRaw)) {
-            return Promise.resolve(true)
-          }
-          return Promise.reject(true)
+          return BigInt(lendingTokenAllowance ?? 0) >= BigInt(loan?.paymentAmountRaw)
+            ? Promise.resolve()
+            : Promise.reject()
         }),
-        borrowerPayingDebt: fromPromise(
-          () =>
-            new Promise((resolve, reject) => {
-              setTimeout(() => {
-                Math.random() > 0.9 ? resolve(true) : reject(true)
-              }, 200)
+        borrowerApproveAllowance: fromPromise(async () => {
+          const result = await writeContract({
+            address: lendingToken?.address,
+            functionName: "approve",
+            abi: erc20Abi,
+            args: [DEBITA_ADDRESS, loan?.paymentAmountRaw],
+          })
+          await refetchLoan()
+          return result
+        }),
+        borrowerPayingDebt: fromPromise(async () => {
+          try {
+            // make sure they actually have the funds to pay the debt
+            const lendingBalance = await balanceOf({
+              address: lendingToken?.address as Address,
+              account: address as Address,
             })
-        ),
-        borrowerApproveAllowance: fromPromise(
-          () =>
-            new Promise((resolve, reject) => {
-              setTimeout(() => {
-                Math.random() > 0.9 ? resolve(true) : reject(true)
-              }, 2000)
+            if (lendingToken && lendingBalance < loan?.paymentAmountRaw) {
+              throw `Insufficient ${lendingToken?.symbol} balance to pay debt`
+            }
+
+            // if this is the native token, we need to send the value with the transaction
+            const value = lendingToken.address === ZERO_ADDRESS ? BigInt(loan?.paymentAmountRaw ?? 0) : BigInt(0)
+
+            // simulate the transaction..
+            const { request } = await config.publicClient.simulateContract({
+              address: DEBITA_ADDRESS,
+              functionName: "payDebt",
+              abi: debitaAbi,
+              args: [id],
+              account: address,
+              gas: BigInt(9000000),
             })
-        ),
+
+            console.log("id", id)
+            console.log("value", value)
+            console.log("request", request)
+
+            const result = await writeContract(request)
+
+            // now we get the loan data again!
+            await refetchLoan()
+
+            return Promise.resolve(result)
+          } catch (error) {
+            console.log(error)
+          }
+
+          return Promise.reject()
+          // useContractWrite({
+          //   address: DEBITA_CONTRACT,
+          //   functionName: "payDebt",
+          //   abi: DEBITA_ABI,
+          //   args: [
+          //     url.id,
+          //     {
+          //       gasLimit: 300000,
+          //       value:
+          //         params.data.LenderToken == "0x0000000000000000000000000000000000000000"
+          //           ? `${formatNumber(Number(params.data.paymentAmount._hex))}`
+          //           : 0,
+          //     },
+          //   ],
+          // })
+        }),
       },
     })
   )
@@ -103,8 +155,6 @@ export default function Loan({ params }: { params: { id: string } }) {
   const displayLoanStatus = useMemo(() => {
     return loanStatus(Number(loan?.deadlineNext))
   }, [loan?.deadlineNext])
-
-  console.log("lendingTokenAllowance", lendingTokenAllowance)
 
   // BREADCRUMBS
   // CONFIG
