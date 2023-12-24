@@ -74,7 +74,34 @@ export default function Loan({ params }: { params: { id: string } }) {
     machine.provide({
       actors: {
         claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
-        claimCollateral: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
+        claimCollateral: fromPromise(async () => {
+          try {
+            // claimCollateralasLender
+
+            if (loan?.hasClaimedCollateral) {
+              throw "Collateral already claimed"
+            }
+
+            const { request } = await config.publicClient.simulateContract({
+              address: DEBITA_ADDRESS,
+              functionName: "claimCollateralasLender",
+              abi: debitaAbi,
+              args: [id],
+              account: address,
+              gas: BigInt(900000),
+            })
+
+            const result = await writeContract(request)
+
+            console.log("result", result)
+
+            // now we get the loan data again!
+            await refetchLoan()
+
+            return Promise.resolve(result)
+          } catch (error) {}
+          return Promise.reject()
+        }),
         checkBorrowerHasPaymentAllowance: fromPromise(() => {
           return BigInt(lendingTokenAllowance ?? 0) >= BigInt(loan?.paymentAmountRaw)
             ? Promise.resolve()
@@ -111,12 +138,8 @@ export default function Loan({ params }: { params: { id: string } }) {
               abi: debitaAbi,
               args: [id],
               account: address,
-              gas: BigInt(9000000),
+              gas: BigInt(900000),
             })
-
-            console.log("id", id)
-            console.log("value", value)
-            console.log("request", request)
 
             const result = await writeContract(request)
 
@@ -172,17 +195,22 @@ export default function Loan({ params }: { params: { id: string } }) {
       loanSend({ type: "is.lender" })
       // now fill in the other details
 
+      if (loan?.hasClaimedCollateral) {
+        loanSend({ type: "has.already.claimed.collateral" })
+      }
+
       // fake unclaimed payments
-      loanSend({ type: "loan.has.tokens.to.claim" })
+      // loanSend({ type: "loan.has.tokens.to.claim" })
       // loanSend({ type: "lender.claim.lent.tokens" })
 
       // How do we know there is a claim available and how much?
+
       if (loan?.claimableDebt > 0) {
         loanSend({ type: "loan.has.tokens.to.claim" })
       }
 
       // Has the borrower defaulted?
-      if (displayLoanStatus.state === "defaulted") {
+      if (loan?.hasDefaulted) {
         loanSend({ type: "loan.has.defaulted" })
       }
     } else if (loan?.borrower === address) {
@@ -190,7 +218,7 @@ export default function Loan({ params }: { params: { id: string } }) {
       // now fill in the other details
 
       // Has the borrower defaulted?
-      if (displayLoanStatus.state === "defaulted") {
+      if (loan?.hasDefaulted) {
         loanSend({ type: "loan.has.defaulted" })
       }
 
@@ -521,8 +549,20 @@ export default function Loan({ params }: { params: { id: string } }) {
 
             {/* Buttons */}
             <div className="mt-8 flex justify-center">
+              {/* Lender - already claimed */}
+              <ShowWhenTrue when={loanState.matches("lender.claim.alreadyClaimed")}>
+                <Button variant="muted" className="w-1/2" disabled>
+                  Claim Collateral
+                </Button>
+              </ShowWhenTrue>
+
               {/* Lender - can claim collateral */}
-              <ShowWhenTrue when={loanState.matches("lender.defaulted.hasDefaulted")}>
+              <ShowWhenTrue
+                when={
+                  loanState.matches("lender.defaulted.hasDefaulted") &&
+                  !loanState.matches("lender.claim.alreadyClaimed")
+                }
+              >
                 <Button
                   variant="action"
                   className="w-1/2"

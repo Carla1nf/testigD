@@ -125,6 +125,9 @@ export const machine = createMachine(
                   "loan.has.tokens.to.claim": {
                     target: "available",
                   },
+                  "has.already.claimed.collateral": {
+                    target: "alreadyClaimed",
+                  },
                 },
               },
               available: {
@@ -133,6 +136,9 @@ export const machine = createMachine(
                     target: "claimingLentTokens",
                   },
                 },
+              },
+              alreadyClaimed: {
+                type: "final",
               },
               claimingLentTokens: {
                 invoke: {
@@ -229,33 +235,28 @@ export const machine = createMachine(
     },
     types: {
       events: {} as
-        | { type: "loan.has.tokens.to.claim" }
+        | { type: "loan.has.payment.due" }
+        | { type: "borrower.check.payment.allowance" }
+        | { type: "borrower.pay.debt" }
+        | { type: "borrower.approve.allowance" }
+        | { type: "borrower.retry.paying.debt" }
+        | { type: "borrower.retry.approve.allowance" }
         | { type: "loan.has.defaulted" }
-        | { type: "is.viewer" }
-        | { type: "is.borrower" }
-        | { type: "is.lender" }
+        | { type: "loan.has.tokens.to.claim" }
         | { type: "lender.claim.lent.tokens" }
+        | { type: "lender.retry.lent.tokens" }
         | { type: "lender.already.claimed.collateral" }
         | { type: "lender.claim.collateral" }
-        | { type: "lender.retry.lent.tokens" }
         | { type: "lender.retry.claim.collateral" }
-        | { type: "borrower.check.payment.allowance" }
-        | { type: "loan.has.payment.due" }
-        | { type: "borrower.pay.debt" }
-        | { type: "borrower.retry.paying.debt" }
-        | { type: "borrower.approve.allowance" }
-        | { type: "borrower.retry.approve.allowance" },
+        | { type: "is.borrower" }
+        | { type: "is.viewer" }
+        | { type: "is.lender" }
+        | { type: "has.already.claimed.collateral" },
     },
   },
   {
     actions: {},
     actors: {
-      claimLentTokens: createMachine({
-        /* ... */
-      }),
-      claimCollateral: createMachine({
-        /* ... */
-      }),
       checkBorrowerHasPaymentAllowance: createMachine({
         /* ... */
       }),
@@ -263,6 +264,12 @@ export const machine = createMachine(
         /* ... */
       }),
       borrowerApproveAllowance: createMachine({
+        /* ... */
+      }),
+      claimLentTokens: createMachine({
+        /* ... */
+      }),
+      claimCollateral: createMachine({
         /* ... */
       }),
     },

@@ -121,6 +121,10 @@ export const useLoanData = (id: number) => {
       const debtLeftRaw = parsedData.paymentAmount * (parsedData.paymentCount - parsedData.paymentsPaid)
       const debtLeft = fromDecimals(debtLeftRaw, lenderToken?.decimals ?? 18)
 
+      const now = new Date().getTime()
+      const daysInSeconds = Number(parsedData?.deadlineNext) * 1000 - now
+      const hasDefaulted = daysInSeconds <= 0
+
       // <SingleExtra type={"Large"}>
       //   <div style={{ marginLeft: "10px" }}>Debt Left</div>
       //   <Datas data={"Time"}>
@@ -146,7 +150,8 @@ export const useLoanData = (id: number) => {
         deadline: parsedData.deadline,
         deadlineNext: parsedData.deadlineNext,
         eachPayment,
-        executed: parsedData.executed,
+        hasClaimedCollateral: parsedData.executed,
+        hasDefaulted,
         id,
         lender,
         lenderId,
