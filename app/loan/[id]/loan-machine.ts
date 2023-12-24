@@ -7,21 +7,9 @@ export const machine = createMachine(
     states: {
       isViewer: {},
       borrower: {
+        initial: "notDefaulted",
         states: {
-          defaulted: {
-            initial: "notDefaulted",
-            states: {
-              notDefaulted: {
-                on: {
-                  "loan.has.defaulted": {
-                    target: "hasDefaulted",
-                  },
-                },
-              },
-              hasDefaulted: {},
-            },
-          },
-          payments: {
+          notDefaulted: {
             initial: "noPaymentsDue",
             states: {
               noPaymentsDue: {
@@ -118,9 +106,14 @@ export const machine = createMachine(
                 },
               },
             },
+            on: {
+              "loan.has.defaulted": {
+                target: "hasDefaulted",
+              },
+            },
           },
+          hasDefaulted: {},
         },
-        type: "parallel",
       },
       lender: {
         states: {

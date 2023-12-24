@@ -364,8 +364,8 @@ export default function Loan({ params }: { params: { id: string } }) {
                 <AlertCircle className="w-5 h-5 mr-2" />
                 <AlertTitle>Please note</AlertTitle>
                 <AlertDescription>
-                  This loan is overdue. The lender has the right to claim collateral and any payments already paid.
-                  Please make payment as soon as possible to avoid loss.
+                  This loan has defaulted. The lender will claim collateral and any payments already paid. It is too
+                  late to make a payment or recover collateral.
                 </AlertDescription>
               </Alert>
             </ShowWhenTrue>
@@ -413,7 +413,7 @@ export default function Loan({ params }: { params: { id: string } }) {
 
                 <ShowWhenTrue when={loanState.matches("borrower")}>
                   <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
-                    <span className="font-bold text-lg text-amber-500">Due</span>
+                    <span className="font-bold text-lg text-amber-500">Expired</span>
                   </ShowWhenTrue>
                   <ShowWhenTrue when={displayLoanStatus.state === "live"}>
                     <DaysHours
@@ -562,7 +562,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - repay debt - checking allowance */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.checkingAllowance")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.checkingAllowance")}>
                 <Button variant="action" className="w-1/2">
                   Checking Allowance
                   <SpinnerIcon className="ml-2 animate-spin-slow" />
@@ -570,7 +570,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - repay debt - checking allowance failed */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.errorCheckingAllowance")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.errorCheckingAllowance")}>
                 <Button
                   variant="action"
                   className="min-w-1/2"
@@ -583,7 +583,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - repay debt - approving new allowance */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.approvingAllowance")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.approvingAllowance")}>
                 <Button
                   variant="action"
                   className="min-w-1/2"
@@ -597,7 +597,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - repay debt - approving new allowance failed*/}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.errorApprovingAllowance")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.errorApprovingAllowance")}>
                 <Button
                   variant="error"
                   className="min-w-1/2"
@@ -610,7 +610,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* Borrower - Ready to pay debt */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.payDebt")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.payDebt")}>
                 <Button
                   variant="action"
                   className="w-1/2"
@@ -623,7 +623,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - repaying debt */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.payingDebt")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.payingDebt")}>
                 <Button variant="action" className="w-1/2">
                   Paying Debt
                   <SpinnerIcon className="ml-2 animate-spin-slow" />
@@ -631,7 +631,7 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - paying debt failed */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.errorPayingDebt")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.errorPayingDebt")}>
                 <Button
                   variant="error"
                   className="min-w-1/2"
@@ -644,9 +644,17 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - debt paid */}
-              <ShowWhenTrue when={loanState.matches("borrower.payments.completed")}>
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.completed")}>
                 <Button variant="success" className="w-1/2">
                   <CheckCircle className="w-5 h-5 mr-2" /> Debt Paid
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - defaulted */}
+
+              <ShowWhenTrue when={loanState.matches("borrower.hasDefaulted")}>
+                <Button variant="default" className="w-1/2" disabled>
+                  Pay Debt
                 </Button>
               </ShowWhenTrue>
             </div>
