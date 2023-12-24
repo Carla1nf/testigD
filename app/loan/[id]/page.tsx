@@ -726,15 +726,22 @@ export default function Loan({ params }: { params: { id: string } }) {
 
               {/* Borrower - can claim collateral */}
               <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.canClaimCollateral")}>
-                <Button
-                  variant="action"
-                  className="w-1/2"
-                  onClick={() => {
-                    loanSend({ type: "borrower.claim.collateral" })
-                  }}
-                >
-                  Claim Collateral
-                </Button>
+                <ShowWhenTrue when={!loan?.hasClaimedCollateral}>
+                  <Button
+                    variant="action"
+                    className="w-1/2"
+                    onClick={() => {
+                      loanSend({ type: "borrower.claim.collateral" })
+                    }}
+                  >
+                    Claim Collateral
+                  </Button>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={loan?.hasClaimedCollateral}>
+                  <Button variant="muted" className="w-1/2" disabled>
+                    Claim Collateral
+                  </Button>
+                </ShowWhenTrue>
               </ShowWhenTrue>
 
               {/* Lender - can claim collateral */}
