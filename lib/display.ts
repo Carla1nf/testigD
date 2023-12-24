@@ -68,7 +68,7 @@ export type LoanStatus = {
   className: string
   state: "live" | "defaulted"
 }
-export function loanStatus(deadlineNext: number) {
+export function loanStatus(deadlineNext: number): LoanStatus {
   const now = new Date().getTime()
   const daysInSeconds = deadlineNext * 1000 - now
 

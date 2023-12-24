@@ -1,33 +1,34 @@
 "use client"
 
-import { useToast } from "@/components/ui/use-toast"
-import DisplayNetwork from "@/components/ux/display-network"
-import useCurrentChain from "@/hooks/useCurrentChain"
-import { useConfig } from "wagmi"
-import { useControlledAddress } from "@/hooks/useControlledAddress"
-import { useEffect, useMemo } from "react"
-import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { machine } from "./loan-machine"
-import { useLoanData } from "@/hooks/useLoanData"
-import { ZERO_ADDRESS } from "@/services/constants"
-import { createActor, fromPromise } from "xstate"
-import { useMachine } from "@xstate/react"
-import { LoanStatus, dollars, loanStatus, shortAddress, thresholdLow } from "@/lib/display"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
-import { cn, fixedDecimals } from "@/lib/utils"
-import DaysHours from "@/components/ux/deadline-datetime"
 import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
-import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
-import dayjs from "dayjs"
-import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
-import { Button } from "@/components/ui/button"
-import TokenImage from "@/components/ux/token-image"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { PersonIcon, SpinnerIcon } from "@/components/icons"
-import pluralize from "pluralize"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
+import DaysHours from "@/components/ux/deadline-datetime"
+import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
+import TokenImage from "@/components/ux/token-image"
+import { useControlledAddress } from "@/hooks/useControlledAddress"
+import useCurrentChain from "@/hooks/useCurrentChain"
+import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
+import { useLoanData } from "@/hooks/useLoanData"
+import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
+import { LoanStatus, dollars, loanStatus, shortAddress } from "@/lib/display"
+import { cn } from "@/lib/utils"
+import { useMachine } from "@xstate/react"
+import dayjs from "dayjs"
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import pluralize from "pluralize"
+import { useEffect, useMemo } from "react"
+import { useConfig, useContractRead } from "wagmi"
+import { fromPromise } from "xstate"
+import { machine } from "./loan-machine"
+import erc20Abi from "../../../abis/erc20.json"
+import { DEBITA_ADDRESS } from "@/lib/contracts"
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -49,6 +50,9 @@ export default function Loan({ params }: { params: { id: string } }) {
       actors: {
         claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
         claimCollateral: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
+        checkBorrowerHasPaymentAllowance: fromPromise(() =>
+          Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true)
+        ),
       },
     })
   )
@@ -71,6 +75,16 @@ export default function Loan({ params }: { params: { id: string } }) {
   const displayLoanStatus = useMemo(() => {
     return loanStatus(Number(loan?.deadlineNext))
   }, [loan?.deadlineNext])
+
+  // we need to know (if this is the borrower) how much they have approved the lending
+  const { data: lendingTokenAllowance } = useContractRead({
+    address: lendingToken?.address,
+    functionName: "allowance",
+    abi: erc20Abi,
+    args: [address, DEBITA_ADDRESS],
+  })
+
+  console.log("lendingTokenAllowance", lendingTokenAllowance)
 
   // BREADCRUMBS
   // CONFIG
@@ -104,10 +118,26 @@ export default function Loan({ params }: { params: { id: string } }) {
     } else if (loan?.borrower === address) {
       loanSend({ type: "is.borrower" })
       // now fill in the other details
+
+      // Has the borrower defaulted?
+      if (displayLoanStatus.state === "defaulted") {
+        loanSend({ type: "loan.has.defaulted" })
+      }
+
+      // does the borrower have a payment due?
+      if (loan?.paymentDue) {
+        loanSend({ type: "loan.has.payment.due" })
+      }
+
+      loanSend({ type: "borrower.check.payment.allowance" })
+      // Has the borrower approved enough tokens to repay debt?
+      // lendingTokenAllowance
+      //
+      //
     } else {
       loanSend({ type: "is.viewer" })
     }
-  }, [address, loan, displayLoanStatus, loanSend])
+  }, [address, loan, displayLoanStatus, loanSend, lendingTokenAllowance])
 
   const displayCollateralValue = dollars({ value: loan?.totalCollateralValue })
   const displayDebtValue = dollars({ value: loan?.lending?.amount })
@@ -142,9 +172,15 @@ export default function Loan({ params }: { params: { id: string } }) {
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
         <div className="flex flex-col gap-8">
           {/* Display Debt/Collateral owners */}
-          <div className="flex space-between gap-8 mb-8">
-            <div>Lender {shortAddress(loan?.lender)}</div>
-            <div>Borrower {shortAddress(loan?.borrower)}</div>
+          <div className="flex space-between gap-8">
+            <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+              Lender <PersonIcon className="w-6 h-6" />
+              {shortAddress(loan?.lender)}
+            </div>
+            <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+              Borrower <PersonIcon className="w-6 h-6" />
+              {shortAddress(loan?.borrower)}
+            </div>
           </div>
 
           {/* Loan Stats */}
@@ -251,16 +287,28 @@ export default function Loan({ params }: { params: { id: string } }) {
             </div>
           </ShowWhenTrue>
 
-          {/* Alert */}
+          {/* Borrower Alerts */}
           <ShowWhenTrue when={loanState.matches("borrower")}>
-            <Alert variant="warning" className="mt-4">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Please note</AlertTitle>
-              <AlertDescription>
-                if any payment is not paid according to the agreed terms, the lender reserves the right to claim the
-                collateral provided as security for the loan.
-              </AlertDescription>
-            </Alert>
+            <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
+              <Alert variant="warning" className="">
+                <AlertCircle className="w-5 h-5 mr-2" />
+                <AlertTitle>Please note</AlertTitle>
+                <AlertDescription>
+                  This loan is overdue. The lender has the right to claim collateral and any payments already paid.
+                  Please make payment as soon as possible to avoid loss.
+                </AlertDescription>
+              </Alert>
+            </ShowWhenTrue>
+            <ShowWhenTrue when={displayLoanStatus.state === "live"}>
+              <Alert variant="info" className="">
+                <AlertCircle className="w-5 h-5 mr-2" />
+                <AlertTitle>Please note</AlertTitle>
+                <AlertDescription>
+                  if any payment is not paid according to the agreed terms, the lender reserves the right to claim the
+                  collateral provided as security for the loan.
+                </AlertDescription>
+              </Alert>
+            </ShowWhenTrue>
           </ShowWhenTrue>
         </div>
         <div className="space-y-8 max-w-xl w-full">
@@ -292,7 +340,30 @@ export default function Loan({ params }: { params: { id: string } }) {
 
               <div>
                 <div>Next Payment</div>
-                <DaysHours deadline={loan?.deadline} className={cn(displayLoanStatus.className, "font-bold text-lg")} />
+
+                <ShowWhenTrue when={loanState.matches("borrower")}>
+                  <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
+                    <span className="font-bold text-lg text-amber-500">Due</span>
+                  </ShowWhenTrue>
+                  <ShowWhenTrue when={displayLoanStatus.state === "live"}>
+                    <DaysHours
+                      deadline={loan?.deadline}
+                      className={cn(displayLoanStatus.className, "font-bold text-lg")}
+                    />
+                  </ShowWhenTrue>
+                </ShowWhenTrue>
+
+                <ShowWhenTrue when={loanState.matches("lender")}>
+                  <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
+                    <span className="font-bold text-lg text-amber-500">Expired</span>
+                  </ShowWhenTrue>
+                  <ShowWhenTrue when={displayLoanStatus.state === "live"}>
+                    <DaysHours
+                      deadline={loan?.deadline}
+                      className={cn(displayLoanStatus.className, "font-bold text-lg")}
+                    />
+                  </ShowWhenTrue>
+                </ShowWhenTrue>
               </div>
             </div>
             {/* Tokens row */}
@@ -417,6 +488,27 @@ export default function Loan({ params }: { params: { id: string } }) {
               <ShowWhenTrue when={loanState.matches("lender.defaulted.completed")}>
                 <Button variant="success" className="w-1/2">
                   <CheckCircle className="w-5 h-5 mr-2" /> Claimed Collateral
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - repay debt - checking allowance */}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.checkingAllowance")}>
+                <Button variant="action" className="w-1/2">
+                  Checking Allowance
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - repay debt - checking allowance failed */}
+              <ShowWhenTrue when={loanState.matches("lender.defaulted.errorClaimingCollateral")}>
+                <Button
+                  variant="error"
+                  className="min-w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.retry.check.allowance" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5 mr-2" /> Check Allowance Failed - Retry?
                 </Button>
               </ShowWhenTrue>
             </div>

@@ -7,10 +7,65 @@ export const machine = createMachine(
     states: {
       isViewer: {},
       borrower: {
-        initial: "hasPayments",
         states: {
-          hasPayments: {},
+          defaulted: {
+            initial: "notDefaulted",
+            states: {
+              notDefaulted: {
+                on: {
+                  "loan.has.defaulted": {
+                    target: "hasDefaulted",
+                  },
+                },
+              },
+              hasDefaulted: {},
+            },
+          },
+          payments: {
+            initial: "noPaymentsDue",
+            states: {
+              noPaymentsDue: {
+                on: {
+                  "loan.has.payment.due": {
+                    target: "hasPaymentDue",
+                  },
+                },
+              },
+              hasPaymentDue: {
+                on: {
+                  "borrower.check.payment.allowance": {
+                    target: "checkingAllowance",
+                  },
+                },
+              },
+              checkingAllowance: {
+                invoke: {
+                  src: "checkBorrowerHasPaymentAllowance",
+                  id: "checkBorrowerHasPaymentAllowance",
+                  onDone: [
+                    {
+                      target: "hasAllowance",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "errorCheckingAllowance",
+                    },
+                  ],
+                },
+              },
+              hasAllowance: {},
+              errorCheckingAllowance: {
+                on: {
+                  "borrower.retry.check.allowance": {
+                    target: "checkingAllowance",
+                  },
+                },
+              },
+            },
+          },
         },
+        type: "parallel",
       },
       lender: {
         states: {
@@ -135,7 +190,10 @@ export const machine = createMachine(
         | { type: "lender.already.claimed.collateral" }
         | { type: "lender.claim.collateral" }
         | { type: "lender.retry.lent.tokens" }
-        | { type: "lender.retry.claim.collateral" },
+        | { type: "lender.retry.claim.collateral" }
+        | { type: "borrower.retry.check.allowance" }
+        | { type: "borrower.check.payment.allowance" }
+        | { type: "loan.has.payment.due" },
     },
   },
   {
@@ -145,6 +203,9 @@ export const machine = createMachine(
         /* ... */
       }),
       claimCollateral: createMachine({
+        /* ... */
+      }),
+      checkBorrowerHasPaymentAllowance: createMachine({
         /* ... */
       }),
     },

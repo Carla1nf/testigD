@@ -113,6 +113,9 @@ export const useLoanData = (id: number) => {
 
       // Each payment
       const eachPayment = fromDecimals(parsedData.paymentAmount, lenderToken?.decimals ?? 18)
+      const paymentDue = parsedData.paymentCount > parsedData.paymentsPaid
+      const paymentAmountRaw = parsedData.paymentAmount
+      const paymentAmount = fromDecimals(paymentAmountRaw, lenderToken?.decimals ?? 18)
 
       // Debt left
       const debtLeftRaw = parsedData.paymentAmount * (parsedData.paymentCount - parsedData.paymentsPaid)
@@ -150,9 +153,11 @@ export const useLoanData = (id: number) => {
         lending,
         ltv,
         numberOfLoanDays,
-        paymentAmountRaw: parsedData.paymentAmount,
+        paymentAmount,
+        paymentAmountRaw,
         paymentCount: parsedData.paymentCount,
         paymentsPaid: parsedData.paymentsPaid,
+        paymentDue,
         ratio,
         timelap: parsedData.timelap,
         totalCollateralValue,

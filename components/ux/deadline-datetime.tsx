@@ -3,6 +3,8 @@
 import { toDays, toHours } from "@/lib/display"
 
 const DaysHours = ({ deadline, className }: { deadline: number; className?: string }) => {
+  if (!deadline) return null
+
   const days = toDays(Number(deadline))
   const hours = toHours(Number(deadline))
 
