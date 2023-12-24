@@ -44,7 +44,7 @@ export const machine = createMachine(
                   id: "checkBorrowerHasPaymentAllowance",
                   onDone: [
                     {
-                      target: "hasAllowance",
+                      target: "payDebt",
                     },
                   ],
                   onError: [
@@ -54,11 +54,69 @@ export const machine = createMachine(
                   ],
                 },
               },
-              hasAllowance: {},
+              payDebt: {
+                on: {
+                  "borrower.pay.debt": {
+                    target: "payingDebt",
+                  },
+                },
+              },
               errorCheckingAllowance: {
                 on: {
                   "borrower.retry.check.allowance": {
                     target: "checkingAllowance",
+                  },
+                  "borrower.approve.allowance": {
+                    target: "approvingAllowance",
+                  },
+                },
+              },
+              payingDebt: {
+                invoke: {
+                  src: "borrowerPayingDebt",
+                  id: "borrowerPayingDebt",
+                  onDone: [
+                    {
+                      target: "completed",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "errorPayingDebt",
+                    },
+                  ],
+                },
+              },
+              approvingAllowance: {
+                invoke: {
+                  src: "borrowerApproveAllowance",
+                  id: "borrowerApproveAllowance",
+                  onDone: [
+                    {
+                      target: "payDebt",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "errorApprovingAllowance",
+                    },
+                  ],
+                },
+              },
+              completed: {
+                type: "final",
+              },
+              errorPayingDebt: {
+                on: {
+                  "borrower.retry.paying.debt": {
+                    target: "payingDebt",
+                  },
+                },
+              },
+              errorApprovingAllowance: {
+                on: {
+                  "borrower.retry.approve.allowance": {
+                    target: "approvingAllowance",
                   },
                 },
               },
@@ -193,7 +251,11 @@ export const machine = createMachine(
         | { type: "lender.retry.claim.collateral" }
         | { type: "borrower.retry.check.allowance" }
         | { type: "borrower.check.payment.allowance" }
-        | { type: "loan.has.payment.due" },
+        | { type: "loan.has.payment.due" }
+        | { type: "borrower.pay.debt" }
+        | { type: "borrower.retry.paying.debt" }
+        | { type: "borrower.approve.allowance" }
+        | { type: "borrower.retry.approve.allowance" },
     },
   },
   {
@@ -206,6 +268,12 @@ export const machine = createMachine(
         /* ... */
       }),
       checkBorrowerHasPaymentAllowance: createMachine({
+        /* ... */
+      }),
+      borrowerPayingDebt: createMachine({
+        /* ... */
+      }),
+      borrowerApproveAllowance: createMachine({
         /* ... */
       }),
     },

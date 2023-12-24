@@ -29,6 +29,7 @@ import { fromPromise } from "xstate"
 import { machine } from "./loan-machine"
 import erc20Abi from "../../../abis/erc20.json"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
+
 /**
  * This page shows the suer the FULL details of the loan
  *
@@ -45,21 +46,6 @@ export default function Loan({ params }: { params: { id: string } }) {
   const { address } = useControlledAddress()
   const { data: loan } = useLoanData(id)
 
-  const [loanState, loanSend] = useMachine(
-    machine.provide({
-      actors: {
-        claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
-        claimCollateral: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
-        checkBorrowerHasPaymentAllowance: fromPromise(() =>
-          Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true)
-        ),
-      },
-    })
-  )
-
-  console.log("loanState.value", loanState.value)
-  console.log("loan", loan)
-
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
   const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.lending?.address)
@@ -72,17 +58,51 @@ export default function Loan({ params }: { params: { id: string } }) {
 
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
-  const displayLoanStatus = useMemo(() => {
-    return loanStatus(Number(loan?.deadlineNext))
-  }, [loan?.deadlineNext])
-
   // we need to know (if this is the borrower) how much they have approved the lending
   const { data: lendingTokenAllowance } = useContractRead({
     address: lendingToken?.address,
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, DEBITA_ADDRESS],
-  })
+  }) as { data: bigint }
+
+  const [loanState, loanSend] = useMachine(
+    machine.provide({
+      actors: {
+        claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
+        claimCollateral: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
+        checkBorrowerHasPaymentAllowance: fromPromise(() => {
+          if (BigInt(lendingTokenAllowance ?? 0) > BigInt(loan?.paymentAmountRaw)) {
+            return Promise.resolve(true)
+          }
+          return Promise.reject(true)
+        }),
+        borrowerPayingDebt: fromPromise(
+          () =>
+            new Promise((resolve, reject) => {
+              setTimeout(() => {
+                Math.random() > 0.9 ? resolve(true) : reject(true)
+              }, 200)
+            })
+        ),
+        borrowerApproveAllowance: fromPromise(
+          () =>
+            new Promise((resolve, reject) => {
+              setTimeout(() => {
+                Math.random() > 0.9 ? resolve(true) : reject(true)
+              }, 2000)
+            })
+        ),
+      },
+    })
+  )
+
+  console.log("loanState.value", loanState.value)
+  console.log("loan", loan)
+
+  const displayLoanStatus = useMemo(() => {
+    return loanStatus(Number(loan?.deadlineNext))
+  }, [loan?.deadlineNext])
 
   console.log("lendingTokenAllowance", lendingTokenAllowance)
 
@@ -500,15 +520,83 @@ export default function Loan({ params }: { params: { id: string } }) {
               </ShowWhenTrue>
 
               {/* borrower - repay debt - checking allowance failed */}
-              <ShowWhenTrue when={loanState.matches("lender.defaulted.errorClaimingCollateral")}>
+              <ShowWhenTrue when={loanState.matches("borrower.payments.errorCheckingAllowance")}>
+                <Button
+                  variant="action"
+                  className="min-w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.approve.allowance" })
+                  }}
+                >
+                  Approve Allowance
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - repay debt - approving new allowance */}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.approvingAllowance")}>
+                <Button
+                  variant="action"
+                  className="min-w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.approve.allowance" })
+                  }}
+                >
+                  Approving Allowance
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - repay debt - approving new allowance failed*/}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.errorApprovingAllowance")}>
                 <Button
                   variant="error"
                   className="min-w-1/2"
                   onClick={() => {
-                    loanSend({ type: "borrower.retry.check.allowance" })
+                    loanSend({ type: "borrower.retry.approve.allowance" })
                   }}
                 >
-                  <XCircle className="h-5 w-5 mr-2" /> Check Allowance Failed - Retry?
+                  <XCircle className="h-5 w-5 mr-2" /> Approving Failed - Retry?
+                </Button>
+              </ShowWhenTrue>
+
+              {/* Borrower - Ready to pay debt */}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.payDebt")}>
+                <Button
+                  variant="action"
+                  className="w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.pay.debt" })
+                  }}
+                >
+                  Pay Debt
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - repaying debt */}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.payingDebt")}>
+                <Button variant="action" className="w-1/2">
+                  Paying Debt
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - paying debt failed */}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.errorPayingDebt")}>
+                <Button
+                  variant="error"
+                  className="min-w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.retry.paying.debt" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5 mr-2" /> Paying Debt Failed - Retry?
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - debt paid */}
+              <ShowWhenTrue when={loanState.matches("borrower.payments.completed")}>
+                <Button variant="success" className="w-1/2">
+                  <CheckCircle className="w-5 h-5 mr-2" /> Debt Paid
                 </Button>
               </ShowWhenTrue>
             </div>
