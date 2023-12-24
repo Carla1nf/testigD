@@ -195,8 +195,8 @@ export const machine = createMachine(
                 description:
                   "The borrower defaulted so the lender doesn't get the lent tokens back. in this case, the lender can claim the collateral tokens, this is true if one or more payments has defaulted",
                 invoke: {
-                  src: "claimCollateral",
-                  id: "claimCollateral",
+                  src: "claimCollateralAsLender",
+                  id: "claimCollateralAsLender",
                   onDone: [
                     {
                       target: "completed",
@@ -269,7 +269,7 @@ export const machine = createMachine(
       claimLentTokens: createMachine({
         /* ... */
       }),
-      claimCollateral: createMachine({
+      claimCollateralAsLender: createMachine({
         /* ... */
       }),
     },

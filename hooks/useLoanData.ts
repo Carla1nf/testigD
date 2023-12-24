@@ -151,6 +151,7 @@ export const useLoanData = (id: number) => {
         deadlineNext: parsedData.deadlineNext,
         eachPayment,
         hasClaimedCollateral: parsedData.executed,
+        hasLoanCompleted: parsedData.executed,
         hasDefaulted,
         id,
         lender,

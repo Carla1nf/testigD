@@ -74,10 +74,8 @@ export default function Loan({ params }: { params: { id: string } }) {
     machine.provide({
       actors: {
         claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
-        claimCollateral: fromPromise(async () => {
+        claimCollateralAsLender: fromPromise(async () => {
           try {
-            // claimCollateralasLender
-
             if (loan?.hasClaimedCollateral) {
               throw "Collateral already claimed"
             }
@@ -88,16 +86,32 @@ export default function Loan({ params }: { params: { id: string } }) {
               abi: debitaAbi,
               args: [id],
               account: address,
-              gas: BigInt(900000),
+              gas: BigInt(300000),
             })
 
             const result = await writeContract(request)
-
-            console.log("result", result)
-
-            // now we get the loan data again!
             await refetchLoan()
+            return Promise.resolve(result)
+          } catch (error) {}
+          return Promise.reject()
+        }),
+        claimCollateralAsBorrower: fromPromise(async () => {
+          try {
+            if (loan?.hasClaimedCollateral) {
+              throw "Collateral already claimed"
+            }
 
+            const { request } = await config.publicClient.simulateContract({
+              address: DEBITA_ADDRESS,
+              functionName: "claimCollateralasBorrower",
+              abi: debitaAbi,
+              args: [id],
+              account: address,
+              gas: BigInt(300000),
+            })
+
+            const result = await writeContract(request)
+            await refetchLoan()
             return Promise.resolve(result)
           } catch (error) {}
           return Promise.reject()
@@ -406,6 +420,17 @@ export default function Loan({ params }: { params: { id: string } }) {
                   if any payment is not paid according to the agreed terms, the lender reserves the right to claim the
                   collateral provided as security for the loan.
                 </AlertDescription>
+              </Alert>
+            </ShowWhenTrue>
+          </ShowWhenTrue>
+
+          {/* Lender Alerts */}
+          <ShowWhenTrue when={loanState.matches("lender")}>
+            <ShowWhenTrue when={loan?.hasLoanCompleted}>
+              <Alert variant="success" className="">
+                <AlertCircle className="w-5 h-5 mr-2" />
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>The loan has completed</AlertDescription>
               </Alert>
             </ShowWhenTrue>
           </ShowWhenTrue>
