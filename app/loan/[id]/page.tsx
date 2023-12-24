@@ -47,7 +47,8 @@ export default function Loan({ params }: { params: { id: string } }) {
   const [loanState, loanSend] = useMachine(
     machine.provide({
       actors: {
-        claimLentTokens: fromPromise(() => Promise.resolve(true)),
+        claimLentTokens: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
+        claimCollateral: fromPromise(() => (Math.random() > 0.5 ? Promise.resolve(true) : Promise.reject(true))),
       },
     })
   )
@@ -67,6 +68,10 @@ export default function Loan({ params }: { params: { id: string } }) {
 
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
+  const displayLoanStatus = useMemo(() => {
+    return loanStatus(Number(loan?.deadlineNext))
+  }, [loan?.deadlineNext])
+
   // BREADCRUMBS
   // CONFIG
   const breadcrumbs = useMemo(() => {
@@ -77,18 +82,24 @@ export default function Loan({ params }: { params: { id: string } }) {
     if (!loan) {
       return
     }
-    // users can change wallets so let's stay on top of that
+
+    // Users can change wallets so let's stay on top of that
     if (loan?.lender === address) {
       loanSend({ type: "is.lender" })
       // now fill in the other details
 
       // fake unclaimed payments
-      // loanSend({ type: "loan.has.tokens.to.claim" })
+      loanSend({ type: "loan.has.tokens.to.claim" })
       // loanSend({ type: "lender.claim.lent.tokens" })
 
-      // 1. how do we know there is a claim available and how much?
+      // How do we know there is a claim available and how much?
       if (loan?.claimableDebt > 0) {
         loanSend({ type: "loan.has.tokens.to.claim" })
+      }
+
+      // Has the borrower defaulted?
+      if (displayLoanStatus.state === "defaulted") {
+        loanSend({ type: "loan.has.defaulted" })
       }
     } else if (loan?.borrower === address) {
       loanSend({ type: "is.borrower" })
@@ -96,13 +107,12 @@ export default function Loan({ params }: { params: { id: string } }) {
     } else {
       loanSend({ type: "is.viewer" })
     }
-  }, [address, loan])
+  }, [address, loan, displayLoanStatus, loanSend])
 
   const displayCollateralValue = dollars({ value: loan?.totalCollateralValue })
   const displayDebtValue = dollars({ value: loan?.lending?.amount })
   const displayLtv = loan?.ltv.toFixed(2)
   const displayDeadlineValue = Number(loan?.deadline) ?? 0
-  const displayLoanStatus = loanStatus(Number(loan?.deadlineNext))
 
   // CHARTING
   // DATA STRUCTURE
@@ -173,7 +183,13 @@ export default function Loan({ params }: { params: { id: string } }) {
                   height={24}
                 />
               </div>
-              <Button variant="action" className="px-8">
+              <Button
+                variant="action"
+                className="px-8"
+                onClick={() => {
+                  loanSend({ type: "lender.claim.lent.tokens" })
+                }}
+              >
                 Claim debt
               </Button>
             </div>
@@ -216,7 +232,7 @@ export default function Loan({ params }: { params: { id: string } }) {
                 variant="error"
                 className="px-8 gap-2"
                 onClick={() => {
-                  loanSend({ type: "lender.retry" })
+                  loanSend({ type: "lender.retry.lent.tokens" })
                 }}
               >
                 <XCircle className="h-5 w-5" /> Claim Failed - Retry?
@@ -362,7 +378,48 @@ export default function Loan({ params }: { params: { id: string } }) {
             </div>
 
             {/* Buttons */}
-            <div className="mt-8 flex justify-center">Buttons</div>
+            <div className="mt-8 flex justify-center">
+              {/* Lender - can claim collateral */}
+              <ShowWhenTrue when={loanState.matches("lender.defaulted.hasDefaulted")}>
+                <Button
+                  variant="action"
+                  className="w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "lender.claim.collateral" })
+                  }}
+                >
+                  Claim Collateral
+                </Button>
+              </ShowWhenTrue>
+
+              {/* Lender - can claim collateral */}
+              <ShowWhenTrue when={loanState.matches("lender.defaulted.claimingCollateral")}>
+                <Button variant="action" className="w-1/2">
+                  Claiming Collateral
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </ShowWhenTrue>
+
+              {/* Lender - failed claimed collateral */}
+              <ShowWhenTrue when={loanState.matches("lender.defaulted.errorClaimingCollateral")}>
+                <Button
+                  variant="error"
+                  className="min-w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "lender.retry.claim.collateral" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5 mr-2" /> Claim Failed - Retry?
+                </Button>
+              </ShowWhenTrue>
+
+              {/* Lender - claimed collateral */}
+              <ShowWhenTrue when={loanState.matches("lender.defaulted.completed")}>
+                <Button variant="success" className="w-1/2">
+                  <CheckCircle className="w-5 h-5 mr-2" /> Claimed Collateral
+                </Button>
+              </ShowWhenTrue>
+            </div>
           </div>
         </div>
       </div>

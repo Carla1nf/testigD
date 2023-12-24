@@ -52,7 +52,7 @@ export const machine = createMachine(
               },
               errorClaimingLentTokens: {
                 on: {
-                  "lender.retry": {
+                  "lender.retry.lent.tokens": {
                     target: "claimingLentTokens",
                   },
                 },
@@ -65,14 +65,14 @@ export const machine = createMachine(
               notDefaulted: {
                 on: {
                   "loan.has.defaulted": {
-                    target: "defaulted",
+                    target: "hasDefaulted",
                   },
                   "lender.already.claimed.collateral": {
                     target: "completed",
                   },
                 },
               },
-              defaulted: {
+              hasDefaulted: {
                 on: {
                   "lender.claim.collateral": {
                     target: "claimingCollateral",
@@ -87,7 +87,7 @@ export const machine = createMachine(
                   "The borrower defaulted so the lender doesn't get the lent tokens back. in this case, the lender can claim the collateral tokens, this is true if one or more payments has defaulted",
                 invoke: {
                   src: "claimCollateral",
-                  id: "claimColateral",
+                  id: "claimCollateral",
                   onDone: [
                     {
                       target: "completed",
@@ -102,7 +102,7 @@ export const machine = createMachine(
               },
               errorClaimingCollateral: {
                 on: {
-                  "lender.retry": {
+                  "lender.retry.claim.collateral": {
                     target: "claimingCollateral",
                   },
                 },
@@ -132,9 +132,10 @@ export const machine = createMachine(
         | { type: "is.borrower" }
         | { type: "is.lender" }
         | { type: "lender.claim.lent.tokens" }
-        | { type: "lender.retry" }
         | { type: "lender.already.claimed.collateral" }
-        | { type: "lender.claim.collateral" },
+        | { type: "lender.claim.collateral" }
+        | { type: "lender.retry.lent.tokens" }
+        | { type: "lender.retry.claim.collateral" },
     },
   },
   {
