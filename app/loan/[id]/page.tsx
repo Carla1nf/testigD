@@ -724,8 +724,48 @@ export default function Loan({ params }: { params: { id: string } }) {
                 </Button>
               </ShowWhenTrue>
 
-              {/* borrower - defaulted */}
+              {/* Borrower - can claim collateral */}
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.canClaimCollateral")}>
+                <Button
+                  variant="action"
+                  className="w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.claim.collateral" })
+                  }}
+                >
+                  Claim Collateral
+                </Button>
+              </ShowWhenTrue>
 
+              {/* Lender - can claim collateral */}
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.claimingCollateral")}>
+                <Button variant="action" className="w-1/2">
+                  Claiming Collateral
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </ShowWhenTrue>
+
+              {/* Lender - failed claimed collateral */}
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.errorClaimingCollateral")}>
+                <Button
+                  variant="error"
+                  className="min-w-1/2"
+                  onClick={() => {
+                    loanSend({ type: "borrower.retry.claim.collateral" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5 mr-2" /> Claim Failed - Retry?
+                </Button>
+              </ShowWhenTrue>
+
+              {/* Lender - claimed collateral */}
+              <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.completedClaimingCollateral")}>
+                <Button variant="success" className="w-1/2">
+                  <CheckCircle className="w-5 h-5 mr-2" /> Claimed Collateral
+                </Button>
+              </ShowWhenTrue>
+
+              {/* borrower - defaulted */}
               <ShowWhenTrue when={loanState.matches("borrower.hasDefaulted")}>
                 <Button variant="muted" className="w-1/2" disabled>
                   Pay Debt

@@ -18,7 +18,7 @@ export const machine = createMachine(
                     target: "hasPaymentDue",
                   },
                   "borrower.has.repaid.in.full": {
-                    target: "claimingCollateral",
+                    target: "canClaimCollateral",
                   },
                 },
               },
@@ -27,6 +27,29 @@ export const machine = createMachine(
                   "borrower.check.payment.allowance": {
                     target: "checkingAllowance",
                   },
+                },
+              },
+              canClaimCollateral: {
+                on: {
+                  "borrower.claim.collateral": {
+                    target: "claimingCollateral",
+                  },
+                },
+              },
+              checkingAllowance: {
+                invoke: {
+                  src: "checkBorrowerHasPaymentAllowance",
+                  id: "checkBorrowerHasPaymentAllowance",
+                  onDone: [
+                    {
+                      target: "payDebt",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "errorCheckingAllowance",
+                    },
+                  ],
                 },
               },
               claimingCollateral: {
@@ -47,32 +70,6 @@ export const machine = createMachine(
                   ],
                 },
               },
-              checkingAllowance: {
-                invoke: {
-                  src: "checkBorrowerHasPaymentAllowance",
-                  id: "checkBorrowerHasPaymentAllowance",
-                  onDone: [
-                    {
-                      target: "payDebt",
-                    },
-                  ],
-                  onError: [
-                    {
-                      target: "errorCheckingAllowance",
-                    },
-                  ],
-                },
-              },
-              completedClaimingCollateral: {
-                type: "final",
-              },
-              errorClaimingCollateral: {
-                on: {
-                  "borrower.retry.claim.collateral": {
-                    target: "claimingCollateral",
-                  },
-                },
-              },
               payDebt: {
                 on: {
                   "borrower.pay.debt": {
@@ -84,6 +81,16 @@ export const machine = createMachine(
                 on: {
                   "borrower.approve.allowance": {
                     target: "approvingAllowance",
+                  },
+                },
+              },
+              completedClaimingCollateral: {
+                type: "final",
+              },
+              errorClaimingCollateral: {
+                on: {
+                  "borrower.retry.claim.collateral": {
+                    target: "claimingCollateral",
                   },
                 },
               },
@@ -284,7 +291,8 @@ export const machine = createMachine(
         | { type: "is.lender" }
         | { type: "has.already.claimed.collateral" }
         | { type: "borrower.has.repaid.in.full" }
-        | { type: "borrower.retry.claim.collateral" },
+        | { type: "borrower.retry.claim.collateral" }
+        | { type: "borrower.claim.collateral" },
     },
   },
   {
