@@ -2,22 +2,16 @@
 
 import { toDays, toHours } from "@/lib/display"
 
-const DaysHours = ({ deadline }: { deadline: number }) => {
+const DaysHours = ({ deadline, className }: { deadline: number; className?: string }) => {
+  if (!deadline) return null
+
   const days = toDays(Number(deadline))
   const hours = toHours(Number(deadline))
 
-  if (days === 0 && hours === 0) {
-    return (
-      <>
-        <span className="text-xs">--&nbsp;--</span>
-      </>
-    )
-  }
-
   return (
-    <span className={`${days > 5 ? "text-green-300" : `${days == 0 && hours == 0 ? "text-yellow-300" : "text-red-300"}`}`}>
-      {days} <span className={`text-xs `}>DAYS</span> {hours} <span className="text-xs">HOURS </span>
-    </span>
+    <div className={className}>
+      {days} <span className="text-xs">DAYS</span> {hours} <span className="text-xs">HOURS </span>
+    </div>
   )
 }
 

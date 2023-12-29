@@ -1,4 +1,4 @@
-import { formatUnits, getAddress } from "viem"
+import { Address, formatUnits, getAddress } from "viem"
 
 import erc20Abi from "../abis/erc20.json"
 import { findInternalTokenByAddress } from "./tokens"
@@ -53,6 +53,34 @@ export const tokenDecimals = async ({ address }: { address: `0x${string}` }) => 
   return Number(tokenDecimals) ?? 0
 }
 
+// we already read the symbol as the name
+export const balanceOf = async ({ address, account }: { address: Address; account: Address }) => {
+  if (!address || !account) {
+    return BigInt(0)
+  }
+  const safeAddress = getAddress(address)
+  const safeAccount = getAddress(account)
+
+  const balance = await readContract({
+    address: safeAddress,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [safeAccount],
+  })
+
+  return (balance as bigint) ?? BigInt(0)
+}
+
 export const fromDecimals = (amount: bigint, decimals: number) => {
   return Number(formatUnits(amount, decimals))
+}
+
+/**
+ * convert a number into the bigInt version with decimal places
+ * @param amount
+ * @param decimals
+ * @returns
+ */
+export const toDecimals = (amount: number, decimals: number) => {
+  return BigInt(amount * 10 ** decimals)
 }

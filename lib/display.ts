@@ -1,5 +1,13 @@
 import { Address } from "viem"
 
+import dayjs from "dayjs"
+import localizedFormat from "dayjs/plugin/localizedFormat"
+dayjs.extend(localizedFormat)
+
+export const formatFullDate = (unixTimestamp: number, format = "LLLL") => {
+  return dayjs(unixTimestamp * 1000).format(format)
+}
+
 type DollarsOptions = {
   value: number
   includeSymbol?: boolean
@@ -63,19 +71,26 @@ export function toHours(unixTimestamp: number) {
   return hours < 0 ? 0 : hours
 }
 
-export function loanStatus(deadlineNext: number) {
+export type LoanStatus = {
+  displayText: string
+  className: string
+  state: "live" | "defaulted"
+}
+export function loanStatus(deadlineNext: number): LoanStatus {
   const now = new Date().getTime()
   const daysInSeconds = deadlineNext * 1000 - now
 
   if (daysInSeconds <= 0) {
     return {
-      displayText: "DEFAULT",
-      className: "text-red-500",
+      displayText: "Defaulted",
+      className: "text-amber-300",
+      state: "defaulted",
     }
   }
   return {
-    displayText: "LIVE",
-    className: "text-green-500",
+    displayText: "Live",
+    className: "text-green-300",
+    state: "live",
   }
 }
 
@@ -119,3 +134,5 @@ export const thresholdLow = (value: number, threshold: number, alternative: stri
   if (value < threshold) return alternative
   return value.toFixed(decimals)
 }
+
+export const yesNo = (value: any) => (Boolean(value) ? "Yes" : "No")

@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { Address } from "viem"
 import DaysHours from "./deadline-datetime"
 import DisplayToken from "./display-token"
+import { useRouter } from "next/navigation"
 
 const DashboardUserTableItem = ({
   address,
@@ -17,6 +18,7 @@ const DashboardUserTableItem = ({
 }) => {
   const { isSuccess, isLoading, isError, data } = useLoanValues(address, index, status)
   const updateDeadline = useManageNextPayment()
+  const router = useRouter()
 
   const hasLoanCompleted = Number(data?.loan.paymentsPaid) === Number(data?.loan.paymentCount)
   const hasLoanExecuted = data?.loan.executed
@@ -73,7 +75,11 @@ const DashboardUserTableItem = ({
     const status = loanStatus(Number(data.loan.deadlineNext))
 
     return (
-      <tr className="flex flex-col animate-enter-token flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={data.loanId}>
+      <tr
+        className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 cursor-pointer animate-enter-token hover:bg-[#383838] "
+        key={data.loanId}
+        onClick={() => router.push(`/loan/${data.loanId}`)}
+      >
         <td className="p-3">
           {data?.loan?.collaterals?.length === 1 ? <DisplayToken token={data?.loan?.collaterals[0]} size={24} /> : null}
           {data?.loan?.collaterals?.length === 2 ? (
@@ -88,17 +94,17 @@ const DashboardUserTableItem = ({
         </td>
         <td className="p-3">{Number(data.loanId)}</td>
         <td className="p-3">
-          <DaysHours deadline={Number(data.loan.deadlineNext)} />
+          <DaysHours deadline={Number(data.loan.deadline)} />
         </td>
         <td className="p-3">
           {" "}
           {Number(data.loan.paymentsPaid)}/{Number(data.loan.paymentCount)}
         </td>
-        <td className="p-3 font-semibold">
+        <td className="p-3">
           {data.loan.paymentCount === data.loan.paymentsPaid || data.loan.executed ? (
-            <div className="text-yellow-400">Ended</div>
+            <div className="text-yellow-500">Ended</div>
           ) : (
-            <div className={`${status.className} ${status.displayText == 'LIVE' ? "text-green-300" : "text-red-400"}`}>{status.displayText}</div>
+            <div className={status.className}>{status.displayText}</div>
           )}
         </td>
       </tr>

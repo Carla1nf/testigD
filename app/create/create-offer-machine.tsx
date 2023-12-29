@@ -370,32 +370,97 @@ export const machine = createMachine(
       },
       confirmation: {
         on: {
-          confirm: {
-            target: "creating",
-          },
+          confirm: [
+            {
+              guard: ({ event }) => event.mode === "lend",
+              target: "checkingLendAllowance",
+            },
+            {
+              guard: ({ event }) => event.mode === "borrow",
+              target: "checkingBorrowAllowance",
+            },
+          ],
           back: {
             target: "#createOffer.form.history",
           },
         },
       },
+      checkingBorrowAllowance: {
+        invoke: {
+          src: "checkingBorrowAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onError: [{ target: "approveBorrowAllowance" }],
+          onDone: [{ target: "creating" }],
+        },
+        on: {
+          back: {
+            target: "confirmation",
+          },
+        },
+      },
+      approveBorrowAllowance: {
+        invoke: {
+          src: "approveBorrowAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onError: [{ target: "approveBorrowAllowance" }],
+          onDone: [{ target: "creating" }],
+        },
+        on: {
+          retry: { target: "checkingBorrowAllowance" },
+          back: { target: "confirmation" },
+        },
+      },
+      checkingLendAllowance: {
+        invoke: {
+          src: "checkingLendAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onDone: { target: "creating" },
+          onError: { target: "approveLendAllowance" },
+        },
+        on: {
+          back: { target: "confirmation" },
+        },
+      },
+      approveLendAllowance: {
+        invoke: {
+          src: "approveLendAllowance",
+          input: ({ context, event }) => ({ context, event }),
+          onError: [{ target: "checkingLendAllowance" }],
+          onDone: [{ target: "creating" }],
+        },
+        on: {
+          retry: { target: "checkingLendAllowance" },
+          back: { target: "confirmation" },
+        },
+      },
       creating: {
         invoke: {
-          src: "createOffer",
-          id: "createOffer",
+          src: "creatingOffer",
+          id: "creatingOffer",
+          input: ({ context, event }) => ({ context, event }),
           onDone: [{ target: "created" }],
           onError: [{ target: "error" }],
         },
+        on: {
+          back: { target: "confirmation" },
+        },
       },
-      created: {},
+      created: {
+        on: {
+          again: { target: "confirmation" },
+          back: { target: "confirmation" },
+        },
+      },
       error: {
         on: {
           retry: { target: "creating" },
+          back: { target: "confirmation" },
         },
       },
     },
     types: {} as {
       context: {
-        // four fiuelds per token
+        // four fields per token
         collateralToken0: Token | undefined
         collateralAmount0: number | undefined
         collateralPrice0: number
@@ -431,7 +496,8 @@ export const machine = createMachine(
         | { type: "back" }
         | { type: "next" }
         | { type: "retry" }
-        | { type: "confirm" }
+        | { type: "confirm"; mode: "lend" | "borrow" }
+        | { type: "again"; mode: "lend" | "borrow" }
         | { type: "durationDays"; value: number }
         | { type: "interestPercent"; value: number }
         | { type: "numberOfPayments"; value: number }
@@ -440,7 +506,6 @@ export const machine = createMachine(
         | { type: "ltv.75" }
         | { type: "ltv.custom" }
         | { type: "forceLtvRatio"; value: number }
-        | { type: "caclulateLtvRatio" }
     },
   },
   {
@@ -598,7 +663,15 @@ export const machine = createMachine(
       updateChartValues: ({ context, event }) => {},
       validateForm: ({ context, event }) => {},
     },
-    actors: {},
+    actors: {
+      createBorrowOffer: fromPromise(async () => {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(true)
+          }, 50000 * 1000)
+        })
+      }),
+    },
     guards: {
       isFormComplete: ({ context }, params) => {
         return Boolean(

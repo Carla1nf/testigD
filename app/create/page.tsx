@@ -1,24 +1,35 @@
 "use client"
 
-import { DebitaIcon } from "@/components/icons"
+import { DebitaIcon, SpinnerIcon } from "@/components/icons"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import SelectToken from "@/components/ux/select-token"
+import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
+import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
+import { ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
-import { CheckCircle2, LucideMinus, LucidePlus } from "lucide-react"
+import { AlertCircle, CheckCircle2, LucideMinus, LucidePlus, XCircle } from "lucide-react"
+import { InputNumber } from "primereact/inputnumber"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useConfig } from "wagmi"
+import { readContract, writeContract } from "wagmi/actions"
+import { fromPromise } from "xstate"
+import erc20Abi from "../../abis/erc20.json"
+import debitaAbi from "../../abis/debita.json"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
-import { InputNumber } from "primereact/inputnumber"
+import { toDecimals } from "@/lib/erc20"
+import pluralize from "pluralize"
 
-const displatEstimatedAPr = (estimatedApr: number) => {
+const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
     value: estimatedApr ?? 0,
     decimalsWhenGteOne: 2,
@@ -26,6 +37,8 @@ const displatEstimatedAPr = (estimatedApr: number) => {
   })
 }
 export default function Create() {
+  const config = useConfig()
+  const { address } = useControlledAddress()
   const currentChain = useCurrentChain()
   const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
@@ -34,15 +47,317 @@ export default function Create() {
   const [modeState, modeSend] = useMachine(modeMachine)
 
   // CREATE BORROW MACHINE
-  const [machineState, machineSend] = useMachine(machine)
+  const [machineState, machineSend] = useMachine(
+    machine.provide({
+      actors: {
+        checkingBorrowAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.collateralToken0.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true, mode: "borrow" })
+          }
+
+          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+
+          const currentAllowance = (await readContract({
+            address: context.collateralToken0.address,
+            functionName: "allowance",
+            abi: erc20Abi,
+            args: [address, DEBITA_ADDRESS],
+          })) as bigint
+
+          if (BigInt(currentAllowance) >= amountRequired) {
+            return Promise.resolve({ currentAllowance, amountRequired, mode: "borrow" })
+          }
+
+          throw "not enough allowance"
+        }),
+        approveBorrowAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.collateralToken0.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true, mode: "borrow" })
+          }
+
+          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+
+          const { request } = await config.publicClient.simulateContract({
+            address: context.collateralToken0.address,
+            functionName: "approve",
+            abi: erc20Abi,
+            args: [DEBITA_ADDRESS, amountRequired],
+            account: address,
+          })
+
+          const executed = await writeContract(request)
+          // console.log("approveBorrowAllowance", executed)
+
+          return { ...executed, mode: "borrow" }
+        }),
+        creatingOffer: fromPromise(async ({ input }) => {
+          console.log("creatingOffer")
+          console.log("input", input)
+          const { context, event } = input
+
+          console.log("context", context)
+          console.log("event", event)
+
+          const mode = event.output.mode === "borrow" ? "borrow" : "lend"
+          console.log("mode", mode)
+
+          //  value used in both modes
+          const _interest = BigInt((context.interestPercent * 100) / 10)
+          const _timelap = (86400 * context.durationDays) / context.numberOfPayments
+          const _paymentCount = BigInt(context.numberOfPayments)
+          const _whitelist: any[] = []
+
+          if (mode === "borrow") {
+            /**
+           * 
+           * ORIGINAL V1 CODE
+           * 
+              const {
+                data: dataCollateral,
+                write: createCollateralOffer,
+                isSuccess: SuccessCreating_Collateral,
+                isLoading: isLoading_Collateral,
+                isError: isError_Collateral,
+              } = useContractWrite({
+                address: DEBITA_CONTRACT,
+                functionName: "createCollateralOffer",
+                abi: DEBITA_ABI,
+                args: [
+                  params.address[1],
+                  params.address[2] == "" ? [params.address[0]] : [params.address[0], params.address[2]],
+                  params.address[2] == "" ? [`${collateral_1}`] : [`${collateral_1}`, `${collateral_2}`],
+                  `${_lenderAmount}`,
+                  Number(params.interest) * 10,
+                  timelap,
+                  params.payments,
+                  [],
+                  {
+                    gasLimit: "2000000",
+                    value:
+                      params.address[0] == "0x0000000000000000000000000000000000000000" ||
+                      params.address[2] == "0x0000000000000000000000000000000000000000"
+                        ? `${formatNumber(
+                            getWEI([params.address[0], params.address[2]], [params.collateral_1, params.collateral_2]) * 10 ** 18,
+                          )}`
+                        : "0",
+                  },
+                ],
+              })
+           * 
+           */
+            try {
+              const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+              const collateral1 = context.collateralAmount1
+                ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
+                : BigInt(0)
+              const _wantedLenderToken = context.token.address
+              const collateralTokens = context.collateralToken1
+                ? [context.collateralToken0.address, context.collateralToken1.address]
+                : [context.collateralToken0.address]
+              const collateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
+              const _wantedLenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+
+              //  Process collateral value
+              let value: bigint = context.collateralToken0.address === ZERO_ADDRESS ? BigInt(collateral0) : BigInt(0)
+              if (context?.collateralToken1?.address === ZERO_ADDRESS) {
+                value += BigInt(collateral1)
+              }
+
+              const { request } = await config.publicClient.simulateContract({
+                address: DEBITA_ADDRESS,
+                functionName: "createCollateralOffer",
+                abi: debitaAbi,
+                args: [
+                  _wantedLenderToken,
+                  collateralTokens,
+                  collateralAmount,
+                  _wantedLenderAmount,
+                  _interest,
+                  _timelap,
+                  _paymentCount,
+                  _whitelist,
+                ],
+                account: address,
+                value, // todo: test with FTM to see if value cones across properly
+                gas: BigInt(2000000),
+              })
+
+              const executed = await writeContract(request)
+              console.log("createCollateralOffer", executed)
+
+              if (executed) {
+                return Promise.resolve({ ...executed, mode: "borrow" })
+              }
+
+              throw "createCollateralOffer->failed"
+
+              // return allowance0
+            } catch (error: any) {
+              console.log("error", error)
+
+              return Promise.reject({ error: error.message })
+            }
+          }
+
+          if (mode === "lend") {
+            /**
+             * 
+             * ORIGINAL V1 CODE
+             * 
+              const {
+                  data: dataLender,
+                  write: createLenderOffer,
+                  isSuccess: SuccessCreating_Lender,
+                  isLoading: isLoading_Lending,
+                  isError: isError_Lending,
+                } = useContractWrite({
+                  address: DEBITA_CONTRACT,
+                  functionName: "createLenderOption",
+                  abi: DEBITA_ABI,
+                  args: [
+                    params.address[1],
+                    params.address[2] == "" ? [params.address[0]] : [params.address[0], params.address[2]],
+                    params.address[2] == "" ? [`${collateral_1}`] : [`${collateral_1}`, `${collateral_2}`],
+                    `${_lenderAmount}`,
+                    Number(params.interest) * 10,
+                    timelap,
+                    params.payments,
+                    [],
+                    {
+                      gasLimit: "2000000",
+                      value: params.address[1] == "0x0000000000000000000000000000000000000000" ? `${_lenderAmount}` : "0",
+                    },
+                  ],
+                })
+            * 
+            */
+            try {
+              const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+              const collateral1 = context.collateralAmount1
+                ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
+                : BigInt(0)
+              const _LenderToken = context.token.address
+              const _wantedCollateralTokens = context.collateralToken1
+                ? [context.collateralToken0.address, context.collateralToken1.address]
+                : [context.collateralToken0.address]
+              const _wantedCollateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
+              const _LenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+
+              // calculate value
+              const value = context.token.address === ZERO_ADDRESS ? _LenderAmount : BigInt(0)
+
+              console.log("_LenderAmount", _LenderAmount)
+              console.log("value", value)
+              console.log("_interest", _interest)
+              console.log("_timelap", _timelap)
+              console.log("_paymentCount", _paymentCount)
+              console.log("_whitelist", _whitelist)
+
+              const { request } = await config.publicClient.simulateContract({
+                address: DEBITA_ADDRESS,
+                functionName: "createLenderOption",
+                abi: debitaAbi,
+                args: [
+                  _LenderToken,
+                  _wantedCollateralTokens,
+                  _wantedCollateralAmount,
+                  _LenderAmount,
+                  _interest,
+                  _timelap,
+                  _paymentCount,
+                  _whitelist,
+                ],
+                account: address,
+                value,
+                gas: BigInt(2000000),
+              })
+
+              const executed = await writeContract(request)
+              console.log("createLenderOption", executed)
+
+              if (executed) {
+                return Promise.resolve({ ...executed, mode: "lend" })
+              }
+
+              throw "createLenderOption->failed"
+
+              // return allowance0
+            } catch (error: any) {
+              console.log("createLenderOption->error", error)
+
+              return Promise.reject({ error: error.message, mode: "lend" })
+            }
+          }
+        }),
+        checkingLendAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.token.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true, mode: "lend" })
+          }
+          const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+          const currentAllowance = (await readContract({
+            address: context.token.address,
+            functionName: "allowance",
+            abi: erc20Abi,
+            args: [address, DEBITA_ADDRESS],
+          })) as bigint
+
+          if (BigInt(currentAllowance) >= amountRequired) {
+            return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
+          }
+
+          throw "not enough allowance"
+
+          // return allowance0
+        }),
+        approveLendAllowance: fromPromise(async ({ input: { context } }) => {
+          // We need to know if we have enough allowance to create the offer
+          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+          // collateralAmount0 of collateralToken0
+          if (context.token.address === ZERO_ADDRESS) {
+            return Promise.resolve({ nativeToken: true, mode: "lend" })
+          }
+
+          const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+
+          const { request } = await config.publicClient.simulateContract({
+            address: context.token.address,
+            functionName: "approve",
+            abi: erc20Abi,
+            args: [DEBITA_ADDRESS, amountRequired],
+            account: address,
+          })
+
+          const executed = await writeContract(request)
+          // console.log("approveLendAllowance", executed)
+
+          return Promise.resolve({ ...executed, mode: "lend" })
+        }),
+      },
+    })
+  )
+
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
-  console.log("context", machineState.context)
+  // console.log("context", machineState.context)
+  console.log("machineState.value", machineState.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
-   * This leads to circular logic so we need to detect which sceanrio is happening and react accordingly.
+   * This leads to circular logic so we need to detect which scenario is happening and react accordingly.
    *
    * If the machine has just recalculated ltvRatio and the input is not focused, update ltvCustomInputValue
    */
@@ -55,7 +370,7 @@ export default function Create() {
     ) {
       setLtvCustomInputValue(fixedDecimals(machineState?.context?.ltvRatio ?? 0, 3).toString())
     }
-  }, [machineState.context.ltvRatio, ltvCustomInputRef.current])
+  }, [machineState.context.ltvRatio, ltvCustomInputValue])
 
   useEffect(() => {
     if (ftm && machineState.context.collateralToken0 === undefined) {
@@ -64,7 +379,7 @@ export default function Create() {
     if (usdc && machineState.context.token === undefined) {
       machineSend({ type: "token", value: usdc })
     }
-  }, [ftm, usdc, machineState.context.collateralToken0, machineSend])
+  }, [ftm, usdc, machineState.context.collateralToken0, machineSend, machineState.context.token])
 
   // TOKENS
   const tokens = useMemo(() => {
@@ -108,6 +423,20 @@ export default function Create() {
     [machineSend]
   )
 
+  const back = useCallback(() => {
+    machineSend({ type: "back" })
+  }, [machineSend])
+
+  // quick calcs - move to machine later
+  const numberOfPayments = Number(machineState.context.numberOfPayments)
+  const durationDays = Number(machineState.context.durationDays)
+  const daysPerPayment = durationDays / numberOfPayments
+  const loanAmount = Number(machineState.context.tokenAmount)
+  const totalLoanInterest = loanAmount * (Number(machineState.context.interestPercent) / 100)
+  const loanFee = totalLoanInterest * 0.06
+  const actualInterest = totalLoanInterest - loanFee
+  const interestPerDay = actualInterest / durationDays / 100
+
   return (
     <div className="animate-enter-div">
       <h1 className="">Create</h1>
@@ -115,22 +444,25 @@ export default function Create() {
         Let&apos;s keep this simple for now, we will just create a form and hook it up to the xstate machine
       </p>
 
-      <Tabs
-        defaultValue="borrow"
-        className=""
-        onValueChange={() => {
-          modeSend({ type: "mode" })
-        }}
-      >
-        <TabsList className="bg-[#252324] rounded-b-none gap-2">
-          <TabsTrigger value="borrow" className="px-12">
-            Borrow
-          </TabsTrigger>
-          <TabsTrigger value="lend" className="px-12">
-            Lend
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* We can only switch modes when the filling out the form or confirming the offer */}
+      <ShowWhenTrue when={machineState.matches("form") || machineState.matches("confirmation")}>
+        <Tabs
+          defaultValue={modeState.value as "lend" | "borrow"}
+          className=""
+          onValueChange={() => {
+            modeSend({ type: "mode" })
+          }}
+        >
+          <TabsList className="bg-[#252324] rounded-b-none gap-2">
+            <TabsTrigger value="borrow" className="px-12">
+              Borrow
+            </TabsTrigger>
+            <TabsTrigger value="lend" className="px-12">
+              Lend
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </ShowWhenTrue>
 
       {/* Form */}
       <ShowWhenTrue when={machineState.matches("form")}>
@@ -279,7 +611,7 @@ export default function Create() {
             <div className="flex flex-col justify-between">
               <Label variant="create">Estimated APR (%)</Label>
               <div className="text-[#9F9F9F] text-lg font-bold">
-                {displatEstimatedAPr(machineState.context.estimatedApr)}
+                {displayEstimatedApr(machineState.context.estimatedApr)}
               </div>
             </div>
             <div className="">
@@ -322,9 +654,30 @@ export default function Create() {
         </div>
       </ShowWhenTrue>
 
-      <ShowWhenTrue when={machineState.matches("confirmation")}>
+      {/* I have changed my mind on this view
+
+      My initial plan was to have different views per state but now I want to keep the confirmation values constantly visible to he user
+      so they can back out at any time or make changes.
+
+      We will use the `borrow` page pattern of changing the buttons per state instead of the whole form, it will
+      feel a LOT more interactive and less jarring for the user.
+      
+      
+      */}
+      <ShowWhenTrue
+        when={
+          machineState.matches("confirmation") ||
+          machineState.matches("checkingBorrowAllowance") ||
+          machineState.matches("approveBorrowAllowance") ||
+          machineState.matches("checkingLendAllowance") ||
+          machineState.matches("approveLendAllowance") ||
+          machineState.matches("creating") ||
+          machineState.matches("created") ||
+          machineState.matches("error")
+        }
+      >
         <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          <div className="mb-4">
+          <div className="">
             <div className="flex flex-row justify-between items-center">
               <div className="flex flex-row gap-2 items-center">
                 <div className="text-xl font-bold">
@@ -336,36 +689,41 @@ export default function Create() {
               <DebitaIcon className="h-11 w-11 flex-basis-1" />
             </div>
 
-            <hr className="h-px mt-4 bg-[#4D4348] border-0" />
+            {/* <hr className="h-px mt-4 bg-[#4D4348] border-0" /> */}
           </div>
 
           <div className="grid grid-cols-2 gap-x-16 gap-y-4">
             <div className="border border-white/10 rounded-sm p-2 col-span-2">
               <Label variant="create">Payments</Label>
               <div className="font-bold text-base text-[#D0D0D0]">
-                <ShowWhenTrue when={machineState.context.numberOfPayments === 1}>
-                  There is a single payment due after {machineState.context.durationDays} days.
+                <ShowWhenTrue when={numberOfPayments === 1}>
+                  There is a single payment due after {durationDays} {pluralize("day", durationDays)}.
                 </ShowWhenTrue>
-                <ShowWhenFalse when={machineState.context.numberOfPayments === 1}>
-                  There are {machineState.context.numberOfPayments} payments due every{" "}
-                  {fixedDecimals(
-                    machineState.context.durationDays ?? 0 / (machineState.context.numberOfPayments ?? 0),
-                    2
-                  )}{" "}
-                  days.
+                <ShowWhenFalse when={numberOfPayments === 1}>
+                  There are {numberOfPayments} {pluralize("payment", numberOfPayments)} due every{" "}
+                  {!Number.isInteger(daysPerPayment) ? fixedDecimals(daysPerPayment, 2) : daysPerPayment}{" "}
+                  {pluralize("day", daysPerPayment)} over a {Number(durationDays)} day period.
                 </ShowWhenFalse>
               </div>
             </div>
 
             <div className="border border-white/10 rounded-sm p-2">
-              <Label variant="create">Total interest</Label>
-              <div className="font-bold text-base text-[#D0D0D0]">{machineState.context.numberOfPayments} Days</div>
+              <Label variant="create">Interest</Label>
+              <div className="font-bold text-base text-[#D0D0D0] mb-1">
+                {fixedDecimals(actualInterest, 3)} {machineState.context.token?.symbol}
+              </div>
+              <div className="text-[10px] text-[#9F9F9F] italic">
+                ({fixedDecimals(loanFee, 6)} {machineState.context.token?.symbol} fee)
+              </div>
             </div>
 
             <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">Estimated APR (%)</Label>
-              <div className="font-bold text-base text-[#D0D0D0]">
-                {displatEstimatedAPr(machineState.context.estimatedApr)}
+              <div className="font-bold text-base text-[#D0D0D0] mb-1">
+                {displayEstimatedApr(machineState.context.estimatedApr)}
+              </div>
+              <div className="text-[10px] text-[#9F9F9F] italic">
+                {percent({ value: interestPerDay, decimalsWhenGteOne: 4, decimalsWhenLessThanOne: 4 })} per day
               </div>
             </div>
 
@@ -375,31 +733,187 @@ export default function Create() {
             </div>
 
             <div className="border border-white/10 rounded-sm p-2">
+              <Label variant="create">Collateral Value</Label>
+              <div className="font-bold text-base text-[#D0D0D0]">
+                {dollars({
+                  value: machineState.context.collateralValue0 + Number(machineState?.context?.collateralValue1),
+                })}
+              </div>
+            </div>
+
+            <div className="border border-white/10 rounded-sm p-2">
               <Label variant="create">LTV Ratio</Label>
-              <div className="font-bold text-base text-[#D0D0D0]">{machineState.context.ltvRatio}</div>
+              <div className="font-bold text-base text-[#D0D0D0]">
+                {fixedDecimals(Number(machineState.context.ltvRatio), 2)}
+              </div>
+            </div>
+
+            <div className="border border-white/10 rounded-sm p-2">
+              <Label variant="create">Loan Value</Label>
+              <div className="font-bold text-base text-[#D0D0D0]">
+                {dollars({
+                  value: Number(machineState?.context?.tokenValue),
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="mt-8 p-4 flex justify-between">
-            <Button
-              variant="secondary"
-              className="px-12"
-              onClick={() => {
-                machineSend({ type: "back" })
-              }}
-            >
-              Back
-            </Button>
-            <Button
-              variant="action"
-              className="px-12"
-              onClick={() => {
-                machineSend({ type: "confirm" })
-              }}
-            >
-              Confirm
-            </Button>
-          </div>
+          {/* We will show different buttons depending on the state */}
+          <ShowWhenTrue when={machineState.matches("confirmation")}>
+            <div className="mt-8 p-4 flex justify-between">
+              <Button variant="secondary" className="px-12" onClick={back}>
+                Back
+              </Button>
+              <Button
+                variant="action"
+                className="px-12"
+                onClick={() => {
+                  machineSend({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
+                }}
+              >
+                Confirm
+              </Button>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue
+            when={machineState.matches("checkingBorrowAllowance") || machineState.matches("checkingLendAllowance")}
+          >
+            <div className="mt-8 p-4 flex justify-between">
+              <Button variant="secondary" className="px-12" onClick={back}>
+                Back
+              </Button>
+              <Button variant="muted" className="pl-4 cursor-none">
+                Checking Allowance
+                <SpinnerIcon className="ml-2 animate-spin-slow" />
+              </Button>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue
+            when={machineState.matches("approveBorrowAllowance") || machineState.matches("approveLendAllowance")}
+          >
+            <div className="px-4 mt-4">
+              <Alert variant="info">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Action required</AlertTitle>
+                <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button variant="muted" className="pl-4 cursor-none">
+                  Approving Allowance
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue
+            when={
+              machineState.matches("checkingBorrowAllowanceError") || machineState.matches("checkingLendAllowanceError")
+            }
+          >
+            <div className="px-4">
+              <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  There was an error approving your allowance, click the button to try again.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button
+                  variant="error"
+                  className="px-12 gap-2"
+                  onClick={() => {
+                    machineSend({ type: "retry" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5" />
+                  Approve Allowance Failed - Retry?
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue when={machineState.matches("creating")}>
+            <div className="px-4">
+              <Alert variant="info">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Action required</AlertTitle>
+                <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button variant="action" className="px-12">
+                  Confirming
+                  <SpinnerIcon className="ml-2 animate-spin-slow" />
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue when={machineState.matches("created")}>
+            <div className="px-4">
+              <Alert variant="success">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>
+                  {" "}
+                  Your offer has been created, please wait and you will be redirected shortly.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button
+                  variant="action"
+                  className="px-12"
+                  onClick={() => {
+                    alert("not implemented yet")
+                  }}
+                >
+                  View Offer
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
+
+          <ShowWhenTrue when={machineState.matches("error")}>
+            <div className="px-4">
+              <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  There was an error creating your offer, click the button to try again.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-8 flex justify-between">
+                <Button variant="secondary" className="px-12" onClick={back}>
+                  Back
+                </Button>
+                <Button
+                  variant="error"
+                  className="px-12 gap-2"
+                  onClick={() => {
+                    machineSend({ type: "retry" })
+                  }}
+                >
+                  <XCircle className="h-5 w-5" />
+                  Create Offer Failed - Retry?
+                </Button>
+              </div>
+            </div>
+          </ShowWhenTrue>
         </div>
       </ShowWhenTrue>
     </div>
