@@ -809,7 +809,7 @@ const DeadlineStat = ({ title, deadline, loanStatus }: { title: string; deadline
   return (
     <div className="flex flex-col gap-1 animate-enter-div">
       <div className="text-sm text-[#757575]">{title}</div>
-      <div className={cn(`text-xl font-bold ${deadline > 432000 ? "text-green-300" : "text-red-400"}`)}>
+      <div className={cn(`text-xl font-bold`)}>
         <ShowWhenTrue when={loanStatus.state === "defaulted"}>
           <span className="">Expired</span>
         </ShowWhenTrue>
