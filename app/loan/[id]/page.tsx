@@ -76,10 +76,12 @@ export default function Loan({ params }: { params: { id: string } }) {
       actors: {
         claimLentTokens: fromPromise(async () => {
           try {
-            if (loan?.hasClaimedCollateral) {
+             /*
+             Got error by claiming the Debt thanks to this code -- 31/12/2023
+             if (loan?.hasClaimedCollateral) {
               throw "Collateral already claimed"
-            }
-
+            } */
+       
             const { request } = await config.publicClient.simulateContract({
               address: DEBITA_ADDRESS,
               functionName: "claimDebt",
@@ -92,7 +94,9 @@ export default function Loan({ params }: { params: { id: string } }) {
             const result = await writeContract(request)
             await refetchLoan()
             return Promise.resolve(result)
-          } catch (error) {}
+          } catch (error) {
+            console.log(error)
+          }
           return Promise.reject()
         }),
         claimCollateralAsLender: fromPromise(async () => {
@@ -261,7 +265,7 @@ export default function Loan({ params }: { params: { id: string } }) {
   }, [address, loan, displayLoanStatus, loanSend, lendingTokenAllowance])
 
   const displayCollateralValue = dollars({ value: loan?.totalCollateralValue })
-  const displayDebtValue = dollars({ value: loan?.lending?.valueUsd ?? 0 })
+  const displayDebtValue = dollars({ value: loan?.debtLeft ?? 0 })
   const displayLtv = loan?.ltv.toFixed(2)
   const displayDeadlineValue = Number(loan?.deadline) ?? 0
 

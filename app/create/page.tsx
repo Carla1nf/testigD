@@ -28,6 +28,7 @@ import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
 import { toDecimals } from "@/lib/erc20"
 import pluralize from "pluralize"
+import Link from "next/link"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -102,6 +103,8 @@ export default function Create() {
           console.log("creatingOffer")
           console.log("input", input)
           const { context, event } = input
+
+   
 
           console.log("context", context)
           console.log("event", event)
@@ -194,6 +197,13 @@ export default function Create() {
               console.log("createCollateralOffer", executed)
 
               if (executed) {
+                const CollateralID = (await readContract({
+                  address: DEBITA_ADDRESS,
+                  functionName: "Collateral_OF_ID",
+                  abi: debitaAbi,
+                  args: [],
+                })) as bigint
+                setId(Number(CollateralID));
                 return Promise.resolve({ ...executed, mode: "borrow" })
               }
 
@@ -284,6 +294,13 @@ export default function Create() {
               console.log("createLenderOption", executed)
 
               if (executed) {
+                const LenderID = (await readContract({
+                  address: DEBITA_ADDRESS,
+                  functionName: "Lender_OF_ID",
+                  abi: debitaAbi,
+                  args: [],
+                })) as bigint
+                setId(Number(LenderID));
                 return Promise.resolve({ ...executed, mode: "lend" })
               }
 
@@ -296,6 +313,10 @@ export default function Create() {
               return Promise.reject({ error: error.message, mode: "lend" })
             }
           }
+           
+       
+          
+          
         }),
         checkingLendAllowance: fromPromise(async ({ input: { context } }) => {
           // We need to know if we have enough allowance to create the offer
@@ -312,6 +333,7 @@ export default function Create() {
             abi: erc20Abi,
             args: [address, DEBITA_ADDRESS],
           })) as bigint
+          
 
           if (BigInt(currentAllowance) >= amountRequired) {
             return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
@@ -350,6 +372,7 @@ export default function Create() {
   )
 
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
+  const [id, setId] = useState(0)
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   // console.log("context", machineState.context)
@@ -875,15 +898,16 @@ export default function Create() {
                 <Button variant="secondary" className="px-12" onClick={back}>
                   Back
                 </Button>
-                <Button
+                <Link href={`/${modeState.matches("borrow") ? "borrow-offer" : "lend-offer"}/${id + 1}`}>
+                   <Button
                   variant="action"
                   className="px-12"
-                  onClick={() => {
-                    alert("not implemented yet")
-                  }}
+                
                 >
                   View Offer
                 </Button>
+                </Link>
+
               </div>
             </div>
           </ShowWhenTrue>
