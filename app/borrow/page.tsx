@@ -62,14 +62,14 @@ export default function Borrow() {
         >
           <thead className="text-white" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left opacity-60 "
               suppressHydrationWarning
             >
-              <th className="p-3 px-4 text-left">Borrow</th>
-              <th className="p-3 px-4 text-center">Offers</th>
-              <th className="p-3 px-4 text-center">Liquidity Offers</th>
-              <th className="p-3 px-4 text-center">Price</th>
-              <th className="p-3 px-4 text-center">Avg Interest</th>
+              <th className="p-3 px-4 text-left font-normal">Borrow</th>
+              <th className="p-3 px-4 text-center font-normal">Offers</th>
+              <th className="p-3 px-4 text-center font-normal">Liquidity Offers</th>
+              <th className="p-3 px-4 text-center font-normal">Price</th>
+              <th className="p-3 px-4 text-center font-normal">Avg Interest</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
@@ -83,9 +83,9 @@ export default function Borrow() {
                     router.push(`/borrow/${offer.token.address}`)
                   }}
                   key={`${offer.token.symbol}_${offer.token.address}`}
-                  className="hover:bg-[#383838] cursor-pointer"
+                  className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5"
                 >
-                  <td className="p-2 text-left px-4 items-center">
+                  <td className="p-4 text-left px-4 items-center">
                     {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
                   </td>
                   <td className="p-2 text-center px-4 items-center">{offer.events.length}</td>

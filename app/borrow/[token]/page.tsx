@@ -78,18 +78,18 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
         >
           <thead className="text-white" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left  opacity-60 border-b-2 border-gray-200/5"
               suppressHydrationWarning
             >
-              <th className="p-3 text-left">Borrow</th>
-              <th className="p-3 text-left">Collateral</th>
-              <th className="p-3 text-center">LTV</th>
-              {/* <th className="p-3 text-center">Lending amt.</th>
-              <th className="p-3 text-center">Collateral amt.</th> */}
-              <th className="p-3 text-center">Time</th>
-              <th className="p-3 text-center">Payments</th>
-              <th className="p-3 text-center">Interest (%)</th>
-              <th className="p-3 text-center">Effective APR (%)</th>
+              <th className="p-3 text-left font-normal">Borrow</th>
+              <th className="p-3 text-left font-normal">Collateral</th>
+              <th className="p-3 text-center font-normal">LTV</th>
+              {/* <th className="p-3 text-center  font-normal">Lending amt.</th>
+              <th className="p-3 text-center  font-normal">Collateral amt.</th> */}
+              <th className="p-3 text-center  font-normal">Time</th>
+              <th className="p-3 text-center  font-normal">Payments</th>
+              <th className="p-3 text-center  font-normal">Interest (%)</th>
+              <th className="p-3 text-center  font-normal">Effective APR (%)</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">

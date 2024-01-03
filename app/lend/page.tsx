@@ -63,7 +63,7 @@ export default function Lend() {
         >
           <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left opacity-70" 
               suppressHydrationWarning
             >
               <th className="p-3 px-4 text-left">Lend</th>
@@ -84,7 +84,7 @@ export default function Lend() {
                     router.push(`/lend/${offer.token.address}`)
                   }}
                   key={`${offer.token.symbol}_${offer.token.address}`}
-                  className="hover:bg-[#383838] cursor-pointer "
+                  className="hover:bg-[#383838] cursor-pointer animate-enter-token"
                 >
                   <td className="p-4 text-left px-4 items-center">
                     {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}

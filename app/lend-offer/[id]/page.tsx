@@ -418,7 +418,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
       </div>
 
       {/* Page content */}
-      <div className="flex flex-col-reverse w-full xl:flex-row gap-16">
+      <div className="flex flex-col-reverse w-full xl:flex-row gap-16 animate-enter-div">
         <div className="flex flex-col gap-8">
           <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
             <div className="grid grid-cols-3 gap-8">
@@ -444,7 +444,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
             </ChartWrapper>
           </div>
         </div>
-        <div className="space-y-8 max-w-xl w-full">
+        <div className="space-y-8 max-w-xl w-full xl:ml-16">
           {/* Owners can cancel the offer */}
           <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
             <div className="grid grid-cols-2 justify-between gap-8">
@@ -499,7 +499,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           {/* Non owners can see who the owner is */}
           <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
             <div className="flex justify-between gap-8">
-              <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
+              <div className="bg-[#21232B]/40 border-2 border-white/10 p-4 w-full rounded-xl flex gap-2 items-center justify-center  ">
                 You are borrowing {borrowingToken?.symbol} from
                 <PersonIcon className="w-6 h-6" />
                 {shortAddress(data?.owner as Address)}
@@ -508,7 +508,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           </ShowWhenTrue>
 
           {/* Form Panel */}
-          <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
+          <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#32282D]/50">
             <div className="text-xl mb-4 font-bold">Lending Offer</div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
@@ -615,7 +615,8 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={lendMachineState.matches("isNotOwner.canAcceptOffer")}>
-                    <input placeholder="Amount to borrow" type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
+                   <div className="flex gap-10">
+                   <input className="text-center rounded-lg bg-[#21232B]/40 border-2 border-white/10" placeholder={`Amount of ${data?.borrowing.token?.symbol}`} type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
                     <Button
                       variant={"action"}
                       className="px-16"
@@ -625,6 +626,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
                     >
                       Accept Offer
                     </Button>
+                   </div>
                   </ShowWhenTrue>
 
                   {/* Show the Accepting Offer spinner while we are accepting the offer */}

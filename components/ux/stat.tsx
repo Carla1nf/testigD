@@ -17,10 +17,10 @@ const Stat = ({
   return (
     <>
       {/* desktop - left align design */}
-      <div className="overflow-hidden dashboard-item-gradient py-2 px-4 rounded-lg  flex-row justify-center items-center h-full hidden md:flex shadow-lg">
-        <div className="pr-4">{Icon}</div>
+      <div className="overflow-hidden dashboard-item-gradient py-3 px-4 rounded-lg  flex-row justify-center items-center h-full hidden md:flex shadow-lg shadow-neutral-950/30">
+        <div className="pr-4 opacity-70">{Icon}</div>
         <div className="text-left grow">
-          <div className="text-xs md:font-bold">{title}</div>
+          <div className="text-xs md:font-bold text-gray-200">{title}</div>
           <div className="text-xs md:text-xl font-medium text-[#A957A4]">
             {value === undefined ? <Skeleton className="h-[80px] w-[200px]" /> : value}
           </div>
