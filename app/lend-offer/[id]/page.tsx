@@ -616,7 +616,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={lendMachineState.matches("isNotOwner.canAcceptOffer")}>
                    <div className="flex gap-10">
-                   <input className="text-center rounded-lg bg-[#21232B]/40 border-2 border-white/10" placeholder={`Amount of ${data?.borrowing.token?.symbol}`} type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
+                   <input className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10" placeholder={`Amount of ${data?.borrowing.token?.symbol}`} type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
                     <Button
                       variant={"action"}
                       className="px-16"
