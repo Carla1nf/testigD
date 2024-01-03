@@ -106,27 +106,25 @@ const DashboardActiveOffersTable = ({
 
 const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Address; item: any }) => {
   const { data: lender } = useOfferLenderData(address, item.id)
+  console.log("lender", lender)
 
   if (!lender) {
     return null
   }
 
-  console.log("lender", lender)
 
   // @ts-ignore todo: ignored to help build, come back and check this is still true
   const lenderToken = findTokenByAddress("fantom", lender.lenderToken)
 
-  const collateral0 = lender?.collaterals[0] ?? undefined
+  const collateral0 = lender?.collaterals
   const collateralToken0 = collateral0 ? findTokenByAddress("fantom", collateral0.address) : undefined
-  const collateral1 = lender?.collaterals[1] ?? undefined
-  const collateralToken1 = collateral1 ? findTokenByAddress("fantom", collateral1.address) : undefined
+
 
   return (
     <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={item.id}>
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
         {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
-        {collateralToken1 ? <DisplayToken token={collateralToken1} size={24} /> : null}
       </td>
       {/* Lending */}
       <td className="p-3 w-10 align-top text-center">
@@ -148,7 +146,6 @@ const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Addr
 
   const lenderToken = data?.lending?.token
   const collateralToken0 = data?.collaterals[0]?.token
-  const collateralToken1 = data?.collaterals[1]?.token
 
   return (
     <tr
@@ -161,7 +158,6 @@ const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Addr
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
         {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
-        {collateralToken1 ? <DisplayToken token={collateralToken1} size={24} /> : null}
       </td>
       {/* Lending */}
       <td className="p-3 align-top text-center items-center">

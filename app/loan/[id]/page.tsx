@@ -54,12 +54,9 @@ export default function Loan({ params }: { params: { id: string } }) {
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
   const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.lending?.address)
-  const collateral0 = loan?.collaterals[0] ?? undefined
+  const collateral0 = loan?.collaterals
   const collateral0Token = collateral0 ? collateral0?.token : undefined
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0?.address)
-  const collateral1 = loan?.collaterals[1] ?? undefined
-  const collateral1Token = collateral1 ? collateral0?.token : undefined
-  const collateral1Prices = useHistoricalTokenPrices(currentChain.slug, collateral1?.address)
 
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
@@ -276,8 +273,8 @@ export default function Loan({ params }: { params: { id: string } }) {
     historicalCollateral: calcCollateralsPriceHistory(
       collateral0Prices,
       Number(collateral0?.amount ?? 0),
-      collateral1Prices,
-      Number(collateral1?.amount ?? 0)
+      collateral0Prices,
+      0
     ),
     timestamps,
   }
@@ -308,7 +305,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             <div className="flex justify-between gap-8 w-full">
               <LtvStat title="LTV" value={displayLtv} />
               <CollateralStat title="Collateral" value={displayCollateralValue} />
-              <DebtStat title={`${loanState.matches("borrower") ? "My Debt" : "Debt"}`} value={displayDebtValue} />
+              <DebtStat title={`${loanState.matches("borrower") ? "My Debt" : "Debt"}`} value={dollars({ value: loan?.lending?.valueUsd ?? 0 })} />
               <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} loanStatus={displayLoanStatus} />
             </div>
 
@@ -523,14 +520,7 @@ export default function Loan({ params }: { params: { id: string } }) {
                         className="text-xl"
                       />
                     ) : null}
-                    {collateral1 && collateral1Token ? (
-                      <DisplayToken
-                        size={32}
-                        token={collateral1Token}
-                        amount={collateral1.amount}
-                        className="text-xl"
-                      />
-                    ) : null}
+                   
                   </div>
                 </div>
 

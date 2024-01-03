@@ -115,13 +115,16 @@ export default function LendOffer({ params }: { params: { id: string } }) {
   // console.log("data", data)
 
   const borrowing = data?.borrowing
-  const collateral0 = data?.collaterals
+  const collateral0 = data?.collaterals[0]
+  const collateral1 = data?.collaterals[1]
 
   const borrowingToken = borrowing ? borrowing?.token : undefined
   const collateral0Token = collateral0 ? collateral0?.token : undefined
+  const collateral1Token = collateral1 ? collateral0?.token : undefined
 
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, borrowingToken?.address as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address as Address)
+  const collateral1Prices = useHistoricalTokenPrices(currentChain.slug, collateral1Token?.address as Address)
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
@@ -133,6 +136,12 @@ export default function LendOffer({ params }: { params: { id: string } }) {
     args: [address, DEBITA_ADDRESS],
   })
 
+  const { data: currentCollateral1TokenAllowance } = useContractRead({
+    address: (collateral1?.address ?? "") as Address,
+    functionName: "allowance",
+    abi: erc20Abi,
+    args: [address, DEBITA_ADDRESS],
+  })
 
   const cancelOffer = async () => {
     try {
@@ -214,7 +223,16 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         }
       }
 
-    
+      // Check the user has enough in wallet to perform the loan
+      if (collateral1) {
+        const collateralBalance1 = await balanceOf({
+          address: collateral1?.address as Address,
+          account: address as Address,
+        })
+        if (collateral1 && collateralBalance1 < collateral1?.amountRaw) {
+          throw `Insufficient ${collateral1Token?.symbol} balance`
+        }
+      }
 
       const value = getAcceptLendingOfferValue(data)
       const { request } = await config.publicClient.simulateContract({
@@ -287,14 +305,17 @@ export default function LendOffer({ params }: { params: { id: string } }) {
       lendMachineSend({ type: "not.owner" })
 
       // dual collateral mode
-      if (collateral0 ) {
+      if (collateral0 && collateral1) {
         // do they have the required allowance to pay for the offer?
         if (currentCollateral0TokenAllowance === undefined) {
           return
         }
-      
+        if (currentCollateral1TokenAllowance === undefined) {
+          return
+        }
         if (
-          Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0) 
+          Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0) &&
+          Number(currentCollateral1TokenAllowance) >= Number(collateral1?.amountRaw ?? 0)
         ) {
           lendMachineSend({ type: "user.has.allowance" })
           return
@@ -307,7 +328,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
       }
 
       // single collateral mode
-      if (collateral0) {
+      if (collateral0 && !collateral1) {
         // do they have the required allowance to pay for the offer?
         if (currentCollateral0TokenAllowance === undefined) {
           return
@@ -356,9 +377,9 @@ export default function LendOffer({ params }: { params: { id: string } }) {
     historicalLender: calcPriceHistory(borrowingPrices, borrowing?.amount ?? 0),
     historicalCollateral: calcCollateralsPriceHistory(
       collateral0Prices,
-      data?.collaterals?.amount ?? 0,
-      collateral0Prices,
-      0,
+      data?.collaterals[0]?.amount ?? 0,
+      collateral1Prices,
+      data?.collaterals[1]?.amount ?? 0
     ),
     lastLender: 100.3,
     lastCollateral: 148.53,
@@ -498,7 +519,9 @@ export default function LendOffer({ params }: { params: { id: string } }) {
                   {collateral0 && collateral0Token ? (
                     <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
                   ) : null}
-                  
+                  {collateral1 && collateral1Token ? (
+                    <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
+                  ) : null}
                 </div>
                 <div className="text-white/50 text-xs italic">
                   Collateral value: {dollars({ value: data?.totalCollateralValue ?? 0 })}

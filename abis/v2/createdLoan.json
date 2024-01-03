@@ -1,0 +1,302 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[2]",
+          "name": "nftIDS",
+          "type": "uint256[2]"
+        },
+        {
+          "internalType": "address[2]",
+          "name": "assetAddresses",
+          "type": "address[2]"
+        },
+        {
+          "internalType": "uint256[2]",
+          "name": "assetAmounts",
+          "type": "uint256[2]"
+        },
+        {
+          "internalType": "bool[2]",
+          "name": "_isAssetNFT",
+          "type": "bool[2]"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_interestRate",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint256[3]",
+          "name": "nftsData",
+          "type": "uint256[3]"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_paymentCount",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_timelap",
+          "type": "uint32"
+        },
+        {
+          "internalType": "address",
+          "name": "_ownershipContract",
+          "type": "address"
+        },
+        {
+          "internalType": "address[2]",
+          "name": "debitaAddresses",
+          "type": "address[2]"
+        },
+        {
+          "internalType": "address",
+          "name": "interest_address",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "claimer",
+          "type": "address"
+        }
+      ],
+      "name": "collateralClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "paymentCount",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "paymentPaid",
+          "type": "uint256"
+        }
+      ],
+      "name": "debtPaid",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_poolVote",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_weights",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "_voteWithVe",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_bribes",
+          "type": "address[]"
+        },
+        {
+          "internalType": "address[][]",
+          "name": "_tokens",
+          "type": "address[][]"
+        }
+      ],
+      "name": "claimBribes",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "claimCollateralasBorrower",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "claimCollateralasLender",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "claimDebt",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "claimableAmount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "debitaOfferV2",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getLoanData",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256[2]",
+              "name": "IDS",
+              "type": "uint256[2]"
+            },
+            {
+              "internalType": "address[2]",
+              "name": "assetAddresses",
+              "type": "address[2]"
+            },
+            {
+              "internalType": "uint256[2]",
+              "name": "assetAmounts",
+              "type": "uint256[2]"
+            },
+            {
+              "internalType": "bool[2]",
+              "name": "isAssetNFT",
+              "type": "bool[2]"
+            },
+            {
+              "internalType": "uint256[3]",
+              "name": "nftData",
+              "type": "uint256[3]"
+            },
+            {
+              "internalType": "uint32",
+              "name": "timelap",
+              "type": "uint32"
+            },
+            {
+              "internalType": "address",
+              "name": "interestAddress_Lending_NFT",
+              "type": "address"
+            },
+            {
+              "internalType": "uint8",
+              "name": "paymentCount",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "paymentsPaid",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "paymentAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadlineNext",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "executed",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct DebitaV2Loan.LoanData",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_veNFT",
+          "type": "address"
+        }
+      ],
+      "name": "getVoterContract_veNFT",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "duration",
+          "type": "uint256"
+        }
+      ],
+      "name": "increaseLock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "payDebt",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]

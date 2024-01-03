@@ -10,7 +10,7 @@ import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import SelectToken from "@/components/ux/select-token"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
-import { DEBITA_ADDRESS } from "@/lib/contracts"
+import { DEBITA_ADDRESS, DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
@@ -24,6 +24,7 @@ import { readContract, writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import debitaAbi from "../../abis/debita.json"
+import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
 import { toDecimals } from "@/lib/erc20"
@@ -66,7 +67,7 @@ export default function Create() {
             address: context.collateralToken0.address,
             functionName: "allowance",
             abi: erc20Abi,
-            args: [address, DEBITA_ADDRESS],
+            args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
           })) as bigint
 
           if (BigInt(currentAllowance) >= amountRequired) {
@@ -90,7 +91,7 @@ export default function Create() {
             address: context.collateralToken0.address,
             functionName: "approve",
             abi: erc20Abi,
-            args: [DEBITA_ADDRESS, amountRequired],
+            args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
             account: address,
           })
 
@@ -113,49 +114,13 @@ export default function Create() {
           console.log("mode", mode)
 
           //  value used in both modes
-          const _interest = BigInt((context.interestPercent * 100) / 10)
+          const _interest = ((context.interestPercent * 100))
           const _timelap = (86400 * context.durationDays) / context.numberOfPayments
-          const _paymentCount = BigInt(context.numberOfPayments)
+          const _paymentCount = (context.numberOfPayments)
           const _whitelist: any[] = []
 
           if (mode === "borrow") {
-            /**
-           * 
-           * ORIGINAL V1 CODE
-           * 
-              const {
-                data: dataCollateral,
-                write: createCollateralOffer,
-                isSuccess: SuccessCreating_Collateral,
-                isLoading: isLoading_Collateral,
-                isError: isError_Collateral,
-              } = useContractWrite({
-                address: DEBITA_CONTRACT,
-                functionName: "createCollateralOffer",
-                abi: DEBITA_ABI,
-                args: [
-                  params.address[1],
-                  params.address[2] == "" ? [params.address[0]] : [params.address[0], params.address[2]],
-                  params.address[2] == "" ? [`${collateral_1}`] : [`${collateral_1}`, `${collateral_2}`],
-                  `${_lenderAmount}`,
-                  Number(params.interest) * 10,
-                  timelap,
-                  params.payments,
-                  [],
-                  {
-                    gasLimit: "2000000",
-                    value:
-                      params.address[0] == "0x0000000000000000000000000000000000000000" ||
-                      params.address[2] == "0x0000000000000000000000000000000000000000"
-                        ? `${formatNumber(
-                            getWEI([params.address[0], params.address[2]], [params.collateral_1, params.collateral_2]) * 10 ** 18,
-                          )}`
-                        : "0",
-                  },
-                ],
-              })
-           * 
-           */
+         
             try {
               const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
               const collateral1 = context.collateralAmount1
@@ -218,47 +183,16 @@ export default function Create() {
           }
 
           if (mode === "lend") {
-            /**
-             * 
-             * ORIGINAL V1 CODE
-             * 
-              const {
-                  data: dataLender,
-                  write: createLenderOffer,
-                  isSuccess: SuccessCreating_Lender,
-                  isLoading: isLoading_Lending,
-                  isError: isError_Lending,
-                } = useContractWrite({
-                  address: DEBITA_CONTRACT,
-                  functionName: "createLenderOption",
-                  abi: DEBITA_ABI,
-                  args: [
-                    params.address[1],
-                    params.address[2] == "" ? [params.address[0]] : [params.address[0], params.address[2]],
-                    params.address[2] == "" ? [`${collateral_1}`] : [`${collateral_1}`, `${collateral_2}`],
-                    `${_lenderAmount}`,
-                    Number(params.interest) * 10,
-                    timelap,
-                    params.payments,
-                    [],
-                    {
-                      gasLimit: "2000000",
-                      value: params.address[1] == "0x0000000000000000000000000000000000000000" ? `${_lenderAmount}` : "0",
-                    },
-                  ],
-                })
-            * 
-            */
+           
             try {
               const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
               const collateral1 = context.collateralAmount1
                 ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
                 : BigInt(0)
               const _LenderToken = context.token.address
-              const _wantedCollateralTokens = context.collateralToken1
-                ? [context.collateralToken0.address, context.collateralToken1.address]
-                : [context.collateralToken0.address]
-              const _wantedCollateralAmount = context.collateralToken1 ? [collateral0, collateral1] : [collateral0]
+              const _wantedCollateralTokens = context.collateralToken0.address;
+              
+              const _wantedCollateralAmount = collateral0;
               const _LenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
               // calculate value
@@ -272,28 +206,29 @@ export default function Create() {
               console.log("_whitelist", _whitelist)
 
               const { request } = await config.publicClient.simulateContract({
-                address: DEBITA_ADDRESS,
-                functionName: "createLenderOption",
-                abi: debitaAbi,
+                address: DEBITA_OFFER_FACTORY_ADDRESS,
+                functionName: "createOfferV2",
+                abi: offerFactoryABI,
                 args: [
-                  _LenderToken,
-                  _wantedCollateralTokens,
-                  _wantedCollateralAmount,
-                  _LenderAmount,
+                  [_LenderToken, _wantedCollateralTokens],
+                  [_LenderAmount, _wantedCollateralAmount],
+                  [false, false /*  if assets are NFTs --> false for now*/ ],
                   _interest,
-                  _timelap,
+                  [0, 1/*  NFT id & Interest rate for nfts --> 0 for now*/],
+                  100/*  value of wanted veNFTs --> 0 for now*/,
                   _paymentCount,
-                  _whitelist,
+                  _timelap,
+                  [true, true], // [0] --> isLending, [1] --> isPerpetual
+                  "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6" // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
                 ],
                 account: address,
-                value,
-                gas: BigInt(2000000),
+                gas: BigInt(3300000),
               })
 
               const executed = await writeContract(request)
               console.log("createLenderOption", executed)
 
-              if (executed) {
+            /*  if (executed) {
                 const LenderID = (await readContract({
                   address: DEBITA_ADDRESS,
                   functionName: "Lender_OF_ID",
@@ -306,12 +241,12 @@ export default function Create() {
 
               throw "createLenderOption->failed"
 
-              // return allowance0
+              // return allowance0 */
             } catch (error: any) {
               console.log("createLenderOption->error", error)
 
               return Promise.reject({ error: error.message, mode: "lend" })
-            }
+            } 
           }
            
        
@@ -331,7 +266,7 @@ export default function Create() {
             address: context.token.address,
             functionName: "allowance",
             abi: erc20Abi,
-            args: [address, DEBITA_ADDRESS],
+            args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
           })) as bigint
           
 
@@ -358,7 +293,7 @@ export default function Create() {
             address: context.token.address,
             functionName: "approve",
             abi: erc20Abi,
-            args: [DEBITA_ADDRESS, amountRequired],
+            args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
             account: address,
           })
 

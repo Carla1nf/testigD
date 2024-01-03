@@ -75,11 +75,11 @@ function getAcceptCollateralOfferValue(collateralData: any) {
 
   const isCollateralZero = collaterals?.address === ZERO_ADDRESS
 
- 
+
   if (isCollateralZero) {
     return Number(collaterals[0].amountRaw)
   }
-  
+
   return 0
 }
 
@@ -117,6 +117,31 @@ export default function LendOffer({ params }: { params: { id: string } }) {
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address as Address)
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
+
+  /* 
+   --- NEW V2 TO IMPLEMENT ---
+  
+   const { request } = await config.publicClient.simulateContract({
+        address: OFFER_CREATED_ADDRESS,
+        functionName: "editOffer",
+        abi: createdOfferABI,
+        args: [[newAmountLending, newAmountCollateral], [newInterest,
+        newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT],
+        account: address     // gas: BigInt(900000),
+        // chainId: currentChain?.chainId,
+      })
+        
+        // this function is not live on the current version of the contract -- will be in the next one
+        
+         const { request } = await config.publicClient.simulateContract({
+        address: OFFER_CREATED_ADDRESS,
+        functionName: "interactPerpetual",
+        abi: createdOfferABI,
+        args: [newBoolPerpetual],
+        account: address     // gas: BigInt(900000),
+        // chainId: currentChain?.chainId,
+      })
+  */
 
   // check if we have the allowance to spend the collateral token
   const { data: currentCollateral0TokenAllowance } = useContractRead({
@@ -202,20 +227,20 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           address: collateral0?.address as Address,
           account: address as Address,
         })
-       /*
-         ON V2 WE DONT NEED TO CHECK ALL THE BALANCE JUST THE PORCENTAGE
-
-       if (collateral0 && collateralBalance0 < collateral0?.amountRaw) {
-          throw `Insufficient ${collateral0Token?.symbol} balance`
-        } */
+        /*
+          ON V2 WE DONT NEED TO CHECK ALL THE BALANCE JUST THE PORCENTAGE
+ 
+        if (collateral0 && collateralBalance0 < collateral0?.amountRaw) {
+           throw `Insufficient ${collateral0Token?.symbol} balance`
+         } */
       }
 
 
-    const { request } = await config.publicClient.simulateContract({
+      const { request } = await config.publicClient.simulateContract({
         address: OFFER_CREATED_ADDRESS,
         functionName: "acceptOfferAsBorrower",
         abi: createdOfferABI,
-        args: [toDecimals(amountToBorrow, data?.collaterals.token?.decimals ?? 0) , 0],
+        args: [toDecimals(amountToBorrow, data?.collaterals.token?.decimals ?? 0), 0],
         account: address     // gas: BigInt(900000),
         // chainId: currentChain?.chainId,
       })
@@ -279,14 +304,14 @@ export default function LendOffer({ params }: { params: { id: string } }) {
       lendMachineSend({ type: "not.owner" })
 
       // dual collateral mode
-      if (collateral0 ) {
+      if (collateral0) {
         // do they have the required allowance to pay for the offer?
         if (currentCollateral0TokenAllowance === undefined) {
           return
         }
-      
+
         if (
-          Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0) 
+          Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0)
         ) {
           lendMachineSend({ type: "user.has.allowance" })
           return
@@ -398,14 +423,17 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
             <div className="grid grid-cols-3 gap-8">
               <Stat value={ltv(Number(data?.ltv))} title={"LTV"} Icon={null} />
-              <Stat
-                value={dollars({ value: Number(borrowing?.valueUsd) })}
-                title={"Borrowing"}
-                Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
-              />
+
               <Stat
                 value={dollars({ value: Number(data?.totalCollateralValue) })}
                 title={"Collateral"}
+                Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
+
+              />
+
+              <Stat
+                value={dollars({ value: Number(borrowing?.valueUsd) })}
+                title={"Borrowing"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
             </div>
@@ -490,7 +518,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
                   {collateral0 && collateral0Token ? (
                     <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
                   ) : null}
-                  
+
                 </div>
                 <div className="text-white/50 text-xs italic">
                   Collateral value: {dollars({ value: data?.totalCollateralValue ?? 0 })}
@@ -587,7 +615,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={lendMachineState.matches("isNotOwner.canAcceptOffer")}>
-                  <input placeholder="Amount to borrow" type="number" onChange={(e) => {setAmountToBorrow(Number(e.currentTarget.value))}}/>
+                    <input placeholder="Amount to borrow" type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
                     <Button
                       variant={"action"}
                       className="px-16"

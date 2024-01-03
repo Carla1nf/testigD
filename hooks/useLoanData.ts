@@ -1,4 +1,4 @@
-import { DEBITA_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
+import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { fromDecimals } from "@/lib/erc20"
 import { findInternalTokenByAddress } from "@/lib/tokens"
@@ -9,24 +9,25 @@ import { Address } from "viem"
 import { readContract } from "wagmi/actions"
 import z from "zod"
 import debitaAbi from "../abis/debita.json"
+import loanCreatedAbi from "../abis/v2/createdLoan.json"
 import ownershipsAbi from "../abis/ownerships.json"
 import useCurrentChain from "./useCurrentChain"
 
 const LoanDataReceivedSchema = z.object({
-  LenderAmount: z.bigint(),
-  LenderOwnerId: z.number(),
-  LenderToken: z.string(),
-  collateralAmount: z.array(z.bigint()),
-  collateralOwnerID: z.number(),
-  collaterals: z.array(z.string()),
-  cooldown: z.bigint(),
+  IDS: z.array(z.bigint()),
+  assetAddresses: z.array(z.string()),
+  assetAmounts: z.array(z.bigint()),
   deadline: z.bigint(),
   deadlineNext: z.bigint(),
   executed: z.boolean(),
+  isAssetNFT: z.array(z.boolean()),
+  nftData: z.array(z.bigint()),
+  timelap: z.number(),
+  interestAddress_Lending_NFT: z.string(),
+  paymentCount: z.number(),
+  paymentsPaid: z.number(),
   paymentAmount: z.bigint(),
-  paymentCount: z.bigint(),
-  paymentsPaid: z.bigint(),
-  timelap: z.bigint(),
+
 })
 
 export const useLoanData = (id: number) => {
@@ -37,15 +38,17 @@ export const useLoanData = (id: number) => {
     staleTime: 10000,
     queryFn: async () => {
       const loanData = await readContract({
-        address: DEBITA_ADDRESS,
-        abi: debitaAbi,
-        functionName: "getLOANS_DATA",
-        args: [id],
+        address: LOAN_CREATED_ADDRESS,
+        abi: loanCreatedAbi,
+        functionName: "getLoanData",
+        args: [],
       })
+
+      console.log(loanData)
 
       const parsedData = LoanDataReceivedSchema.parse(loanData)
 
-      const borrowerId = parsedData?.collateralOwnerID ?? undefined
+      const borrowerId = parsedData?.IDS[1] ?? undefined
       const borrower = await readContract({
         address: OWNERSHIP_ADDRESS,
         abi: ownershipsAbi,
@@ -53,7 +56,7 @@ export const useLoanData = (id: number) => {
         args: [borrowerId],
       })
 
-      const lenderId = parsedData?.LenderOwnerId ?? undefined
+      const lenderId = parsedData?.IDS[0] ?? undefined
       const lender = await readContract({
         address: OWNERSHIP_ADDRESS,
         abi: ownershipsAbi,
@@ -63,42 +66,37 @@ export const useLoanData = (id: number) => {
 
       // get the amount of debt that the user has already repaid (if any)
       const claimableDebtRaw = await readContract({
-        address: DEBITA_ADDRESS,
-        abi: debitaAbi,
-        functionName: "claimeableDebt", // this is a typo in the contract, needs fixing in solidity
-        args: [lenderId],
+        address: LOAN_CREATED_ADDRESS,
+        abi: loanCreatedAbi,
+        functionName: "claimableAmount", // this is a typo in the contract, needs fixing in solidity
+        args: [],
       })
 
       // gets the tokens from the loan
 
-      const collaterals = parsedData.collaterals.map((address, index) => {
-        const token = findInternalTokenByAddress(currentChain.slug, address)
-        return {
-          address,
-          token,
-          amountRaw: parsedData.collateralAmount[index],
-          amount: fromDecimals(parsedData.collateralAmount[index], token?.decimals ?? 18),
+        const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
+        const collateral = {
+          address: parsedData.assetAddresses[1],
+          token: collateralToken,
+          amountRaw: parsedData.assetAmounts[1],
+          amount: fromDecimals(parsedData.assetAmounts[1], collateralToken?.decimals ?? 18),
           price: 0,
           valueUsd: 0,
         }
-      })
+      
 
-      let totalCollateralValue = 0
-      for (let i = 0; i < collaterals.length; i++) {
-        const collateral = collaterals[i]
-        const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-        collateral.price = price.price ?? 0
+        const priceCollateral = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
+        collateral.price = priceCollateral.price ?? 0
         collateral.valueUsd = collateral.amount * collateral.price
-        totalCollateralValue += collateral.valueUsd
-      }
+      
 
       // lets do the same for the lender token
-      const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.LenderToken)
+      const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
       const lending = {
-        address: parsedData.LenderToken,
-        amountRaw: parsedData.LenderAmount, // notice the subtle name shift from API casing to camelCase
+        address: parsedData.assetAddresses[0],
+        amountRaw: parsedData.assetAmounts[0], // notice the subtle name shift from API casing to camelCase
         token: lenderToken,
-        amount: fromDecimals(parsedData.LenderAmount, lenderToken?.decimals ?? 18),
+        amount: fromDecimals(parsedData.assetAmounts[0], lenderToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
@@ -106,7 +104,7 @@ export const useLoanData = (id: number) => {
       lending.price = price.price ?? 0
       lending.valueUsd = lending.amount * lending.price
 
-      const ratio = totalCollateralValue / lending.valueUsd
+      const ratio = collateral.valueUsd / lending.valueUsd
       const ltv = (1 / ratio) * 100
       const numberOfLoanDays = Number(parsedData.timelap) / 86400
       // const apr = ((Number(parsedData.interest) / Number(numberOfLoanDays)) * 365) / 1000 // percentages are 0.134 for 13.4%
@@ -118,8 +116,8 @@ export const useLoanData = (id: number) => {
       const paymentAmount = fromDecimals(paymentAmountRaw, lenderToken?.decimals ?? 18)
 
       // Debt left
-      const debtLeftRaw = parsedData.paymentAmount * (parsedData.paymentCount - parsedData.paymentsPaid)
-      const debtLeft = fromDecimals(debtLeftRaw, lenderToken?.decimals ?? 18)
+      const debtLeftRaw = Number(parsedData.paymentAmount) * (parsedData.paymentCount - parsedData.paymentsPaid)
+      const debtLeft = fromDecimals(BigInt(debtLeftRaw), lenderToken?.decimals ?? 18)
 
       const now = new Date().getTime()
       const daysInSeconds = Number(parsedData?.deadlineNext) * 1000 - now
@@ -145,10 +143,10 @@ export const useLoanData = (id: number) => {
         // interest: Number(parsedData.interest) / 1000,
         borrower,
         borrowerId,
-        collaterals,
+        collaterals: collateral,
         claimableDebt,
         claimableDebtRaw,
-        cooldown: parsedData.cooldown,
+        cooldown: 0,
         debtLeft,
         debtLeftRaw,
         deadline: parsedData.deadline,
@@ -171,7 +169,7 @@ export const useLoanData = (id: number) => {
         paymentDue,
         ratio,
         timelap: parsedData.timelap,
-        totalCollateralValue,
+        totalCollateralValue: collateral.valueUsd,
       }
     },
   })

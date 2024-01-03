@@ -70,7 +70,6 @@ const DashboardUserTableItem = ({
   if (!shouldDisplay) {
     return
   }
-
   if (isSuccess) {
     const status = loanStatus(Number(data.loan.deadlineNext))
 
@@ -81,13 +80,8 @@ const DashboardUserTableItem = ({
         onClick={() => router.push(`/loan/${data.loanId}`)}
       >
         <td className="p-3">
-          {data?.loan?.collaterals?.length === 1 ? <DisplayToken token={data?.loan?.collaterals[0]} size={24} /> : null}
-          {data?.loan?.collaterals?.length === 2 ? (
-            <div className="flex flex-col gap-2">
-              <DisplayToken token={data.loan.collaterals[0]} size={24} />
-              <DisplayToken token={data.loan.collaterals[1]} size={24} />
-            </div>
-          ) : null}
+        <DisplayToken token={data?.loan?.collaterals} size={24} />
+        
         </td>
         <td className="p-3">
           <DisplayToken token={data.loan.token} size={24} />
