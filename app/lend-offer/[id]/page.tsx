@@ -508,7 +508,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           </ShowWhenTrue>
 
           {/* Form Panel */}
-          <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#32282D]/50">
+          <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
             <div className="text-xl mb-4 font-bold">Lending Offer</div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
