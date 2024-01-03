@@ -10,10 +10,8 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const { address } = useControlledAddress()
   const { data: data } = useOfferLenderData(address, event.id)
 
-  const collateral0 = data?.collaterals[0]
-  const collateral1 = data?.collaterals[1]
+  const collateral0 = data?.collaterals
   const collateralToken0 = collateral0?.token
-  const collateralToken1 = collateral1?.token
   // const lenderToken = collateralData?.lender?.token
 
   // console.log("data", data)
@@ -32,14 +30,13 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       <td className="p-3 text-left">
         <div className="flex flex-col gap-2">
           {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : null}
-          {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
         </div>
       </td>
       <td className="p-3 text-center">{ltv(Number(data?.ltv))}</td>
       <td className="p-3 text-center">{data?.numberOfLoanDays} Days</td>
       <td className="p-3 text-center">{Number(data?.paymentCount ?? 0)}</td>
       <td className="p-3 text-center">
-        {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+        {percent({ value: data?.interest ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
       </td>
       <td className="p-3 text-center">
         {percent({ value: data?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}

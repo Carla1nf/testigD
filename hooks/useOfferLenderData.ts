@@ -109,11 +109,11 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
       const ratio = totalCollateralValue / borrowing.valueUsd
       const ltv = (1 / ratio) * 100
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
-      const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 1000 // percentages are 0.134 for 13.4%
+      const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
    
       return {
         collaterals,
-        interest: Number(lenderData.interestRate) / 1000,
+        interest: Number(lenderData.interestRate) / 10000,
         borrowing,
         ltv,
         apr,
