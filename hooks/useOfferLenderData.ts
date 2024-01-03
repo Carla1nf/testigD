@@ -1,26 +1,45 @@
-import { DEBITA_ADDRESS } from "@/lib/contracts"
+import { DEBITA_ADDRESS, OFFER_CREATED_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
 import { readContract } from "wagmi/actions"
 import z from "zod"
-import debitaAbi from "../abis/debita.json"
+import createdOfferABI from "../abis/v2/createdOffer.json";
 import { findInternalTokenByAddress } from "@/lib/tokens"
 import useCurrentChain from "./useCurrentChain"
 import { fromDecimals } from "@/lib/erc20"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 
+   /**
+     * @dev create Offer
+     * @param assetAddresses [0] = Lending, [1] = Collateral
+     * @param assetAmounts [0] = Lending, [1] = Collateral
+     * @param isAssetNFT [0] = Lending, [1] = Collateral
+     * @param _interestRate (1 ==> 0.01%, 1000 ==> 10%, 10000 ==> 100%)
+     * @param nftData [0] = NFT ID Lender, [1] NFT ID Collateral, [2] Total amount of interest (If lending is NFT) ---  0 on each if not NFT
+     * @param veValue value of wanted locked veNFT (for borrower or lender) (0 if not veNFT)
+     * @param _paymentCount Number of payments
+     * @param _timelap timelap on each payment
+     * @param loanBooleans [0] = isLending (true --> msg.sender is Lender), [1] = isPerpetual
+     * @param interest_address address of the erc-20 for interest payments, 0x0 if lending is not NFT
+     **/
+    
 const LenderDataReceivedSchema = z.object({
-  LenderAmount: z.bigint(),
-  LenderToken: z.string(),
-  interest: z.bigint(),
-  owner: z.string(),
-  paymentCount: z.bigint(),
-  timelap: z.bigint(),
-  wantedCollateralAmount: z.array(z.bigint()),
-  wantedCollateralTokens: z.array(z.string()),
-  whitelist: z.array(z.string()),
+  assetAddresses: z.array(z.string()),
+  assetAmounts: z.array(z.bigint(), z.bigint()),
+  interestRate: z.number(),
+  interest_address: z.string(),
+  isActive: z.boolean(),
+  isAssetNFT: z.array(z.boolean(), z.boolean()),
+  isLending: z.boolean(),
+  isPerpetual: z.boolean(),
+  nftData: z.array(z.bigint(), z.bigint()),
+  paymentCount: z.number(),
+  valueOfVeNFT: z.bigint(),
+  _timelap: z.number(),
+
+
 })
 
 type LenderDataReceived = z.infer<typeof LenderDataReceivedSchema>
@@ -30,54 +49,55 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
   const useOfferLenderDataQuery = useQuery({
     queryKey: ["offer-lender-data", address, id],
     queryFn: async () => {
+
       const lenderData = (await readContract({
-        address: DEBITA_ADDRESS,
-        abi: debitaAbi,
-        functionName: "getOfferLENDER_DATA",
-        args: [id],
+        address: OFFER_CREATED_ADDRESS,
+        abi: createdOfferABI,
+        functionName: "getOffersData",
+        args: [],
       })) as LenderDataReceived
 
+      console.log("parsedData", lenderData)
+
       const parsedData = LenderDataReceivedSchema.parse(lenderData)
-      // console.log("parsedData", parsedData)
+      console.log(parsedData, "after");
 
       // We get WAY TOO MUCH DATA from this function, it will trip RPC limits at some point
 
-      if (parsedData.owner === ZERO_ADDRESS) {
+      if (!parsedData.isActive) {
         return null
       }
 
       // we should process the data here, collateral tokens should be an array of grouped data, not as multiple arrays
       // lets go one step further and bring token info and pricing in as well. This will make the data much more useful
       // and simplify rendering.
-      const collaterals = parsedData.wantedCollateralTokens.map((address, index) => {
-        const token = findInternalTokenByAddress(currentChain.slug, address)
-        return {
-          address,
-          token,
-          amountRaw: parsedData.wantedCollateralAmount[index],
-          amount: fromDecimals(parsedData.wantedCollateralAmount[index], token?.decimals ?? 18),
-          price: 0,
-          valueUsd: 0,
-        }
-      })
+      const collateralData = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
+      const collaterals = {
+        address: parsedData.assetAddresses[1],
+        amountRaw: parsedData.assetAmounts[1],
+        token: collateralData,
+        amount: fromDecimals(parsedData.assetAmounts[1], collateralData?.decimals ?? 18),
+        price: 0,
+        valueUsd: 0,
+      }
 
       // cant use async map - hate them but need to use a for loop for that
       let totalCollateralValue = 0
-      for (let i = 0; i < collaterals.length; i++) {
-        const collateral = collaterals[i]
-        const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-        collateral.price = price.price ?? 0
+     
+        const collateral = collaterals
+        const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
+        collateral.price = _price.price ?? 0
         collateral.valueUsd = collateral.amount * collateral.price
         totalCollateralValue += collateral.valueUsd
-      }
+      
 
       // lets do the same for the lender token
-      const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.LenderToken)
+      const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
       const borrowing = {
-        address: parsedData.LenderToken,
-        amountRaw: parsedData.LenderAmount,
+        address: parsedData.assetAddresses[0],
+        amountRaw: parsedData.assetAmounts[0],
         token: lenderToken,
-        amount: fromDecimals(parsedData.LenderAmount, lenderToken?.decimals ?? 18),
+        amount: fromDecimals(parsedData.assetAmounts[0], lenderToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
@@ -88,22 +108,22 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
 
       const ratio = totalCollateralValue / borrowing.valueUsd
       const ltv = (1 / ratio) * 100
-      const numberOfLoanDays = Number(parsedData.timelap) / 86400
-      const apr = ((Number(parsedData.interest) / Number(numberOfLoanDays)) * 365) / 1000 // percentages are 0.134 for 13.4%
-
+      const numberOfLoanDays = Number(parsedData._timelap) / 86400
+      const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 1000 // percentages are 0.134 for 13.4%
+   
       return {
         collaterals,
-        interest: Number(lenderData.interest) / 1000,
+        interest: Number(lenderData.interestRate) / 1000,
         borrowing,
         ltv,
         apr,
         numberOfLoanDays,
-        owner: lenderData.owner,
+        owner: ZERO_ADDRESS,
         paymentCount: lenderData.paymentCount,
-        timelap: lenderData.timelap,
-        wantedCollateralAmount: lenderData.wantedCollateralAmount,
+        timelap: lenderData._timelap,
+        wantedCollateralAmount: lenderData.nftData[1],
         totalCollateralValue,
-        whitelist: lenderData.whitelist,
+        whitelist: [],
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,

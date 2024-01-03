@@ -10,12 +10,11 @@ import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
 import Stat from "@/components/ux/stat"
-import createdOfferABI from "@/abis/v2/createdOffer.json";
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOfferLenderData } from "@/hooks/useOfferLenderData"
-import { DEBITA_ADDRESS, OFFER_CREATED_ADDRESS } from "@/lib/contracts"
+import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
 import { fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
@@ -24,7 +23,7 @@ import dayjs from "dayjs"
 import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
@@ -34,7 +33,7 @@ import { lendOfferMachine } from "./lend-offer-machine"
 
 import { useToast } from "@/components/ui/use-toast"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { balanceOf, toDecimals } from "@/lib/erc20"
+import { balanceOf } from "@/lib/erc20"
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -71,15 +70,24 @@ function getAcceptCollateralOfferValue(collateralData: any) {
   if (!collateralData) {
     return 0
   }
-  const collaterals = collateralData?.collaterals
+  const { collaterals } = collateralData
+  if (!Array.isArray(collaterals)) {
+    return 0
+  }
+  const hasFirstCollateral = collaterals.length > 0
+  const hasSecondCollateral = collaterals.length > 1
+  const isFirstAddressZero = hasFirstCollateral && collaterals[0]?.address === ZERO_ADDRESS
+  const isSecondAddressZero = hasSecondCollateral && collaterals[1]?.address === ZERO_ADDRESS
 
-  const isCollateralZero = collaterals?.address === ZERO_ADDRESS
-
- 
-  if (isCollateralZero) {
+  if (isSecondAddressZero && isFirstAddressZero) {
+    return Number(collaterals[0].amountRaw) + Number(collaterals[1].amountRaw)
+  }
+  if (isFirstAddressZero) {
     return Number(collaterals[0].amountRaw)
   }
-  
+  if (isSecondAddressZero) {
+    return Number(collaterals[1].amountRaw)
+  }
   return 0
 }
 
@@ -98,13 +106,12 @@ export default function LendOffer({ params }: { params: { id: string } }) {
   const id = Number(params.id)
   const config = useConfig()
   const { toast } = useToast()
-  const [amountToBorrow, setAmountToBorrow] = useState(0);
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data } = useOfferLenderData(address, id)
   const isOwnerConnected = address === data?.owner
-  console.log(data, "DATAA");
+
   // console.log("data", data)
 
   const borrowing = data?.borrowing
@@ -123,7 +130,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
     address: (collateral0?.address ?? "") as Address,
     functionName: "allowance",
     abi: erc20Abi,
-    args: [address, OFFER_CREATED_ADDRESS],
+    args: [address, DEBITA_ADDRESS],
   })
 
 
@@ -167,7 +174,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         address: (collateral0?.address ?? "") as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [OFFER_CREATED_ADDRESS, BigInt(collateral0?.amountRaw ?? 0)],
+        args: [DEBITA_ADDRESS, BigInt(collateral0?.amountRaw ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -202,21 +209,22 @@ export default function LendOffer({ params }: { params: { id: string } }) {
           address: collateral0?.address as Address,
           account: address as Address,
         })
-       /*
-         ON V2 WE DONT NEED TO CHECK ALL THE BALANCE JUST THE PORCENTAGE
-
-       if (collateral0 && collateralBalance0 < collateral0?.amountRaw) {
+        if (collateral0 && collateralBalance0 < collateral0?.amountRaw) {
           throw `Insufficient ${collateral0Token?.symbol} balance`
-        } */
+        }
       }
 
+    
 
-    const { request } = await config.publicClient.simulateContract({
-        address: OFFER_CREATED_ADDRESS,
-        functionName: "acceptOfferAsBorrower",
-        abi: createdOfferABI,
-        args: [toDecimals(amountToBorrow, data?.collaterals.token?.decimals ?? 0) , 0],
-        account: address     // gas: BigInt(900000),
+      const value = getAcceptLendingOfferValue(data)
+      const { request } = await config.publicClient.simulateContract({
+        address: DEBITA_ADDRESS,
+        functionName: "acceptLenderOffer",
+        abi: debitaAbi,
+        args: [id],
+        account: address,
+        value: BigInt(value),
+        // gas: BigInt(900000),
         // chainId: currentChain?.chainId,
       })
       // console.log("userAcceptOffer→request", request)
@@ -587,7 +595,6 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={lendMachineState.matches("isNotOwner.canAcceptOffer")}>
-                  <input placeholder="Amount to borrow" type="number" onChange={(e) => {setAmountToBorrow(Number(e.currentTarget.value))}}/>
                     <Button
                       variant={"action"}
                       className="px-16"

@@ -20,6 +20,16 @@ type Tokens = Record<string, Token[]>
 export const INTERNAL_TOKENS: Tokens = {
   fantom: [
     {
+      name: "wFTM",
+      symbol: "wFTM",
+      decimals: 18,
+      address: "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+      chainId: fantom.id,
+      isNative: true,
+      isLp: false,
+      icon: "/files/tokens/fantom/ftm-native.svg",
+    },
+    {
       name: "FTM",
       symbol: "FTM",
       decimals: 18,
