@@ -29,7 +29,8 @@ import { fromPromise } from "xstate"
 import { machine } from "./loan-machine"
 import erc20Abi from "../../../abis/erc20.json"
 import debitaAbi from "../../../abis/debita.json"
-import { DEBITA_ADDRESS } from "@/lib/contracts"
+import createdLoanABI from "@/abis/v2/createdLoan.json"
+import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS } from "@/lib/contracts"
 import { readContract, writeContract } from "wagmi/actions"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { balanceOf } from "@/lib/erc20"
@@ -65,7 +66,7 @@ export default function Loan({ params }: { params: { id: string } }) {
     address: lendingToken?.address,
     functionName: "allowance",
     abi: erc20Abi,
-    args: [address, DEBITA_ADDRESS],
+    args: [address, LOAN_CREATED_ADDRESS],
   }) as { data: bigint }
 
   const [loanState, loanSend] = useMachine(
@@ -82,7 +83,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             const { request } = await config.publicClient.simulateContract({
               address: DEBITA_ADDRESS,
               functionName: "claimDebt",
-              abi: debitaAbi,
+              abi: createdLoanABI,
               args: [id],
               account: address,
               gas: BigInt(300000),
@@ -103,12 +104,12 @@ export default function Loan({ params }: { params: { id: string } }) {
             }
 
             const { request } = await config.publicClient.simulateContract({
-              address: DEBITA_ADDRESS,
+              address: LOAN_CREATED_ADDRESS,
               functionName: "claimCollateralasLender",
-              abi: debitaAbi,
-              args: [id],
+              abi: createdLoanABI,
+              args: [],
               account: address,
-              gas: BigInt(300000),
+              gas: BigInt(600000),
             })
 
             const result = await writeContract(request)
@@ -124,12 +125,12 @@ export default function Loan({ params }: { params: { id: string } }) {
             }
 
             const { request } = await config.publicClient.simulateContract({
-              address: DEBITA_ADDRESS,
+              address: LOAN_CREATED_ADDRESS,
               functionName: "claimCollateralasBorrower",
-              abi: debitaAbi,
-              args: [id],
+              abi: createdLoanABI,
+              args: [],
               account: address,
-              gas: BigInt(300000),
+              gas: BigInt(600000),
             })
 
             const result = await writeContract(request)
@@ -148,7 +149,7 @@ export default function Loan({ params }: { params: { id: string } }) {
             address: lendingToken?.address,
             functionName: "approve",
             abi: erc20Abi,
-            args: [DEBITA_ADDRESS, loan?.paymentAmountRaw],
+            args: [LOAN_CREATED_ADDRESS, loan?.paymentAmountRaw],
           })
           await refetchLoan()
           return result
@@ -169,10 +170,10 @@ export default function Loan({ params }: { params: { id: string } }) {
 
             // simulate the transaction..
             const { request } = await config.publicClient.simulateContract({
-              address: DEBITA_ADDRESS,
+              address: LOAN_CREATED_ADDRESS,
               functionName: "payDebt",
-              abi: debitaAbi,
-              args: [id],
+              abi: createdLoanABI,
+              args: [],
               account: address,
               gas: BigInt(900000),
             })

@@ -241,7 +241,8 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         functionName: "acceptOfferAsBorrower",
         abi: createdOfferABI,
         args: [toDecimals(amountToBorrow, data?.collaterals.token?.decimals ?? 0), 0],
-        account: address     // gas: BigInt(900000),
+        account: address,
+ 
         // chainId: currentChain?.chainId,
       })
       // console.log("userAcceptOffer→request", request)
