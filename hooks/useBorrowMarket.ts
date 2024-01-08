@@ -10,16 +10,12 @@ export const useBorrowMarket = () => {
   const { data } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
 
-  console.log("useBorrowMarket->data", data)
-
   const query: any = useQuery({
     queryKey: ["borrow-market-divided-offers", currentChain.slug, data?.lend?.length],
     queryFn: async () => {
       // todo: why do we reference the lend data in the borrow market?
       const dividedOffers = processLenderOfferCreated(data?.lend ?? [])
       const offers: LenderOfferTokenData[] = Array.from(dividedOffers.values())
-
-      console.log("dividedOffers", dividedOffers)
 
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i]

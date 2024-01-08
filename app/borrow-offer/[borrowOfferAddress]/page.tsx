@@ -16,11 +16,11 @@ import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
-import { fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
 import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { useEffect, useMemo } from "react"
@@ -30,7 +30,6 @@ import { fromPromise } from "xstate"
 import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import { borrowOfferMachine } from "./borrow-offer-machine"
-import dynamic from "next/dynamic"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -529,7 +528,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
             <div className="mt-8 flex justify-center">
               <ShowWhenTrue when={borrowMachineState.matches("isNotOwner")}>
                 <>
-                  {/* Show the Increase Allowance button when the user doesnt not have enough allowance */}
+                  {/* Show the Increase Allowance button when the user doesn't not have enough allowance */}
                   <ShowWhenTrue when={borrowMachineState.matches("isNotOwner.notEnoughAllowance")}>
                     <Button
                       variant={"action"}
