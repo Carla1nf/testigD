@@ -123,22 +123,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
-  /* 
-   --- NEW V2 TO IMPLEMENT ---
-  
- 
-        
-        // this function is not live on the current version of the contract -- will be in the next one
-        
-         const { request } = await config.publicClient.simulateContract({
-        address: OFFER_CREATED_ADDRESS,
-        functionName: "interactPerpetual",
-        abi: createdOfferABI,
-        args: [newBoolPerpetual],
-        account: address     // gas: BigInt(900000),
-        // chainId: currentChain?.chainId,
-      })
-  */
 
   // check if we have the allowance to spend the collateral token
   const { data: currentCollateral0TokenAllowance } = useContractRead({
@@ -147,6 +131,19 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     abi: erc20Abi,
     args: [address, OFFER_CREATED_ADDRESS],
   })
+
+  const interactPerpetual = async () => {
+    const { request } = await config.publicClient.simulateContract({
+      address: OFFER_CREATED_ADDRESS,
+      functionName: "interactPerpetual",
+      abi: createdOfferABI,
+      args: [!(data?.perpetual)],
+      account: address     // gas: BigInt(900000),
+      // chainId: currentChain?.chainId,
+    })
+    const executed = await writeContract(request)
+    console.log(executed)
+  }
 
   const editOffer = async () => {
     const newBorrow = borrowingToken ? Number(newBorrowAmount.current?.value) * 10 ** borrowingToken?.decimals : 0
@@ -546,6 +543,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <div>{editing ? "Cancel" : "Edit Offer"}</div>
                 </div>
               </ShowWhenFalse>
+
+              <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" value="" checked={data?.perpetual} onClick={() => interactPerpetual()} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
+                </label>
+              </ShowWhenFalse>
             </div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
@@ -659,8 +664,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 )}
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
-                <div className="text-[#DCB5BC]">Whitelist</div>
-                <div className="text-base">{yesNo(data?.whitelist?.length)}</div>
+                <div className="text-[#DCB5BC]">Perpetual</div>
+                <div className="text-base">{yesNo(data?.perpetual)}</div>
               </div>
             </div>
 

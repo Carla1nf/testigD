@@ -122,7 +122,7 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
         timelap: lenderData._timelap,
         wantedCollateralAmount: lenderData.nftData[1],
         totalCollateralValue,
-        whitelist: [],
+        perpetual: lenderData.isPerpetual        
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,
