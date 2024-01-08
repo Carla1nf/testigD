@@ -2,7 +2,7 @@ import { Token } from "@/lib/tokens"
 import axios from "axios"
 import z from "zod"
 
-const GetDataElementSchema = z.tuple([z.number(), z.number(), z.number(), z.string(), z.string()])
+const GetDataElementSchema = z.tuple([z.string(), z.number(), z.number(), z.string(), z.string()])
 const GetDataNestedArraySchema = z.array(GetDataElementSchema)
 const GetDataSchema = z.tuple([GetDataNestedArraySchema, GetDataNestedArraySchema, z.number()])
 
@@ -122,10 +122,16 @@ export type GetDataResponse = z.infer<typeof GetDataResponse>
 const getData = async () => {
   try {
     // todo: move URL into a config file in prep for xchain app
+    // V1 API
     // [collaterals, lending, totalLiquidityLent]
-    const response = await axios.get("https://v4wfbcl0v9.execute-api.us-east-1.amazonaws.com/Deploy/getData")
-    const parsedResponse = GetDataSchema.parse(response.data)
+    // const response = await axios.get("https://v4wfbcl0v9.execute-api.us-east-1.amazonaws.com/Deploy/getData")
+
+    // V2 API
+    // [collaterals, lending, totalLiquidityLent]
+    const response = await axios.get("https://rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData")
+
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
+    const parsedResponse = GetDataSchema.parse(response.data)
 
     return parsedResponse
   } catch (error) {
