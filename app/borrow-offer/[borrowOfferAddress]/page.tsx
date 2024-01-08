@@ -537,7 +537,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
                         borrowMachineSend({ type: "user.allowance.increase" })
                       }}
                     >
-                      Increase Allowance
+                      Accept Offer
                     </Button>
                   </ShowWhenTrue>
 
