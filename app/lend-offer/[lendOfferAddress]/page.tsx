@@ -106,7 +106,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const lendOfferAddress = params.lendOfferAddress
-  const OFFER_CREATED_ADDRESS = lendOfferAddress;
+  const OFFER_CREATED_ADDRESS = lendOfferAddress
   const { data } = useOfferLenderData(address, lendOfferAddress)
   const isOwnerConnected = address === data?.owner
 
@@ -123,7 +123,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
-
   // check if we have the allowance to spend the collateral token
   const { data: currentCollateral0TokenAllowance } = useContractRead({
     address: (collateral0?.address ?? "") as Address,
@@ -137,8 +136,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       address: OFFER_CREATED_ADDRESS,
       functionName: "interactPerpetual",
       abi: createdOfferABI,
-      args: [!(data?.perpetual)],
-      account: address     // gas: BigInt(900000),
+      args: [!data?.perpetual],
+      account: address, // gas: BigInt(900000),
       // chainId: currentChain?.chainId,
     })
     const executed = await writeContract(request)
@@ -524,7 +523,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
             <div className="flex justify-between gap-8">
               <div className="bg-[#21232B]/40 border-2 border-white/10 p-4 w-full rounded-xl flex gap-2 items-center justify-center  ">
-                You are borrowing {borrowingToken?.symbol} from
+                You could borrow {borrowingToken?.symbol} from
                 <PersonIcon className="w-6 h-6" />
                 {shortAddress(data?.owner as Address)}
               </div>
@@ -543,12 +542,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <div>{editing ? "Cancel" : "Edit Offer"}</div>
                 </div>
               </ShowWhenFalse>
-
               <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" value="" checked={data?.perpetual} onClick={() => interactPerpetual()} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                    <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
+                  <input
+                    type="checkbox"
+                    value=""
+                    checked={data?.perpetual}
+                    onClick={() => interactPerpetual()}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
                 </label>
               </ShowWhenFalse>
             </div>
@@ -712,7 +716,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         lendMachineSend({ type: "user.allowance.increase" })
                       }}
                     >
-                      Increase Allowance
+                      Accept Offer
                     </Button>
                   </ShowWhenTrue>
 
