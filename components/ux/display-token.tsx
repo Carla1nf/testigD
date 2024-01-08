@@ -25,6 +25,7 @@ const DisplayToken = ({
   const components: Record<ComponentKeys, JSX.Element | false | undefined> = {
     Icon: displayOrder.includes("Icon") && (
       <TokenImage
+        key="Icon"
         width={size ?? 24}
         height={size ?? 24}
         chainSlug="fantom"
@@ -33,9 +34,11 @@ const DisplayToken = ({
       />
     ),
     Amount: displayOrder.includes("Amount") && amount !== undefined && (
-      <span className="text-white">{formatNumber({ value: amount, decimals })}</span>
+      <span key="Amount" className="text-white">
+        {formatNumber({ value: amount, decimals })}
+      </span>
     ),
-    Name: displayOrder.includes("Name") && <span>{token?.symbol}</span>,
+    Name: displayOrder.includes("Name") && <span key="Name">{token?.symbol}</span>,
   }
 
   const orderedComponents: ComponentKeys[] = displayOrder.split(/(?=[A-Z])/) as ComponentKeys[]

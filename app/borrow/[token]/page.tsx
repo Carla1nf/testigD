@@ -25,8 +25,6 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   const marketOffers = token ? filterOffersByToken(offers, token) : []
   const events = Array.isArray(marketOffers) && marketOffers.length > 0 ? marketOffers[0].events : []
 
-  console.log("params", params)
-
   const breadcrumbs = useMemo(
     () => [
       <DisplayNetwork currentChain={currentChain} size={18} key="network" />,
@@ -96,7 +94,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           </thead>
           <tbody className="flex-1 sm:flex-none">
             {events?.map((event: any) => {
-              return <TableRow event={event} token={token} key={event.id} />
+              return <TableRow event={event} token={token} key={event.address} />
             })}
           </tbody>
         </table>

@@ -1,3 +1,5 @@
+"use client"
+
 import { dollars } from "@/lib/display"
 import { clampHigh, dynamicClampIncrement, lastNumber } from "@/lib/utils"
 import { useMemo } from "react"

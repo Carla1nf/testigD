@@ -1,27 +1,29 @@
 "use client"
 
-import ChartWrapper from "@/components/charts/chart-wrapper"
-import LoanChart from "@/components/charts/loan-chart"
+import createdOfferABI from "@/abis/v2/createdOffer.json"
 import { PersonIcon, PriceIcon, SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
 import Stat from "@/components/ux/stat"
-import createdOfferABI from "@/abis/v2/createdOffer.json"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOfferLenderData } from "@/hooks/useOfferLenderData"
 import { DEBITA_ADDRESS, OFFER_CREATED_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
+import { balanceOf, toDecimals } from "@/lib/erc20"
+import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
 import { fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
 import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -32,9 +34,8 @@ import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import { lendOfferMachine } from "./lend-offer-machine"
 
-import { useToast } from "@/components/ui/use-toast"
-import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { balanceOf, toDecimals } from "@/lib/erc20"
+const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
+const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -363,7 +364,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         }
       }
     }
-  }, [isOwnerConnected, currentCollateral0TokenAllowance])
+  }, [isOwnerConnected, currentCollateral0TokenAllowance, lendMachineState, lendMachineSend, collateral0])
 
   // console.log("state", lendMachineState.value)
 
@@ -440,7 +441,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       <div className="@container mb-8 space-y-4">
         <Breadcrumbs items={breadcrumbs} />
         <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-          Offer #{lendOfferAddress}
+          {/* Offer #{lendOfferAddress} */}
+          Offer
         </h1>
       </div>
 

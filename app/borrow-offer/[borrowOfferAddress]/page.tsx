@@ -1,7 +1,5 @@
 "use client"
 
-import ChartWrapper from "@/components/charts/chart-wrapper"
-import LoanChart from "@/components/charts/loan-chart"
 import { PersonIcon, PriceIcon, SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -26,12 +24,16 @@ import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { useEffect, useMemo } from "react"
-import { useConfig, useContractRead } from "wagmi"
+import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import { borrowOfferMachine } from "./borrow-offer-machine"
+import dynamic from "next/dynamic"
+
+const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
+const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
 
 // function getAcceptCollateralOfferValue(collateralData: any) {
 //   if (!collateralData) {
@@ -69,14 +71,14 @@ function getAcceptLendingOfferValue(collateralData: any) {
   return 0
 }
 
-export default function BorrowOffer({ params }: { params: { id: string } }) {
-  const id = Number(params.id)
+export default function BorrowOffer({ params }: { params: { borrowOfferAddress: Address } }) {
+  const borrowOfferAddress = params.borrowOfferAddress
   const config = useConfig()
   const { toast } = useToast()
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
-  const { data: collateralData } = useOfferCollateralData(address, id)
+  const { data: collateralData } = useOfferCollateralData(address, borrowOfferAddress)
   const isOwnerConnected = address === collateralData?.owner
 
   const lending = collateralData?.lending
@@ -107,7 +109,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         address: DEBITA_ADDRESS,
         functionName: "cancelCollateralOffer",
         abi: debitaAbi,
-        args: [id],
+        args: [borrowOfferAddress],
         account: address,
         gas: BigInt(900000),
       })
@@ -163,7 +165,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         address: DEBITA_ADDRESS,
         functionName: "acceptCollateralOffer",
         abi: debitaAbi,
-        args: [id],
+        args: [borrowOfferAddress],
         account: address,
         value: BigInt(value),
         // gas: BigInt(900000),
@@ -334,8 +336,8 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
         description={
           <>
             <div className="mb-4">
-              We are unable to find borrow offer {id}, it appears to have either already been accepted or may have never
-              existed.
+              We are unable to find borrow offer {borrowOfferAddress}, it appears to have either already been accepted
+              or may have never existed.
             </div>
             Please contact us in our{" "}
             <a
@@ -359,7 +361,7 @@ export default function BorrowOffer({ params }: { params: { id: string } }) {
       {/* Page header */}
       <div className="@container mb-8 space-y-4">
         <Breadcrumbs items={breadcrumbs} />
-        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Lend ID #{Number(id)}</h1>
+        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Loan</h1>
       </div>
 
       {/* Page content */}

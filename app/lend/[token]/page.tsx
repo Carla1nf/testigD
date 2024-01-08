@@ -97,7 +97,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           </thead>
           <tbody className="flex-1 sm:flex-none">
             {events?.map((event: any) => {
-              return <TableRow event={event} token={token} key={event.id} />
+              return <TableRow event={event} token={token} key={event.address} />
             })}
           </tbody>
         </table>
@@ -109,7 +109,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
 const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const router = useRouter()
   const { address } = useControlledAddress()
-  const { data: collateralData } = useOfferCollateralData(address, event.id)
+  const { data: collateralData } = useOfferCollateralData(address, event.address)
 
   const collateral0 = collateralData?.collaterals[0]
   const collateral1 = collateralData?.collaterals[1]
@@ -130,12 +130,13 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       </td>
       <td className="p-4 text-left">
         <div className="flex flex-col gap-2">
-          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : 
-  <div className="animate-pulse flex space-x-4">
-    <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>
-   
-  </div>
-}
+          {collateralToken0 ? (
+            <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} />
+          ) : (
+            <div className="animate-pulse flex space-x-4">
+              <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>
+            </div>
+          )}
           {collateralToken1 ? <DisplayToken size={28} token={collateralToken1} amount={collateral1.amount} /> : null}
         </div>
       </td>
