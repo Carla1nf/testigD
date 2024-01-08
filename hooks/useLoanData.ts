@@ -27,13 +27,12 @@ const LoanDataReceivedSchema = z.object({
   paymentCount: z.number(),
   paymentsPaid: z.number(),
   paymentAmount: z.bigint(),
-
 })
 
-export const useLoanData = (id: number) => {
+export const useLoanData = (loanAddress: Address) => {
   const currentChain = useCurrentChain()
   const useLoanDataQuery: any = useQuery({
-    queryKey: ["loan-data", currentChain.slug, id],
+    queryKey: ["loan-data", currentChain.slug, loanAddress],
     refetchInterval: 30000,
     staleTime: 10000,
     queryFn: async () => {
@@ -74,21 +73,19 @@ export const useLoanData = (id: number) => {
 
       // gets the tokens from the loan
 
-        const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
-        const collateral = {
-          address: parsedData.assetAddresses[1],
-          token: collateralToken,
-          amountRaw: parsedData.assetAmounts[1],
-          amount: fromDecimals(parsedData.assetAmounts[1], collateralToken?.decimals ?? 18),
-          price: 0,
-          valueUsd: 0,
-        }
-      
+      const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
+      const collateral = {
+        address: parsedData.assetAddresses[1],
+        token: collateralToken,
+        amountRaw: parsedData.assetAmounts[1],
+        amount: fromDecimals(parsedData.assetAmounts[1], collateralToken?.decimals ?? 18),
+        price: 0,
+        valueUsd: 0,
+      }
 
-        const priceCollateral = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-        collateral.price = priceCollateral.price ?? 0
-        collateral.valueUsd = collateral.amount * collateral.price
-      
+      const priceCollateral = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
+      collateral.price = priceCollateral.price ?? 0
+      collateral.valueUsd = collateral.amount * collateral.price
 
       // lets do the same for the lender token
       const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
@@ -156,7 +153,7 @@ export const useLoanData = (id: number) => {
         hasLoanCompleted: parsedData.executed,
         hasRepaidLoan,
         hasDefaulted,
-        id,
+        loanAddress,
         lender,
         lenderId,
         lending,

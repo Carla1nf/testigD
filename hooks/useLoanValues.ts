@@ -17,7 +17,7 @@ export type TokenValue = Token & {
 }
 
 type Loan = {
-  id: number
+  loanAddress: Address
   collateralOwnerId: number
   collaterals: TokenValue
   cooldown: bigint
@@ -47,7 +47,7 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number,
         functionName: "tokenOfOwnerByIndex",
         args: [address, index],
       })) as number
-   /*
+      /*
     LoanFactory Contract has a function called NftID_to_LoanAddress 
    const loanId = (await readContract({
         address: DEBITA_ADDRESS,
@@ -55,7 +55,7 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number,
         functionName: "NftID_to_LoanAddress",
         args: [ownerNftTokenId ?? ""],
       })) as number */
-     const loanId = 0;
+      const loanId = 0
       const loanData = (await readContract({
         address: LOAN_CREATED_ADDRESS,
         abi: loanCreatedAbi,
@@ -73,38 +73,35 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number,
       })) as number
 
       // Process collateral into meaningful knowledge
-          
-      let collaterals = undefined;
-      
-          const safeAddressCollateral = getAddress(loanData?.assetAddresses[1] ?? "")
-          const amount_collateral = loanData?.assetAmounts[1] 
-          const found_collateral = findTokenByAddress("fantom", safeAddressCollateral)
-          if (found_collateral) {
-            const value = fromDecimals(amount_collateral, found_collateral.decimals)
-            collaterals = {
-              ...pick(found_collateral, ["name", "symbol", "address", "chainId", "decimals", "icon"]),
-              value,
-              amount: Number(amount_collateral),
-            }
-          } else {
-             // this is not a known token, lets get the data required from RPC calls (todo: cache this into extenral tokens cache)
-          const decimals = await tokenDecimals({ address: safeAddressCollateral })
-          const value = fromDecimals(amount_collateral, decimals)
-          collaterals = {
-            name: await tokenName({ address: loanData?.assetAddresses[0] ?? "" }),
-            symbol: await tokenSymbol({ address: safeAddressCollateral }),
-            address: safeAddressCollateral,
-            chainId: 250, // hard coded fantom
-            amount: Number(amount_collateral),
-            decimals,
-            value,
-          }
-          }
 
+      let collaterals = undefined
 
-         
-          console.log(ownerNftTokenId, "NFTIDso")
+      const safeAddressCollateral = getAddress(loanData?.assetAddresses[1] ?? "")
+      const amount_collateral = loanData?.assetAmounts[1]
+      const found_collateral = findTokenByAddress("fantom", safeAddressCollateral)
+      if (found_collateral) {
+        const value = fromDecimals(amount_collateral, found_collateral.decimals)
+        collaterals = {
+          ...pick(found_collateral, ["name", "symbol", "address", "chainId", "decimals", "icon"]),
+          value,
+          amount: Number(amount_collateral),
+        }
+      } else {
+        // this is not a known token, lets get the data required from RPC calls (todo: cache this into extenral tokens cache)
+        const decimals = await tokenDecimals({ address: safeAddressCollateral })
+        const value = fromDecimals(amount_collateral, decimals)
+        collaterals = {
+          name: await tokenName({ address: loanData?.assetAddresses[0] ?? "" }),
+          symbol: await tokenSymbol({ address: safeAddressCollateral }),
+          address: safeAddressCollateral,
+          chainId: 250, // hard coded fantom
+          amount: Number(amount_collateral),
+          decimals,
+          value,
+        }
+      }
 
+      console.log(ownerNftTokenId, "NFTIDso")
 
       // Lets build the loan object as we want to see it
       let loanToken = undefined

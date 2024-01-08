@@ -120,9 +120,9 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   return (
     <tr
       onClick={() => {
-        router.push(`/borrow-offer/${event.id}`)
+        router.push(`/borrow-offer/${event.address}`)
       }}
-      key={`${collateralData?.lender?.token?.symbol}_${event.id}`}
+      key={`${collateralData?.lender?.token?.symbol}_${event.address}`}
       className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b border-[#383838]/50"
     >
       <td className="p-4 text-left">

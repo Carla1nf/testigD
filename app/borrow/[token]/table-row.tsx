@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const router = useRouter()
   const { address } = useControlledAddress()
-  const { data: data } = useOfferLenderData(address, event.id)
+  const { data: data } = useOfferLenderData(address, event.address)
 
   const collateral0 = data?.collaterals
   const collateralToken0 = collateral0?.token
