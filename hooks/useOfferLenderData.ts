@@ -1,30 +1,29 @@
-import { DEBITA_ADDRESS, OFFER_CREATED_ADDRESS } from "@/lib/contracts"
+import createdOfferABI from "@/abis/v2/createdOffer.json"
+import { OFFER_CREATED_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
-import { ZERO_ADDRESS } from "@/services/constants"
+import { fromDecimals } from "@/lib/erc20"
+import { findInternalTokenByAddress } from "@/lib/tokens"
+import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
 import { readContract } from "wagmi/actions"
 import z from "zod"
-import createdOfferABI from "../abis/v2/createdOffer.json";
-import { findInternalTokenByAddress } from "@/lib/tokens"
 import useCurrentChain from "./useCurrentChain"
-import { fromDecimals } from "@/lib/erc20"
-import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 
-   /**
-     * @dev create Offer
-     * @param assetAddresses [0] = Lending, [1] = Collateral
-     * @param assetAmounts [0] = Lending, [1] = Collateral
-     * @param isAssetNFT [0] = Lending, [1] = Collateral
-     * @param _interestRate (1 ==> 0.01%, 1000 ==> 10%, 10000 ==> 100%)
-     * @param nftData [0] = NFT ID Lender, [1] NFT ID Collateral, [2] Total amount of interest (If lending is NFT) ---  0 on each if not NFT
-     * @param veValue value of wanted locked veNFT (for borrower or lender) (0 if not veNFT)
-     * @param _paymentCount Number of payments
-     * @param _timelap timelap on each payment
-     * @param loanBooleans [0] = isLending (true --> msg.sender is Lender), [1] = isPerpetual
-     * @param interest_address address of the erc-20 for interest payments, 0x0 if lending is not NFT
-     **/
-    
+/**
+ * @dev create Offer
+ * @param assetAddresses [0] = Lending, [1] = Collateral
+ * @param assetAmounts [0] = Lending, [1] = Collateral
+ * @param isAssetNFT [0] = Lending, [1] = Collateral
+ * @param _interestRate (1 ==> 0.01%, 1000 ==> 10%, 10000 ==> 100%)
+ * @param nftData [0] = NFT ID Lender, [1] NFT ID Collateral, [2] Total amount of interest (If lending is NFT) ---  0 on each if not NFT
+ * @param veValue value of wanted locked veNFT (for borrower or lender) (0 if not veNFT)
+ * @param _paymentCount Number of payments
+ * @param _timelap timelap on each payment
+ * @param loanBooleans [0] = isLending (true --> msg.sender is Lender), [1] = isPerpetual
+ * @param interest_address address of the erc-20 for interest payments, 0x0 if lending is not NFT
+ **/
+
 const LenderDataReceivedSchema = z.object({
   assetAddresses: z.array(z.string()),
   assetAmounts: z.array(z.bigint(), z.bigint()),
@@ -38,38 +37,33 @@ const LenderDataReceivedSchema = z.object({
   paymentCount: z.number(),
   valueOfVeNFT: z.bigint(),
   _timelap: z.number(),
-
-
 })
 
 type LenderDataReceived = z.infer<typeof LenderDataReceivedSchema>
 
-export const useOfferLenderData = (address: Address | undefined, id: number) => {
+export const useOfferLenderData = (address: Address | undefined, lendOfferAddress: Address) => {
   const currentChain = useCurrentChain()
   const useOfferLenderDataQuery = useQuery({
-    queryKey: ["offer-lender-data", address, id],
+    queryKey: ["offer-lender-data", address, lendOfferAddress],
     queryFn: async () => {
-
       const lenderData = (await readContract({
-        address: OFFER_CREATED_ADDRESS,
+        address: lendOfferAddress,
         abi: createdOfferABI,
         functionName: "getOffersData",
         args: [],
       })) as LenderDataReceived
 
       const owner = (await readContract({
-        address: OFFER_CREATED_ADDRESS,
+        address: lendOfferAddress,
         abi: createdOfferABI,
         functionName: "owner",
         args: [],
       })) as string
 
-
       const parsedData = LenderDataReceivedSchema.parse(lenderData)
-      console.log(parsedData, "after");
+      // console.log("parsedData", parsedData)
 
       // We get WAY TOO MUCH DATA from this function, it will trip RPC limits at some point
-
       if (!parsedData.isActive) {
         return null
       }
@@ -89,13 +83,12 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
 
       // cant use async map - hate them but need to use a for loop for that
       let totalCollateralValue = 0
-     
-        const collateral = collaterals
-        const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-        collateral.price = _price.price ?? 0
-        collateral.valueUsd = collateral.amount * collateral.price
-        totalCollateralValue += collateral.valueUsd
-      
+
+      const collateral = collaterals
+      const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
+      collateral.price = _price.price ?? 0
+      collateral.valueUsd = collateral.amount * collateral.price
+      totalCollateralValue += collateral.valueUsd
 
       // lets do the same for the lender token
       const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
@@ -116,7 +109,7 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
       const ltv = (1 / ratio) * 100
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
-   
+
       return {
         collaterals,
         interest: Number(lenderData.interestRate) / 10000,

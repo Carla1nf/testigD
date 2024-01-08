@@ -1,5 +1,6 @@
 "use client"
 
+import createdLoanABI from "@/abis/v2/createdLoan.json"
 import ChartWrapper from "@/components/charts/chart-wrapper"
 import LoanChart from "@/components/charts/loan-chart"
 import { PersonIcon, SpinnerIcon } from "@/components/icons"
@@ -11,30 +12,28 @@ import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DaysHours from "@/components/ux/deadline-datetime"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
+import Spinner from "@/components/ux/spin"
 import TokenImage from "@/components/ux/token-image"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useLoanData } from "@/hooks/useLoanData"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
+import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS } from "@/lib/contracts"
 import { LoanStatus, dollars, formatFullDate, loanStatus, shortAddress } from "@/lib/display"
+import { balanceOf } from "@/lib/erc20"
 import { cn } from "@/lib/utils"
+import { ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import pluralize from "pluralize"
 import { useEffect, useMemo } from "react"
-import { Address, useConfig, useContractRead, useContractWrite } from "wagmi"
+import { Address, useConfig, useContractRead } from "wagmi"
+import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
-import { machine } from "./loan-machine"
 import erc20Abi from "../../../abis/erc20.json"
-import debitaAbi from "../../../abis/debita.json"
-import createdLoanABI from "@/abis/v2/createdLoan.json"
-import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS } from "@/lib/contracts"
-import { readContract, writeContract } from "wagmi/actions"
-import { ZERO_ADDRESS } from "@/services/constants"
-import { balanceOf } from "@/lib/erc20"
-import Spinner from "@/components/ux/spin"
+import { machine } from "./loan-machine"
 
 /**
  * This page shows the suer the FULL details of the loan
@@ -43,14 +42,14 @@ import Spinner from "@/components/ux/spin"
  * Borrowers can repay their loan (one or more times if multiple payments are due)
  *
  */
-export default function Loan({ params }: { params: { id: string } }) {
-  const id = Number(params.id)
+export default function Loan({ params }: { params: { loanAddress: string } }) {
+  const loanAddress = params.loanAddress
   const config = useConfig()
   const { toast } = useToast()
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
-  const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(id)
+  const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(loanAddress)
 
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
@@ -74,17 +73,17 @@ export default function Loan({ params }: { params: { id: string } }) {
       actors: {
         claimLentTokens: fromPromise(async () => {
           try {
-             /*
+            /*
              Got error by claiming the Debt thanks to this code -- 31/12/2023
              if (loan?.hasClaimedCollateral) {
               throw "Collateral already claimed"
             } */
-       
+
             const { request } = await config.publicClient.simulateContract({
               address: DEBITA_ADDRESS,
               functionName: "claimDebt",
               abi: createdLoanABI,
-              args: [id],
+              args: [loanAddress],
               account: address,
               gas: BigInt(300000),
             })
@@ -292,9 +291,7 @@ export default function Loan({ params }: { params: { id: string } }) {
         {/* Page header */}
         <div className="@container mb-8 space-y-4">
           <Breadcrumbs items={breadcrumbs} />
-          <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
-            Debita Loan #{Number(id)}
-          </h1>
+          <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Debita Loan</h1>
         </div>
 
         {/* Page content */}
@@ -306,7 +303,10 @@ export default function Loan({ params }: { params: { id: string } }) {
             <div className="flex justify-between gap-8 w-full">
               <LtvStat title="LTV" value={displayLtv} />
               <CollateralStat title="Collateral" value={displayCollateralValue} />
-              <DebtStat title={`${loanState.matches("borrower") ? "My Debt" : "Debt"}`} value={dollars({ value: loan?.lending?.valueUsd ?? 0 })} />
+              <DebtStat
+                title={`${loanState.matches("borrower") ? "My Debt" : "Debt"}`}
+                value={dollars({ value: loan?.lending?.valueUsd ?? 0 })}
+              />
               <DeadlineStat title="Final deadline" deadline={displayDeadlineValue} loanStatus={displayLoanStatus} />
             </div>
 
@@ -521,7 +521,6 @@ export default function Loan({ params }: { params: { id: string } }) {
                         className="text-xl"
                       />
                     ) : null}
-                   
                   </div>
                 </div>
 

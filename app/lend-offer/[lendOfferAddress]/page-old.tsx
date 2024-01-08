@@ -102,8 +102,8 @@ function getAcceptLendingOfferValue(values: any) {
   return 0
 }
 
-export default function LendOffer({ params }: { params: { id: string } }) {
-  const id = Number(params.id)
+export default function LendOffer({ params }: { params: { lendOfferAddress: stringAddress } }) {
+  const lendOfferAddress = params.lendOfferAddress
   const config = useConfig()
   const { toast } = useToast()
 
@@ -149,7 +149,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         address: DEBITA_ADDRESS,
         functionName: "cancelLenderOffer",
         abi: debitaAbi,
-        args: [id],
+        args: [lendOfferAddress],
         account: address,
         gas: BigInt(900000),
       })
@@ -239,7 +239,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         address: DEBITA_ADDRESS,
         functionName: "acceptLenderOffer",
         abi: debitaAbi,
-        args: [id],
+        args: [lendOfferAddress],
         account: address,
         value: BigInt(value),
         // gas: BigInt(900000),

@@ -2,7 +2,7 @@ import { Token } from "@/lib/tokens"
 import axios from "axios"
 import z from "zod"
 
-const GetDataElementSchema = z.tuple([z.number(), z.number(), z.number(), z.string(), z.string()])
+const GetDataElementSchema = z.tuple([z.string(), z.number(), z.number(), z.string(), z.string()])
 const GetDataNestedArraySchema = z.array(GetDataElementSchema)
 const GetDataSchema = z.tuple([GetDataNestedArraySchema, GetDataNestedArraySchema, z.number()])
 
@@ -16,7 +16,7 @@ const GetDataSchema = z.tuple([GetDataNestedArraySchema, GetDataNestedArraySchem
  * );
  */
 const LenderOfferCreatedSchema = z.object({
-  id: z.number(),
+  address: z.string(),
   owner: z.string(),
   lendingToken: z.string(),
   apr: z.number(),
@@ -93,7 +93,7 @@ export const processLenderOfferCreated = (data: LenderOfferCreated[]): Map<strin
  * );
  */
 const CollateralOfferCreatedSchema = z.object({
-  id: z.number(),
+  address: z.string(),
   owner: z.string(),
   lendingToken: z.string(),
   apr: z.number(),
@@ -121,11 +121,17 @@ export type GetDataResponse = z.infer<typeof GetDataResponse>
  */
 const getData = async () => {
   try {
-    // todo: move URL into a config file in prep for xchain app
+    // V1 API
     // [collaterals, lending, totalLiquidityLent]
-    const response = await axios.get("https://v4wfbcl0v9.execute-api.us-east-1.amazonaws.com/Deploy/getData")
-    const parsedResponse = GetDataSchema.parse(response.data)
+    // const response = await axios.get("https://v4wfbcl0v9.execute-api.us-east-1.amazonaws.com/Deploy/getData")
+
+    // V2 API
+    // [collaterals, lending, totalLiquidityLent]
+    // todo: move URL into a config file in prep for x-chain app
+    const response = await axios.get("https://rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData")
+
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
+    const parsedResponse = GetDataSchema.parse(response.data)
 
     return parsedResponse
   } catch (error) {
@@ -149,7 +155,7 @@ const transformGetDataResponse = (response: GetData): GetDataResponse => {
     lend: response[1].map((event) => {
       // console.log("transformGetDataResponse->lend->event", event)
       return LenderOfferCreatedSchema.parse({
-        id: event[0],
+        address: event[0],
         owner: event[3],
         lendingToken: event[4],
         apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457
@@ -158,7 +164,7 @@ const transformGetDataResponse = (response: GetData): GetDataResponse => {
     }),
     borrow: response[0].map((event) => {
       return CollateralOfferCreatedSchema.parse({
-        id: event[0],
+        address: event[0],
         owner: event[3],
         lendingToken: event[4],
         apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457

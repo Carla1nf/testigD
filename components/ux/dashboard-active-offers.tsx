@@ -79,7 +79,7 @@ const DashboardActiveOffersTable = ({
               ? lending.map((item: any) => {
                   return (
                     <DashboardActiveOffersTableLendItem
-                      key={`td_${status}_${item.id}`}
+                      key={`td_${status}_${item.address}`}
                       address={address as Address}
                       item={item}
                     />
@@ -90,7 +90,7 @@ const DashboardActiveOffersTable = ({
               ? collateral.map((item: any) => {
                   return (
                     <DashboardActiveOffersTableBorrowItem
-                      key={`td_${status}_${item.id}`}
+                      key={`td_${status}_${item.address}`}
                       address={address as Address}
                       item={item}
                     />
@@ -105,13 +105,12 @@ const DashboardActiveOffersTable = ({
 }
 
 const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Address; item: any }) => {
-  const { data: lender } = useOfferLenderData(address, item.id)
+  const { data: lender } = useOfferLenderData(address, item.address)
   console.log("lender", lender)
 
   if (!lender) {
     return null
   }
-
 
   // @ts-ignore todo: ignored to help build, come back and check this is still true
   const lenderToken = findTokenByAddress("fantom", lender.lenderToken)
@@ -119,9 +118,11 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
   const collateral0 = lender?.collaterals
   const collateralToken0 = collateral0 ? findTokenByAddress("fantom", collateral0.address) : undefined
 
-
   return (
-    <tr className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer" key={item.id}>
+    <tr
+      className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer"
+      key={item.address}
+    >
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
         {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
@@ -138,7 +139,7 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
 
 const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Address; item: any }) => {
   const router = useRouter()
-  const { data } = useOfferCollateralData(address, item.id)
+  const { data } = useOfferCollateralData(address, item.address)
 
   if (!data) {
     return null
@@ -152,7 +153,7 @@ const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Addr
       className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 text-xs cursor-pointer"
       key={item.id}
       onClick={() => {
-        router.push(`/borrow-offer/${item.id}`)
+        router.push(`/borrow-offer/${item.address}`)
       }}
     >
       {/* Collateral */}
