@@ -5,7 +5,7 @@ import LoanChart from "@/components/charts/loan-chart"
 import { PersonIcon, PriceIcon, SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
@@ -99,12 +99,19 @@ export default function LendOffer({ params }: { params: { id: string } }) {
   const config = useConfig()
   const { toast } = useToast()
   const [amountToBorrow, setAmountToBorrow] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const newCollateralAmount = useRef<HTMLInputElement>(null)
+  const newBorrowAmount = useRef<HTMLInputElement>(null)
+  const newPaymentCount = useRef<HTMLInputElement>(null)
+  const newTimelap = useRef<HTMLInputElement>(null)
+  const newInterest = useRef<HTMLInputElement>(null)
+  
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data } = useOfferLenderData(address, id)
   const isOwnerConnected = address === data?.owner
-  console.log(data, "DATAA");
+ 
   // console.log("data", data)
 
   const borrowing = data?.borrowing
@@ -118,18 +125,11 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
+
   /* 
    --- NEW V2 TO IMPLEMENT ---
   
-   const { request } = await config.publicClient.simulateContract({
-        address: OFFER_CREATED_ADDRESS,
-        functionName: "editOffer",
-        abi: createdOfferABI,
-        args: [[newAmountLending, newAmountCollateral], [newInterest,
-        newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT],
-        account: address     // gas: BigInt(900000),
-        // chainId: currentChain?.chainId,
-      })
+ 
         
         // this function is not live on the current version of the contract -- will be in the next one
         
@@ -150,6 +150,26 @@ export default function LendOffer({ params }: { params: { id: string } }) {
     abi: erc20Abi,
     args: [address, OFFER_CREATED_ADDRESS],
   })
+
+  const editOffer = async () => {
+    const newBorrow = borrowingToken ? Number(newBorrowAmount.current?.value) * 10 ** borrowingToken?.decimals : 0;
+
+    const newCollateral = collateral0Token ? Number(newCollateralAmount.current?.value) * 10 ** collateral0Token?.decimals : 0;
+    const { request } = await config.publicClient.simulateContract({
+      address: OFFER_CREATED_ADDRESS,
+      functionName: "editOffer",
+      abi: createdOfferABI,
+      args: [[newBorrow, newCollateral], [(Number(newInterest.current?.value) * 100), Number(newPaymentCount.current?.value), (Number(newTimelap.current?.value) * 86400)], 0, 0],
+      account: address     // gas: BigInt(900000),
+      // chainId: currentChain?.chainId,
+    })
+
+    const executed = await writeContract(request)
+    console.log(executed);
+
+    /* args: [[newAmountLending, newAmountCollateral], [newInterest,
+      newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT], */
+  }
 
 
   const cancelOffer = async () => {
@@ -242,7 +262,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
         abi: createdOfferABI,
         args: [toDecimals(amountToBorrow, data?.collaterals.token?.decimals ?? 0), 0],
         account: address,
- 
+
         // chainId: currentChain?.chainId,
       })
       // console.log("userAcceptOffer→request", request)
@@ -444,6 +464,9 @@ export default function LendOffer({ params }: { params: { id: string } }) {
               <LoanChart loanData={chartValues} />
             </ChartWrapper>
           </div>
+
+
+
         </div>
         <div className="space-y-8 max-w-xl w-full xl:ml-16">
           {/* Owners can cancel the offer */}
@@ -510,15 +533,32 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
           {/* Form Panel */}
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
-            <div className="text-xl mb-4 font-bold">Lending Offer</div>
+            <div className="text-xl mb-4 font-bold flex items-center gap-5" >
+              Lending Offer
+              <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
+              <div onClick={async () => setEditing(!editing)} className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300">
+                <div >{editing ? "Cancel" : "Edit Offer"}</div>
+
+              </div>
+              </ShowWhenFalse>
+              
+            </div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="flex flex-col gap-3">
                 <div>Provide Collateral</div>
                 <div className="-ml-[px]">
-                  {collateral0 && collateral0Token ? (
-                    <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
-                  ) : null}
+                  {collateral0 && collateral0Token ?
+
+                    <>
+                      {editing ?
+                        <div className="flex items-center gap-2 animate-enter-div">
+                          <input min={0} type="number" ref={newCollateralAmount} className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white" placeholder={`new ${collateral0Token.symbol} amount`} defaultValue={collateral0.amount} />
+                          {collateral0Token.symbol}
+                        </div> : (
+                          <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
+                        )}
+                    </> : null}
 
                 </div>
                 <div className="text-white/50 text-xs italic">
@@ -528,11 +568,22 @@ export default function LendOffer({ params }: { params: { id: string } }) {
               <div className="flex flex-col gap-3">
                 <div>To Borrow</div>
 
-                {borrowing && borrowingToken ? (
-                  <div className="-ml-[4px]">
-                    <DisplayToken size={32} token={borrowingToken} amount={borrowing.amount} className="text-xl" />
-                  </div>
-                ) : null}
+
+                <>
+                  {borrowing && borrowingToken ? (
+                    <>
+                      {editing ?
+                        <div className="flex items-center gap-2 animate-enter-div">
+                          <input min={0} type="number" ref={newBorrowAmount} className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white" placeholder={`new ${borrowingToken.symbol} amount`} defaultValue={borrowing.amount} />
+                          {borrowingToken.symbol}
+                        </div> : <div className="-ml-[4px]">
+                          <DisplayToken size={32} token={borrowingToken} amount={borrowing.amount} className="text-xl" />
+                        </div>}
+                    </>
+
+                  ) : null}
+                </>
+
                 <div className="text-white/50 text-xs italic">
                   Borrow value: {dollars({ value: borrowing?.valueUsd ?? 0 })}
                 </div>
@@ -544,13 +595,24 @@ export default function LendOffer({ params }: { params: { id: string } }) {
             <div className="grid grid-cols-3 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Payments Am.</div>
-                <div className="text-base">{Number(data?.paymentCount ?? 0)}</div>
+                {editing ?
+                  <div className="flex items-center gap-2 animate-enter-div">
+                    <input min={0} type="number" ref={newPaymentCount} className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white" placeholder={`new amount`} defaultValue={Number(data?.paymentCount ?? 0)} />
+
+                  </div> : <div className="text-base">{Number(data?.paymentCount ?? 0)}</div>
+                }
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Payments Every</div>
+                {editing ?
+                  <div className="flex items-center gap-2 animate-enter-div">
+                    <input min={0} type="number" ref={newTimelap} className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white" placeholder={`new timelap`} defaultValue={Number(data?.numberOfLoanDays ?? 0)} />
+
+                  </div>  : 
                 <div className="text-base">
+               
                   {Number(data?.numberOfLoanDays ?? 0)} {pluralize("day", Number(data?.numberOfLoanDays ?? 0))}
-                </div>
+                </div> }
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Whitelist</div>
@@ -562,10 +624,15 @@ export default function LendOffer({ params }: { params: { id: string } }) {
             <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Total Interest</div>
+                {editing ?
+                  <div className="flex items-center gap-2 animate-enter-div">
+                    <input min={0} type="number" ref={newInterest} className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white" placeholder={`new interest`} defaultValue={Number((data?.interest ?? 0) * 100)} />
+
+                  </div> : 
                 <div className="text-base">
                   {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
                   {percent({ value: data?.interest ?? 0 })})
-                </div>
+                </div> }
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
@@ -577,6 +644,7 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
             {/* Buttons */}
             <div className="mt-8 flex justify-center">
+
               <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
                 <>
                   {/* Show the Increase Allowance button when the user doesn't not have enough allowance */}
@@ -616,18 +684,18 @@ export default function LendOffer({ params }: { params: { id: string } }) {
 
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={lendMachineState.matches("isNotOwner.canAcceptOffer")}>
-                   <div className="flex gap-10">
-                   <input className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10" placeholder={`Amount of ${data?.borrowing.token?.symbol}`} type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
-                    <Button
-                      variant={"action"}
-                      className="px-16"
-                      onClick={async () => {
-                        lendMachineSend({ type: "user.accept.offer" })
-                      }}
-                    >
-                      Accept Offer
-                    </Button>
-                   </div>
+                    <div className="flex gap-10">
+                      <input className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10" placeholder={`Amount of ${data?.borrowing.token?.symbol}`} type="number" onChange={(e) => { setAmountToBorrow(Number(e.currentTarget.value)) }} />
+                      <Button
+                        variant={"action"}
+                        className="px-16"
+                        onClick={async () => {
+                          lendMachineSend({ type: "user.accept.offer" })
+                        }}
+                      >
+                        Accept Offer
+                      </Button>
+                    </div>
                   </ShowWhenTrue>
 
                   {/* Show the Accepting Offer spinner while we are accepting the offer */}
@@ -661,6 +729,20 @@ export default function LendOffer({ params }: { params: { id: string } }) {
                   </ShowWhenTrue>
                 </>
               </ShowWhenTrue>
+
+              <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
+                {editing ? 
+                 <Button
+                 variant="action"
+                 className="h-full w-full"
+                 onClick={() => {
+                   editOffer()
+                 }}
+               >
+                 Confirm
+               </Button>
+                : ""}
+              </ShowWhenFalse>
             </div>
           </div>
 

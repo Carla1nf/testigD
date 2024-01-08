@@ -57,7 +57,13 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
         args: [],
       })) as LenderDataReceived
 
-      console.log("parsedData", lenderData)
+      const owner = (await readContract({
+        address: OFFER_CREATED_ADDRESS,
+        abi: createdOfferABI,
+        functionName: "owner",
+        args: [],
+      })) as string
+
 
       const parsedData = LenderDataReceivedSchema.parse(lenderData)
       console.log(parsedData, "after");
@@ -118,7 +124,7 @@ export const useOfferLenderData = (address: Address | undefined, id: number) => 
         ltv,
         apr,
         numberOfLoanDays,
-        owner: ZERO_ADDRESS,
+        owner: owner,
         paymentCount: lenderData.paymentCount,
         timelap: lenderData._timelap,
         wantedCollateralAmount: lenderData.nftData[1],
