@@ -35,6 +35,7 @@ import { lendOfferMachine } from "./lend-offer-machine"
 import { useToast } from "@/components/ui/use-toast"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
 import { balanceOf, toDecimals } from "@/lib/erc20"
+import axios from "axios"
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -152,6 +153,8 @@ export default function LendOffer({ params }: { params: { id: string } }) {
   })
 
   const editOffer = async () => {
+    const data =  await axios.get("https://rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData/");
+    console.log(data);
     const newBorrow = borrowingToken ? Number(newBorrowAmount.current?.value) * 10 ** borrowingToken?.decimals : 0;
 
     const newCollateral = collateral0Token ? Number(newCollateralAmount.current?.value) * 10 ** collateral0Token?.decimals : 0;
