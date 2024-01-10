@@ -73,7 +73,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
       {/* Render token table (secondary level - specific token selected)  */}
       <ShowWhenTrue when={Array.isArray(marketOffers) && marketOffers.length > 0}>
         <table
-          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
+          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg sm:shadow-lg md:inline-table"
           suppressHydrationWarning
         >
           <thead className="text-white" suppressHydrationWarning>

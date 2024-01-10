@@ -8,6 +8,7 @@ import "@rainbow-me/rainbowkit/styles.css"
 import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
 import { Toaster } from "@/components/ui/toaster"
+import axios from "axios"
 
 /**
  * These are the google fonts imported in the V1 website. find out if they are still used and import as necessary

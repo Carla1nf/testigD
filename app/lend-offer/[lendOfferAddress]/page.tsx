@@ -106,8 +106,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const lendOfferAddress = params.lendOfferAddress
-  const OFFER_CREATED_ADDRESS = lendOfferAddress;
+  const OFFER_CREATED_ADDRESS = lendOfferAddress
   const { data } = useOfferLenderData(address, lendOfferAddress)
+  console.log(data)
   const isOwnerConnected = address === data?.owner
 
   // console.log("data", data)
@@ -117,12 +118,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
   const borrowingToken = borrowing ? borrowing?.token : undefined
   const collateral0Token = collateral0 ? collateral0?.token : undefined
+  console.log(collateral0, collateral0Token, "BRRR")
 
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, borrowingToken?.address as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address as Address)
 
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
-
 
   // check if we have the allowance to spend the collateral token
   const { data: currentCollateral0TokenAllowance } = useContractRead({
@@ -137,8 +138,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       address: OFFER_CREATED_ADDRESS,
       functionName: "interactPerpetual",
       abi: createdOfferABI,
-      args: [!(data?.perpetual)],
-      account: address     // gas: BigInt(900000),
+      args: [!data?.perpetual],
+      account: address, // gas: BigInt(900000),
       // chainId: currentChain?.chainId,
     })
     const executed = await writeContract(request)
@@ -543,12 +544,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <div>{editing ? "Cancel" : "Edit Offer"}</div>
                 </div>
               </ShowWhenFalse>
-
               <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" value="" checked={data?.perpetual} onClick={() => interactPerpetual()} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                    <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
+                  <input
+                    type="checkbox"
+                    value=""
+                    checked={data?.perpetual}
+                    onClick={() => interactPerpetual()}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-pink-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-pink-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
                 </label>
               </ShowWhenFalse>
             </div>
@@ -563,6 +569,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
+                            max={data?.isNFT[1] ? 1 : 10000000000000}
                             type="number"
                             ref={newCollateralAmount}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
@@ -574,6 +581,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       ) : (
                         <DisplayToken
                           size={32}
+                          tokenId={data?.tokenId}
+                          isNFT={data?.isNFT[1]}
                           token={collateral0Token}
                           amount={collateral0.amount}
                           className="text-xl"
@@ -597,6 +606,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           <input
                             min={0}
                             type="number"
+                            max={data?.isNFT[0] ? 1 : 10000000000000}
                             ref={newBorrowAmount}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                             placeholder={`new ${borrowingToken.symbol} amount`}
@@ -686,15 +696,33 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </div>
                 ) : (
                   <div className="text-base">
-                    {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
-                    {percent({ value: data?.interest ?? 0 })})
+                    {data?.isNFT[0] ? (
+                      <>
+                        {thresholdLow(data?.interestData_NFT.amount, 0.01, "< 0.01")}{" "}
+                        {data.interestData_NFT?.token?.symbol}
+                      </>
+                    ) : (
+                      <>
+                        {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
+                        {percent({ value: data?.interest ?? 0 })})
+                      </>
+                    )}
                   </div>
                 )}
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
                 <div className="text-base">
-                  {amountDuePerPayment.toFixed(2)} {borrowingToken?.symbol}
+                  {data?.isNFT[0] ? (
+                    <>
+                      {(data?.interestData_NFT.amount / data?.paymentCount).toFixed(2)}{" "}
+                      {data.interestData_NFT?.token?.symbol}
+                    </>
+                  ) : (
+                    <>
+                      {amountDuePerPayment.toFixed(2)} {borrowingToken?.symbol}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

@@ -119,6 +119,17 @@ export const INTERNAL_TOKENS: Tokens = {
       isLp: true,
       icon: "/files/tokens/fantom/lp-fsonic.svg",
     },
+
+    {
+      name: "Bassment Rats",
+      symbol: "Rat NFT",
+      decimals: 0,
+      address: "0x1576570D1AcFCd59750419bd02Eb3386B6897407",
+      chainId: fantom.id,
+      isNative: false,
+      isLp: false,
+      icon: "/files/tokens/fantom/rats.png",
+    },
   ],
 }
 

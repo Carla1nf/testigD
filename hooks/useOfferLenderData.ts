@@ -16,7 +16,7 @@ import useCurrentChain from "./useCurrentChain"
  * @param assetAmounts [0] = Lending, [1] = Collateral
  * @param isAssetNFT [0] = Lending, [1] = Collateral
  * @param _interestRate (1 ==> 0.01%, 1000 ==> 10%, 10000 ==> 100%)
- * @param nftData [0] = NFT ID Lender, [1] NFT ID Collateral, [2] Total amount of interest (If lending is NFT) ---  0 on each if not NFT
+ * @param nftData [0] = NFT ID, [2] Total amount of interest (If lending is NFT) ---  0 on each if not NFT
  * @param veValue value of wanted locked veNFT (for borrower or lender) (0 if not veNFT)
  * @param _paymentCount Number of payments
  * @param _timelap timelap on each payment
@@ -84,11 +84,13 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
       // cant use async map - hate them but need to use a for loop for that
       let totalCollateralValue = 0
 
-      const collateral = collaterals
-      const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-      collateral.price = _price.price ?? 0
-      collateral.valueUsd = collateral.amount * collateral.price
-      totalCollateralValue += collateral.valueUsd
+      if (!parsedData.isAssetNFT[1]) {
+        const collateral = collaterals
+        const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
+        collateral.price = _price.price ?? 0
+        collateral.valueUsd = collateral.amount * collateral.price
+        totalCollateralValue += collateral.valueUsd
+      }
 
       // lets do the same for the lender token
       const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
@@ -101,14 +103,26 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
         valueUsd: 0,
       }
 
-      const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, borrowing.address as Address))
-      borrowing.price = price.price ?? 0
-      borrowing.valueUsd = borrowing.amount * borrowing.price
+      borrowing.valueUsd = 0
+      if (!parsedData.nftData[0]) {
+        const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, borrowing.address as Address))
+        borrowing.price = price.price ?? 0
+        borrowing.valueUsd = borrowing.amount * borrowing.price
+      }
 
       const ratio = totalCollateralValue / borrowing.valueUsd
       const ltv = (1 / ratio) * 100
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
+      const interestToken_NFT = findInternalTokenByAddress(currentChain.slug, parsedData.interest_address)
+      const interestToken = {
+        address: parsedData.interest_address,
+        amountRaw: lenderData.nftData[1],
+        token: interestToken_NFT,
+        amount: fromDecimals(lenderData.nftData[1], interestToken_NFT?.decimals ?? 18),
+        price: 0,
+        valueUsd: 0,
+      }
 
       return {
         collaterals,
@@ -120,9 +134,13 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
         owner: owner,
         paymentCount: lenderData.paymentCount,
         timelap: lenderData._timelap,
-        wantedCollateralAmount: lenderData.nftData[1],
+        wantedCollateralAmount: lenderData.assetAmounts[1],
         totalCollateralValue,
-        perpetual: lenderData.isPerpetual        
+        perpetual: lenderData.isPerpetual,
+        isNFT: lenderData.isAssetNFT,
+        tokenId: Number(lenderData.nftData[0]),
+        interestData_NFT: interestToken,
+        interestToken_NFT: interestToken_NFT,
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,

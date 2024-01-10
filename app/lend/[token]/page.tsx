@@ -131,7 +131,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       <td className="p-4 text-left">
         <div className="flex flex-col gap-2">
           {collateralToken0 ? (
-            <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} />
+            <DisplayToken size={28}  token={collateralToken0} amount={collateral0.amount} />
           ) : (
             <div className="animate-pulse flex space-x-4">
               <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>

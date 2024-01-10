@@ -29,7 +29,15 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       </td>
       <td className="p-3 text-left">
         <div className="flex flex-col gap-2">
-          {collateralToken0 ? <DisplayToken size={28} token={collateralToken0} amount={collateral0.amount} /> : null}
+          {collateralToken0 ? (
+            <DisplayToken
+              size={28}
+              isNFT={data?.isNFT[1]}
+              tokenId={data?.tokenId}
+              token={collateralToken0}
+              amount={collateral0.amount}
+            />
+          ) : null}
         </div>
       </td>
       <td className="p-3 text-center">{ltv(Number(data?.ltv))}</td>
