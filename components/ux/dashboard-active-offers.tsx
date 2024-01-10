@@ -1,17 +1,16 @@
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import { LoanStatus } from "@/hooks/useLoanValues"
-import { useOfferLenderData } from "@/hooks/useOfferLenderData"
+import { useOffer } from "@/hooks/useOffer"
 import { percent } from "@/lib/display"
 import { findTokenByAddress } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { GetDataResponse } from "@/services/api"
 import { Redo } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Address } from "wagmi"
 import { Button } from "../ui/button"
 import DisplayToken from "./display-token"
-import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
-import { useRouter } from "next/navigation"
 
 const DashboardActiveOffers = ({
   lending,
@@ -105,7 +104,7 @@ const DashboardActiveOffersTable = ({
 }
 
 const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Address; item: any }) => {
-  const { data: lender } = useOfferLenderData(address, item.address)
+  const { data: lender } = useOffer(address, item.address)
   console.log("lender", lender)
 
   if (!lender) {
@@ -139,7 +138,7 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
 
 const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Address; item: any }) => {
   const router = useRouter()
-  const { data } = useOfferCollateralData(address, item.address)
+  const { data } = useOffer(address, item.address)
 
   if (!data) {
     return null

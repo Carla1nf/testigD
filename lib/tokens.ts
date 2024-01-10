@@ -2,11 +2,13 @@ import { ZERO_ADDRESS } from "@/services/constants"
 import { fantom } from "wagmi/chains"
 import z from "zod"
 
+const ethereumAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+
 export const tokenSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   decimals: z.number(),
-  address: z.string(),
+  address: ethereumAddressSchema,
   chainId: z.number(),
   isNative: z.boolean(),
   isLp: z.boolean(),

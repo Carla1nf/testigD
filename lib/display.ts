@@ -125,7 +125,7 @@ export function ltv(ltv: number) {
   return 0
 }
 
-export const shortAddress = (address: Address) => {
+export const shortAddress = (address: Address | undefined) => {
   if (!address) return ""
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
