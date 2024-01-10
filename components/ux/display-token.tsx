@@ -84,7 +84,7 @@ export default DisplayToken
               </div>
             </>
           ) : (
-            "Mandar a otro tsx"
+            "Load token id data"
           )}
         </div>
       ) : (
