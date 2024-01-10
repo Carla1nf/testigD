@@ -1,5 +1,4 @@
 import createdOfferABI from "@/abis/v2/createdOffer.json"
-import { OFFER_CREATED_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { fromDecimals } from "@/lib/erc20"
 import { findInternalTokenByAddress } from "@/lib/tokens"
@@ -41,7 +40,7 @@ const LenderDataReceivedSchema = z.object({
 
 type LenderDataReceived = z.infer<typeof LenderDataReceivedSchema>
 
-export const useOfferLenderData = (address: Address | undefined, lendOfferAddress: Address) => {
+export const useOffer = (address: Address | undefined, lendOfferAddress: Address) => {
   const currentChain = useCurrentChain()
   const useOfferLenderDataQuery = useQuery({
     queryKey: ["offer-lender-data", address, lendOfferAddress],
@@ -60,23 +59,26 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
         args: [],
       })) as string
 
+      console.log("lenderData", lenderData)
+
       const parsedData = LenderDataReceivedSchema.parse(lenderData)
-      // console.log("parsedData", parsedData)
 
       // We get WAY TOO MUCH DATA from this function, it will trip RPC limits at some point
       if (!parsedData.isActive) {
         return null
       }
 
+      console.log("parsedData.assetAddresses", parsedData.assetAddresses)
+
       // we should process the data here, collateral tokens should be an array of grouped data, not as multiple arrays
       // lets go one step further and bring token info and pricing in as well. This will make the data much more useful
       // and simplify rendering.
-      const collateralData = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
-      const collaterals = {
+      const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
+      const collateral = {
         address: parsedData.assetAddresses[1],
         amountRaw: parsedData.assetAmounts[1],
-        token: collateralData,
-        amount: fromDecimals(parsedData.assetAmounts[1], collateralData?.decimals ?? 18),
+        token: collateralToken,
+        amount: fromDecimals(parsedData.assetAmounts[1], collateralToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
@@ -85,7 +87,6 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
       let totalCollateralValue = 0
 
       if (!parsedData.isAssetNFT[1]) {
-        const collateral = collaterals
         const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
         collateral.price = _price.price ?? 0
         collateral.valueUsd = collateral.amount * collateral.price
@@ -93,25 +94,24 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
       }
 
       // lets do the same for the lender token
-      const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
-      const borrowing = {
-        address: parsedData.assetAddresses[0],
-        amountRaw: parsedData.assetAmounts[0],
-        token: lenderToken,
-        amount: fromDecimals(parsedData.assetAmounts[0], lenderToken?.decimals ?? 18),
+      const principleToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
+      const principle = {
+        address: parsedData.assetAddresses[0] as Address,
+        amountRaw: parsedData.assetAmounts[0] as bigint,
+        token: principleToken,
+        amount: fromDecimals(parsedData.assetAmounts[0], principleToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
 
-      borrowing.valueUsd = 0
       if (!parsedData.nftData[0]) {
-        const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, borrowing.address as Address))
-        borrowing.price = price.price ?? 0
-        borrowing.valueUsd = borrowing.amount * borrowing.price
+        const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, principle.address as Address))
+        principle.price = price.price ?? 0
+        principle.valueUsd = principle.amount * principle.price
       }
 
-      const ratio = totalCollateralValue / borrowing.valueUsd
-      const ltv = (1 / ratio) * 100
+      const ratio = principle.valueUsd > 0 ? totalCollateralValue / principle.valueUsd : 0
+      const ltv = ratio ? (1 / ratio) * 100 : 0
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
       const interestToken_NFT = findInternalTokenByAddress(currentChain.slug, parsedData.interest_address)
@@ -125,9 +125,9 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
       }
 
       return {
-        collaterals,
+        collateral,
+        principle,
         interest: Number(lenderData.interestRate) / 10000,
-        borrowing,
         ltv,
         apr,
         numberOfLoanDays,
@@ -140,6 +140,7 @@ export const useOfferLenderData = (address: Address | undefined, lendOfferAddres
         isNFT: lenderData.isAssetNFT,
         tokenId: Number(lenderData.nftData[0]),
         interestData_NFT: interestToken,
+        interestToken_NFT: interestToken_NFT,
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,

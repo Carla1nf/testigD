@@ -1,16 +1,13 @@
-import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
-import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
+import { LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { fromDecimals } from "@/lib/erc20"
 import { findInternalTokenByAddress } from "@/lib/tokens"
-import { ZERO_ADDRESS } from "@/services/constants"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
 import { readContract } from "wagmi/actions"
 import z from "zod"
-import debitaAbi from "../abis/debita.json"
-import loanCreatedAbi from "../abis/v2/createdLoan.json"
 import ownershipsAbi from "../abis/ownerships.json"
+import loanCreatedAbi from "../abis/v2/createdLoan.json"
 import useCurrentChain from "./useCurrentChain"
 
 const LoanDataReceivedSchema = z.object({
@@ -43,8 +40,6 @@ export const useLoanData = (loanAddress: Address) => {
         args: [],
       })
 
-      console.log(loanData)
-
       const parsedData = LoanDataReceivedSchema.parse(loanData)
 
       const borrowerId = parsedData?.IDS[1] ?? undefined
@@ -64,12 +59,12 @@ export const useLoanData = (loanAddress: Address) => {
       })
 
       // get the amount of debt that the user has already repaid (if any)
-      const claimableDebtRaw = await readContract({
+      const claimableDebtRaw = (await readContract({
         address: LOAN_CREATED_ADDRESS,
         abi: loanCreatedAbi,
         functionName: "claimableAmount", // this is a typo in the contract, needs fixing in solidity
         args: [],
-      })
+      })) as bigint
 
       // gets the tokens from the loan
 
@@ -122,18 +117,6 @@ export const useLoanData = (loanAddress: Address) => {
       const hasRepaidLoan =
         parsedData.paymentsPaid >= parsedData.paymentCount && !hasDefaulted && Number(debtLeft) === 0
       const claimableDebt = fromDecimals(claimableDebtRaw, lenderToken?.decimals ?? 18)
-
-      // <SingleExtra type={"Large"}>
-      //   <div style={{ marginLeft: "10px" }}>Debt Left</div>
-      //   <Datas data={"Time"}>
-      //     {(
-      //       (Number(params.data.paymentAmount._hex) *
-      //         (Number(params.data.paymentCount._hex) - Number(params.data.paymentsPaid._hex))) /
-      //       10 ** 18
-      //     ).toFixed(2)}
-      //     <div style={{ opacity: "0.6" }}>{nameLending}</div>
-      //   </Datas>
-      // </SingleExtra>
 
       return {
         // apr,

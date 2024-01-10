@@ -6,6 +6,7 @@ import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { dollars, percent } from "@/lib/display"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 
 // import styles from "./styles.module.css";
@@ -13,6 +14,7 @@ import { useRouter } from "next/navigation"
 export default function Home() {
   const { offers } = useLendingMarket()
   const router = useRouter()
+  const currentChain = useCurrentChain()
 
   return (
     <div>
@@ -21,7 +23,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto flex items-center mt-10">
             <div className="space-y-6">
               <div>
-                <h1 className="text-5xl font-bold"> Customize & Create </h1>
+                <h1 className="text-5xl font-bold">Customize & Create </h1>
                 <h1 className="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-800">
                   your loans
                 </h1>
@@ -37,7 +39,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex space-x-4 md:ml-32 relative">
-              <img className="z-10 opacity-100 " height="580" src="/veNFT.png" width="580" />
+              <Image className="z-10 opacity-100 " height={580} src="/veNFT.png" alt="veNFT" width={580} />
             </div>
           </div>
         </div>
@@ -89,10 +91,10 @@ export default function Home() {
           </div>
           {offers?.map((offer: any, index: number) => {
             return (
-              <div className="hover:bg-[#383838] rounded flex">
+              <div key={offer.tokenAddress} className="hover:bg-[#383838] rounded flex">
                 <div className="p-5"> {index + 1}. </div>
                 <td className="p-4 text-left px-4 items-center w-36">
-                  {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
+                  {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}
                 </td>
 
                 <td className="p-4 w-72 text-center font-semibold">{dollars({ value: offer.liquidityOffer })}</td>
@@ -131,6 +133,7 @@ export default function Home() {
           {["Fantom", "Base"].map((chain, index) => {
             return (
               <div
+                key={chain}
                 className={`w-[350px] relative flex flex-col ml-5 rounded-md h-80 ${
                   !index ? "hover:bg-slate-400/20" : ""
                 }`}
@@ -144,7 +147,8 @@ export default function Home() {
                     Soon
                   </div>
                 )}
-                <img
+                <Image
+                  alt={chain}
                   height="90"
                   width="90"
                   className="p-4"

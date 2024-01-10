@@ -1,11 +1,12 @@
 import { useManageNextPayment } from "@/context/next-payment-context"
+import useCurrentChain from "@/hooks/useCurrentChain"
 import { LoanStatus, useLoanValues } from "@/hooks/useLoanValues"
 import { loanStatus } from "@/lib/display"
+import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { Address } from "viem"
 import DaysHours from "./deadline-datetime"
 import DisplayToken from "./display-token"
-import { useRouter } from "next/navigation"
 
 const DashboardUserTableItem = ({
   address,
@@ -19,6 +20,7 @@ const DashboardUserTableItem = ({
   const { isSuccess, isLoading, isError, data } = useLoanValues(address, index, status)
   const updateDeadline = useManageNextPayment()
   const router = useRouter()
+  const currentChain = useCurrentChain()
 
   const hasLoanCompleted = Number(data?.loan.paymentsPaid) === Number(data?.loan.paymentCount)
   const hasLoanExecuted = data?.loan.executed
@@ -36,7 +38,14 @@ const DashboardUserTableItem = ({
         updateDeadline(Number(data?.loan.deadlineNext))
       }
     }
-  }, [hasLoanExecuted, hasLoanCompleted, data?.ownerNftTokenId, data?.loan.collateralOwnerId, data?.loan.deadlineNext])
+  }, [
+    hasLoanExecuted,
+    hasLoanCompleted,
+    data?.ownerNftTokenId,
+    data?.loan.collateralOwnerId,
+    data?.loan.deadlineNext,
+    updateDeadline,
+  ])
 
   if (isError || isLoading) {
     return null
@@ -80,11 +89,10 @@ const DashboardUserTableItem = ({
         onClick={() => router.push(`/loan/${data.loanId}`)}
       >
         <td className="p-3">
-        <DisplayToken token={data?.loan?.collaterals} size={24} />
-        
+          <DisplayToken token={data?.loan?.collaterals} size={24} chainSlug={currentChain.slug} />
         </td>
         <td className="p-3">
-          <DisplayToken token={data.loan.token} size={24} />
+          <DisplayToken token={data.loan.token} size={24} chainSlug={currentChain.slug} />
         </td>
         <td className="p-3">{Number(data.loanId)}</td>
         <td className="p-3">

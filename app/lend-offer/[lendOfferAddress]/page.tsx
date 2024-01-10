@@ -13,7 +13,7 @@ import Stat from "@/components/ux/stat"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
-import { useOfferLenderData } from "@/hooks/useOfferLenderData"
+import { useOffer } from "@/hooks/useOffer"
 import { dollars, ltv, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
@@ -85,8 +85,8 @@ function getAcceptLendingOfferValue(values: any) {
   if (!values) {
     return 0
   }
-  if (values?.borrowing?.address === ZERO_ADDRESS) {
-    return Number(values?.borrowing?.amount ?? 0)
+  if (values?.principle?.address === ZERO_ADDRESS) {
+    return Number(values?.principle?.amount ?? 0)
   }
 
   return 0
@@ -102,32 +102,25 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const newPaymentCount = useRef<HTMLInputElement>(null)
   const newTimelap = useRef<HTMLInputElement>(null)
   const newInterest = useRef<HTMLInputElement>(null)
-
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const lendOfferAddress = params.lendOfferAddress
   const OFFER_CREATED_ADDRESS = lendOfferAddress
-  const { data } = useOfferLenderData(address, lendOfferAddress)
-  console.log(data)
-  const isOwnerConnected = address === data?.owner
+  const { data: offer } = useOffer(address, lendOfferAddress)
 
-  // console.log("data", data)
-
-  const borrowing = data?.borrowing
-  const collateral0 = data?.collaterals
-
-  const borrowingToken = borrowing ? borrowing?.token : undefined
-  const collateral0Token = collateral0 ? collateral0?.token : undefined
-  console.log(collateral0, collateral0Token, "BRRR")
+  const principle = offer?.principle
+  const collateral = offer?.collateral
+  const collateralToken = collateral ? collateral?.token : undefined
+  const borrowingToken = principle ? principle?.token : undefined
+  const isOwnerConnected = address === offer?.owner
 
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, borrowingToken?.address as Address)
-  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address as Address)
-
+  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
   // check if we have the allowance to spend the collateral token
   const { data: currentCollateral0TokenAllowance } = useContractRead({
-    address: (collateral0?.address ?? "") as Address,
+    address: (collateral?.address ?? "") as Address,
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, OFFER_CREATED_ADDRESS],
@@ -138,7 +131,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       address: OFFER_CREATED_ADDRESS,
       functionName: "interactPerpetual",
       abi: createdOfferABI,
-      args: [!data?.perpetual],
+      args: [!offer?.perpetual],
       account: address, // gas: BigInt(900000),
       // chainId: currentChain?.chainId,
     })
@@ -149,8 +142,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const editOffer = async () => {
     const newBorrow = borrowingToken ? Number(newBorrowAmount.current?.value) * 10 ** borrowingToken?.decimals : 0
 
-    const newCollateral = collateral0Token
-      ? Number(newCollateralAmount.current?.value) * 10 ** collateral0Token?.decimals
+    const newCollateral = collateralToken
+      ? Number(newCollateralAmount.current?.value) * 10 ** collateralToken?.decimals
       : 0
     const { request } = await config.publicClient.simulateContract({
       address: OFFER_CREATED_ADDRESS,
@@ -207,17 +200,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
   const increaseAllowance = async () => {
     try {
-      if (collateral0?.address === ZERO_ADDRESS) {
+      if (collateral?.address === ZERO_ADDRESS) {
         return true
       }
-
-      // console.log("collateral0", collateral0)
-
       const { request } = await config.publicClient.simulateContract({
-        address: (collateral0?.address ?? "") as Address,
+        address: (collateral?.address ?? "") as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [OFFER_CREATED_ADDRESS, BigInt(collateral0?.amountRaw ?? 0)],
+        args: [OFFER_CREATED_ADDRESS, BigInt(collateral?.amountRaw ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -247,15 +237,15 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const userAcceptOffer = async () => {
     try {
       // Check the user has enough in wallet to perform the loan
-      if (collateral0) {
+      if (collateral) {
         const collateralBalance0 = await balanceOf({
-          address: collateral0?.address as Address,
+          address: collateral?.address as Address,
           account: address as Address,
         })
         /*
-          ON V2 WE DONT NEED TO CHECK ALL THE BALANCE JUST THE PORCENTAGE
+          ON V2 WE DON'T NEED TO CHECK ALL THE BALANCE JUST THE PERCENTAGE
  
-        if (collateral0 && collateralBalance0 < collateral0?.amountRaw) {
+        if (collateral && collateralBalance0 < collateral?.amountRaw) {
            throw `Insufficient ${collateral0Token?.symbol} balance`
          } */
       }
@@ -264,7 +254,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         address: OFFER_CREATED_ADDRESS,
         functionName: "acceptOfferAsBorrower",
         abi: createdOfferABI,
-        args: [toDecimals(amountToBorrow, data?.collaterals.token?.decimals ?? 0), 0],
+        args: [toDecimals(amountToBorrow, collateralToken?.decimals ?? 0), 0],
         account: address,
 
         // chainId: currentChain?.chainId,
@@ -329,17 +319,15 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       lendMachineSend({ type: "not.owner" })
 
       // dual collateral mode
-      if (collateral0) {
+      if (collateral) {
         // do they have the required allowance to pay for the offer?
         if (currentCollateral0TokenAllowance === undefined) {
           return
         }
-
-        if (Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0)) {
+        if (Number(currentCollateral0TokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
           lendMachineSend({ type: "user.has.allowance" })
           return
         }
-
         if (!lendMachineState.matches("isNotOwner.notEnoughAllowance")) {
           lendMachineSend({ type: "user.not.has.allowance" })
           return
@@ -347,12 +335,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       }
 
       // single collateral mode
-      if (collateral0) {
+      if (collateral) {
         // do they have the required allowance to pay for the offer?
         if (currentCollateral0TokenAllowance === undefined) {
           return
         }
-        if (Number(currentCollateral0TokenAllowance) >= Number(collateral0?.amountRaw ?? 0)) {
+        if (Number(currentCollateral0TokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
           lendMachineSend({ type: "user.has.allowance" })
           return
         }
@@ -361,9 +349,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         }
       }
     }
-  }, [isOwnerConnected, currentCollateral0TokenAllowance, lendMachineState, lendMachineSend, collateral0])
-
-  // console.log("state", lendMachineState.value)
+  }, [isOwnerConnected, currentCollateral0TokenAllowance, lendMachineState, lendMachineSend, collateral])
 
   // BREADCRUMBS
   // CONFIG
@@ -377,7 +363,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       )
       result.push(
         <Link href={`/borrow/${borrowingToken?.address}`} key="token">
-          <DisplayToken size={18} token={borrowingToken} className="hover:text-white/75" />
+          <DisplayToken
+            size={18}
+            token={borrowingToken}
+            className="hover:text-white/75"
+            chainSlug={currentChain.slug}
+          />
         </Link>
       )
       return result
@@ -385,18 +376,18 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     return []
   }, [currentChain, borrowingToken])
 
-  const totalLoan = Number(borrowing?.amount ?? 0)
-  const totalInterestOnLoan = Number(data?.interest ?? 0) * Number(borrowing?.amount ?? 0)
+  const totalLoan = Number(principle?.amount ?? 0)
+  const totalInterestOnLoan = Number(offer?.interest ?? 0) * Number(principle?.amount ?? 0)
   const totalLoanIncludingInterest = totalLoan + totalInterestOnLoan
-  const amountDuePerPayment = totalLoanIncludingInterest / Number(data?.paymentCount ?? 1)
+  const amountDuePerPayment = totalLoanIncludingInterest / Number(offer?.paymentCount ?? 1)
 
   // CHARTING
   // DATA STRUCTURE
   const chartValues = {
-    historicalLender: calcPriceHistory(borrowingPrices, borrowing?.amount ?? 0),
+    historicalLender: calcPriceHistory(borrowingPrices, principle?.amount ?? 0),
     historicalCollateral: calcCollateralsPriceHistory(
       collateral0Prices,
-      data?.collaterals?.amount ?? 0,
+      offer?.collateral?.amount ?? 0,
       collateral0Prices,
       0
     ),
@@ -405,7 +396,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     timestamps,
   }
 
-  if (data === null) {
+  if (offer === null) {
     return (
       <RedirectToDashboardShortly
         title="Borrow offer not found"
@@ -448,16 +439,16 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         <div className="flex flex-col gap-8">
           <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
             <div className="grid grid-cols-3 gap-8">
-              <Stat value={ltv(Number(data?.ltv))} title={"LTV"} Icon={null} />
+              <Stat value={ltv(Number(offer?.ltv))} title={"LTV"} Icon={null} />
 
               <Stat
-                value={dollars({ value: Number(data?.totalCollateralValue) })}
+                value={dollars({ value: Number(offer?.totalCollateralValue) })}
                 title={"Collateral"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
 
               <Stat
-                value={dollars({ value: Number(borrowing?.valueUsd) })}
+                value={dollars({ value: Number(principle?.valueUsd) })}
                 title={"Borrowing"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
@@ -525,9 +516,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
             <div className="flex justify-between gap-8">
               <div className="bg-[#21232B]/40 border-2 border-white/10 p-4 w-full rounded-xl flex gap-2 items-center justify-center  ">
-                You are borrowing {borrowingToken?.symbol} from
+                You could borrow {borrowingToken?.symbol} from
                 <PersonIcon className="w-6 h-6" />
-                {shortAddress(data?.owner as Address)}
+                {shortAddress(offer?.owner as Address)}
               </div>
             </div>
           </ShowWhenTrue>
@@ -549,11 +540,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <input
                     type="checkbox"
                     value=""
-                    checked={data?.perpetual}
+                    checked={offer?.perpetual}
                     onClick={() => interactPerpetual()}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-pink-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-pink-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
                 </label>
               </ShowWhenFalse>
@@ -563,54 +554,53 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               <div className="flex flex-col gap-3">
                 <div>Provide Collateral</div>
                 <div className="-ml-[px]">
-                  {collateral0 && collateral0Token ? (
+                  {collateral && collateralToken ? (
                     <>
                       {editing ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
-                            max={data?.isNFT[1] ? 1 : 10000000000000}
+                            max={offer?.isNFT[1] ? 1 : 10000000000000}
                             type="number"
                             ref={newCollateralAmount}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
-                            placeholder={`new ${collateral0Token.symbol} amount`}
-                            defaultValue={collateral0.amount}
+                            placeholder={`new ${collateralToken.symbol} amount`}
+                            defaultValue={collateral.amount}
                           />
-                          {collateral0Token.symbol}
+                          {collateralToken.symbol}
                         </div>
                       ) : (
                         <DisplayToken
                           size={32}
-                          tokenId={data?.tokenId}
-                          isNFT={data?.isNFT[1]}
-                          token={collateral0Token}
-                          amount={collateral0.amount}
+                          token={collateralToken}
+                          amount={collateral.amount}
                           className="text-xl"
+                          chainSlug={currentChain.slug}
                         />
                       )}
                     </>
                   ) : null}
                 </div>
                 <div className="text-white/50 text-xs italic">
-                  Collateral value: {dollars({ value: data?.totalCollateralValue ?? 0 })}
+                  Collateral value: {dollars({ value: offer?.totalCollateralValue ?? 0 })}
                 </div>
               </div>
               <div className="flex flex-col gap-3">
                 <div>To Borrow</div>
 
                 <>
-                  {borrowing && borrowingToken ? (
+                  {principle && borrowingToken ? (
                     <>
                       {editing ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
                             type="number"
-                            max={data?.isNFT[0] ? 1 : 10000000000000}
+                            max={offer?.isNFT[0] ? 1 : 10000000000000}
                             ref={newBorrowAmount}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                             placeholder={`new ${borrowingToken.symbol} amount`}
-                            defaultValue={borrowing.amount}
+                            defaultValue={principle.amount}
                           />
                           {borrowingToken.symbol}
                         </div>
@@ -619,8 +609,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           <DisplayToken
                             size={32}
                             token={borrowingToken}
-                            amount={borrowing.amount}
+                            amount={principle.amount}
                             className="text-xl"
+                            chainSlug={currentChain.slug}
                           />
                         </div>
                       )}
@@ -629,7 +620,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </>
 
                 <div className="text-white/50 text-xs italic">
-                  Borrow value: {dollars({ value: borrowing?.valueUsd ?? 0 })}
+                  Borrow value: {dollars({ value: principle?.valueUsd ?? 0 })}
                 </div>
               </div>
             </div>
@@ -647,11 +638,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       ref={newPaymentCount}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new amount`}
-                      defaultValue={Number(data?.paymentCount ?? 0)}
+                      defaultValue={Number(offer?.paymentCount ?? 0)}
                     />
                   </div>
                 ) : (
-                  <div className="text-base">{Number(data?.paymentCount ?? 0)}</div>
+                  <div className="text-base">{Number(offer?.paymentCount ?? 0)}</div>
                 )}
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
@@ -664,18 +655,18 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       ref={newTimelap}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new timelap`}
-                      defaultValue={Number(data?.numberOfLoanDays ?? 0)}
+                      defaultValue={Number(offer?.numberOfLoanDays ?? 0)}
                     />
                   </div>
                 ) : (
                   <div className="text-base">
-                    {Number(data?.numberOfLoanDays ?? 0)} {pluralize("day", Number(data?.numberOfLoanDays ?? 0))}
+                    {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                   </div>
                 )}
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Perpetual</div>
-                <div className="text-base">{yesNo(data?.perpetual)}</div>
+                <div className="text-base">{yesNo(offer?.perpetual)}</div>
               </div>
             </div>
 
@@ -691,32 +682,23 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       ref={newInterest}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new interest`}
-                      defaultValue={Number((data?.interest ?? 0) * 100)}
+                      defaultValue={Number((offer?.interest ?? 0) * 100)}
                     />
                   </div>
                 ) : (
                   <div className="text-base">
-                    {data?.isNFT[0] ? (
-                      <>
-                        {thresholdLow(data?.interestData_NFT.amount, 0.01, "< 0.01")}{" "}
-                        {data.interestData_NFT?.token?.symbol}
-                      </>
-                    ) : (
-                      <>
-                        {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
-                        {percent({ value: data?.interest ?? 0 })})
-                      </>
-                    )}
+                    {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
+                    {percent({ value: offer?.interest ?? 0 })})
                   </div>
                 )}
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
                 <div className="text-base">
-                  {data?.isNFT[0] ? (
+                  {offer?.isNFT[0] ? (
                     <>
-                      {(data?.interestData_NFT.amount / data?.paymentCount).toFixed(2)}{" "}
-                      {data.interestData_NFT?.token?.symbol}
+                      {(offer?.interestData_NFT.amount / offer?.paymentCount).toFixed(2)}{" "}
+                      {offer.interestData_NFT?.token?.symbol}
                     </>
                   ) : (
                     <>
@@ -740,7 +722,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         lendMachineSend({ type: "user.allowance.increase" })
                       }}
                     >
-                      Increase Allowance
+                      Accept Offer
                     </Button>
                   </ShowWhenTrue>
 
@@ -771,7 +753,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     <div className="flex gap-10">
                       <input
                         className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
-                        placeholder={`Amount of ${data?.borrowing.token?.symbol}`}
+                        placeholder={`Amount of ${offer?.principle.token?.symbol}`}
                         type="number"
                         onChange={(e) => {
                           setAmountToBorrow(Number(e.currentTarget.value))

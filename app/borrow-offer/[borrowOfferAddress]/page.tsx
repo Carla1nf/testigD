@@ -12,7 +12,7 @@ import Stat from "@/components/ux/stat"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
-import { useOfferCollateralData } from "@/hooks/useOfferCollateralData"
+import { useOffer } from "@/hooks/useOffer"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, ltv, percent, shortAddress, thresholdLow } from "@/lib/display"
@@ -34,37 +34,12 @@ import { borrowOfferMachine } from "./borrow-offer-machine"
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
 
-// function getAcceptCollateralOfferValue(collateralData: any) {
-//   if (!collateralData) {
-//     return 0
-//   }
-//   const { collaterals } = collateralData
-//   if (!Array.isArray(collaterals)) {
-//     return 0
-//   }
-//   const hasFirstCollateral = collaterals.length > 0
-//   const hasSecondCollateral = collaterals.length > 1
-//   const isFirstAddressZero = hasFirstCollateral && collaterals[0]?.address === ZERO_ADDRESS
-//   const isSecondAddressZero = hasSecondCollateral && collaterals[1]?.address === ZERO_ADDRESS
-
-//   if (isSecondAddressZero && isFirstAddressZero) {
-//     return Number(collaterals[0].amountRaw) + Number(collaterals[1].amountRaw)
-//   }
-//   if (isFirstAddressZero) {
-//     return Number(collaterals[0].amountRaw)
-//   }
-//   if (isSecondAddressZero) {
-//     return Number(collaterals[1].amountRaw)
-//   }
-//   return 0
-// }
-
-function getAcceptLendingOfferValue(collateralData: any) {
-  if (!collateralData) {
+function getAcceptLendingOfferValue(offer: any) {
+  if (!offer) {
     return 0
   }
-  if (collateralData?.lending?.address === ZERO_ADDRESS) {
-    return Number(collateralData?.lending?.amount ?? 0)
+  if (offer?.principle?.address === ZERO_ADDRESS) {
+    return Number(offer?.principle?.amount ?? 0)
   }
 
   return 0
@@ -74,29 +49,23 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
   const borrowOfferAddress = params.borrowOfferAddress
   const config = useConfig()
   const { toast } = useToast()
-
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
-  const { data: collateralData } = useOfferCollateralData(address, borrowOfferAddress)
-  const isOwnerConnected = address === collateralData?.owner
+  const { data: offer } = useOffer(address, borrowOfferAddress)
+  console.log("offer", offer)
 
-  const lending = collateralData?.lending
-  const collateral0 = collateralData?.collaterals[0]
-  const collateral1 = collateralData?.collaterals[1]
-
-  const lendingToken = lending ? lending?.token : undefined
-  const collateral0Token = collateral0 ? collateral0?.token : undefined
-  const collateral1Token = collateral1 ? collateral0?.token : undefined
-
-  const lendingPrices = useHistoricalTokenPrices(currentChain.slug, lendingToken?.address)
-  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0Token?.address)
-  const collateral1Prices = useHistoricalTokenPrices(currentChain.slug, collateral1Token?.address)
-
-  const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
+  const isOwnerConnected = address === offer?.owner
+  const principle = offer?.principle
+  const collateral = offer?.collateral
+  const principleToken = principle ? principle?.token : undefined
+  const collateralToken = collateral ? collateral?.token : undefined
+  const principlePrices = useHistoricalTokenPrices(currentChain.slug, principleToken?.address as Address)
+  const collateralPrices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
+  const timestamps = principlePrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
   // check if we have the allowance to spend the lender token
   const { data: currentLendingTokenAllowance } = useContractRead({
-    address: collateralData?.lending?.address ?? "",
+    address: principle?.address as Address,
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, DEBITA_ADDRESS],
@@ -133,10 +102,10 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
   const increaseAllowance = async () => {
     try {
       const { request } = await config.publicClient.simulateContract({
-        address: collateralData?.lending?.address ?? "",
+        address: principle?.address as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [DEBITA_ADDRESS, BigInt(collateralData?.lending?.amountRaw ?? 0)],
+        args: [DEBITA_ADDRESS, BigInt(principle?.amountRaw ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -159,7 +128,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
 
   const userAcceptOffer = async () => {
     try {
-      const value = getAcceptLendingOfferValue(collateralData)
+      const value = getAcceptLendingOfferValue(offer)
       const { request } = await config.publicClient.simulateContract({
         address: DEBITA_ADDRESS,
         functionName: "acceptCollateralOffer",
@@ -212,59 +181,6 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
     })
   )
 
-  /**
-   * These are the toast messages we need would display (taken from the old app)
-   */
-
-  {
-    /* <ShowWhenTrue when={isAcceptCollateralOfferError}>
-                <Alert variant="error" className="mt-8">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription> Transaction Failed. Please try again later.</AlertDescription>
-                </Alert>
-              </ShowWhenTrue>
-              <ShowWhenTrue when={isAcceptCollateralOfferSuccess}>
-                <Alert variant="success" className="mt-8">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <AlertTitle>Success</AlertTitle>
-                  <AlertDescription>Transaction sent. You&apos;ll be redirected in a moment.</AlertDescription>
-                </Alert>
-              </ShowWhenTrue>
-              <ShowWhenTrue when={isAcceptCollateralOfferLoading}>
-                <Alert variant="warning" className="mt-8">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <AlertTitle>Waiting</AlertTitle>
-                  <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
-                </Alert>
-              </ShowWhenTrue> */
-  }
-
-  {
-    /*           
-          <ShowWhenTrue when={isCancelOfferSuccess}>
-            <Alert variant="success" className="mt-8">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Cancelled</AlertTitle>
-              <AlertDescription>You have cancelled this offer.</AlertDescription>
-            </Alert>
-          </ShowWhenTrue>
-          <ShowWhenTrue when={isCancelOfferError}>
-            <Alert variant="error" className="mt-8">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription> Transaction Failed. Please try again later.</AlertDescription>
-            </Alert>
-          </ShowWhenTrue>
-          <ShowWhenTrue when={isCancelOfferLoading}>
-            <Alert variant="warning" className="mt-8">
-              <AlertCircle className="w-5 h-5 mr-2" />
-              <AlertTitle>Waiting</AlertTitle>
-              <AlertDescription>Transaction sent. Waiting for a response.</AlertDescription>
-            </Alert>
-          </ShowWhenTrue> */
-  }
-
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
   useEffect(() => {
@@ -280,13 +196,13 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
       }
 
       // do they have the required allowance to pay for the offer?
-      if (Number(currentLendingTokenAllowance) >= Number(collateralData?.lending?.amount ?? 0)) {
+      if (Number(currentLendingTokenAllowance) >= Number(principle?.amount ?? 0)) {
         borrowMachineSend({ type: "user.has.allowance" })
       } else if (!borrowMachineState.matches("isNotOwner.notEnoughAllowance")) {
         borrowMachineSend({ type: "user.not.has.allowance" })
       }
     }
-  }, [isOwnerConnected, currentLendingTokenAllowance])
+  }, [isOwnerConnected, currentLendingTokenAllowance, borrowMachineState, borrowMachineSend, principle?.amount])
 
   console.log("state", borrowMachineState.value)
 
@@ -294,41 +210,41 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
   // CONFIG
   const breadcrumbs = useMemo(() => {
     const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
-    if (lendingToken) {
+    if (principleToken) {
       result.push(
         <Link href={`/lend/`} className="hover:text-white/75" key="lending-market">
           Lending Market
         </Link>
       )
       result.push(
-        <Link href={`/lend/${lendingToken?.address}`} key="token">
-          <DisplayToken size={18} token={lendingToken} className="hover:text-white/75" />
+        <Link href={`/lend/${principleToken?.address}`} key="token">
+          <DisplayToken
+            size={18}
+            token={principleToken}
+            chainSlug={currentChain.slug}
+            className="hover:text-white/75"
+          />
         </Link>
       )
       return result
     }
     return []
-  }, [currentChain, lendingToken])
+  }, [currentChain, principleToken])
 
-  const totalLoan = Number(collateralData?.lending?.amount ?? 0)
-  const totalInterestOnLoan = Number(collateralData?.interest ?? 0) * Number(lending?.amount ?? 0)
+  const totalLoan = Number(principle?.amount ?? 0)
+  const totalInterestOnLoan = Number(offer?.interest ?? 0) * Number(principle?.amount ?? 0)
   const totalLoanIncludingInterest = totalLoan + totalInterestOnLoan
-  const amountDuePerPayment = totalLoanIncludingInterest / Number(collateralData?.paymentCount ?? 1)
+  const amountDuePerPayment = totalLoanIncludingInterest / Number(offer?.paymentCount ?? 1)
 
   // CHARTING
   // DATA STRUCTURE
   const chartValues = {
-    historicalLender: calcPriceHistory(lendingPrices, collateralData?.lending?.amount ?? 0),
-    historicalCollateral: calcCollateralsPriceHistory(
-      collateral0Prices,
-      collateralData?.collaterals[0]?.amount ?? 0,
-      collateral1Prices,
-      collateralData?.collaterals[1]?.amount ?? 0
-    ),
+    historicalLender: calcPriceHistory(principlePrices, principle?.amount ?? 0),
+    historicalCollateral: calcCollateralsPriceHistory(collateralPrices, offer?.collateral?.amount ?? 0),
     timestamps,
   }
 
-  if (collateralData === null) {
+  if (offer === null) {
     return (
       <RedirectToDashboardShortly
         title="Borrow offer not found"
@@ -368,14 +284,14 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
         <div className="flex flex-col gap-8">
           <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
             <div className="grid grid-cols-3 gap-8">
-              <Stat value={ltv(collateralData?.ltv)} title={"LTV"} Icon={null} />
+              <Stat value={ltv(Number(offer?.ltv))} title={"LTV"} Icon={null} />
               <Stat
-                value={dollars({ value: collateralData?.lending?.valueUsd })}
+                value={dollars({ value: Number(principle?.valueUsd) })}
                 title={"Lending"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
               <Stat
-                value={dollars({ value: collateralData?.totalCollateralValue })}
+                value={dollars({ value: Number(offer?.totalCollateralValue) })}
                 title={"Collateral"}
                 Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
               />
@@ -394,7 +310,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
               <div className="bg-[#21232B] border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are the Owner
                 <PersonIcon className="w-6 h-6" />
-                {/* {shortAddress(collateralData?.owner)} */}
+                {/* {shortAddress(offer?.owner)} */}
               </div>
               <div>
                 {/* Cancel the offer */}
@@ -445,7 +361,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
               <div className="bg-[#21232B] border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are lending to
                 <PersonIcon className="w-6 h-6" />
-                {shortAddress(collateralData?.owner)}
+                {shortAddress(offer?.owner as Address)}
               </div>
             </div>
           </ShowWhenTrue>
@@ -459,15 +375,18 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
                 <div>
                   Collateral
                   <span className="text-white/50 text-xs italic ml-2">
-                    {dollars({ value: collateralData?.totalCollateralValue ?? 0 })}
+                    {dollars({ value: offer?.totalCollateralValue ?? 0 })}
                   </span>
                 </div>
                 <div className="-ml-[2px]">
-                  {collateral0 && collateral0Token ? (
-                    <DisplayToken size={32} token={collateral0Token} amount={collateral0.amount} className="text-xl" />
-                  ) : null}
-                  {collateral1 && collateral1Token ? (
-                    <DisplayToken size={32} token={collateral1Token} amount={collateral1.amount} className="text-xl" />
+                  {collateral && collateralToken ? (
+                    <DisplayToken
+                      size={32}
+                      token={collateralToken}
+                      amount={collateral.amount}
+                      chainSlug={currentChain.slug}
+                      className="text-xl"
+                    />
                   ) : null}
                 </div>
               </div>
@@ -475,13 +394,19 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
                 <div>
                   Wanted Lending
                   <span className="text-white/50 text-xs italic ml-2">
-                    {dollars({ value: collateralData?.lending?.valueUsd ?? 0 })}
+                    {dollars({ value: Number(principle?.valueUsd ?? 0) })}
                   </span>
                 </div>
 
-                {lending && lendingToken ? (
+                {principle && principleToken ? (
                   <div className="-ml-[2px]">
-                    <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                    <DisplayToken
+                      size={32}
+                      token={principleToken}
+                      amount={principle.amount}
+                      chainSlug={currentChain.slug}
+                      className="text-xl"
+                    />
                   </div>
                 ) : null}
               </div>
@@ -492,18 +417,17 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
             <div className="grid grid-cols-3 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Payments Am.</div>
-                <div className="text-base">{Number(collateralData?.paymentCount ?? 0)}</div>
+                <div className="text-base">{Number(offer?.paymentCount ?? 0)}</div>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Payments Every</div>
                 <div className="text-base">
-                  {Number(collateralData?.numberOfLoanDays ?? 0)}{" "}
-                  {pluralize("day", Number(collateralData?.numberOfLoanDays ?? 0))}
+                  {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                 </div>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Whitelist</div>
-                <div className="text-base">{collateralData?.whitelist?.length > 0 ? "Yes" : "No"}</div>
+                <div className="text-base">n/a</div>
               </div>
             </div>
 
@@ -512,14 +436,14 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Total Interest</div>
                 <div className="text-base">
-                  {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {lendingToken?.symbol} (
-                  {percent({ value: collateralData?.interest ?? 0 })})
+                  {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {principleToken?.symbol} (
+                  {percent({ value: offer?.interest ?? 0 })})
                 </div>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
                 <div className="text-base">
-                  {amountDuePerPayment.toFixed(2)} {lendingToken?.symbol}
+                  {amountDuePerPayment.toFixed(2)} {principleToken?.symbol}
                 </div>
               </div>
             </div>
@@ -537,7 +461,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
                         borrowMachineSend({ type: "user.allowance.increase" })
                       }}
                     >
-                      Increase Allowance
+                      Accept Offer
                     </Button>
                   </ShowWhenTrue>
 

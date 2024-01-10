@@ -16,8 +16,8 @@ import { useMemo } from "react"
 
 export default function Lend() {
   const stats = useLendingMarketStats()
-  const { offers } = useLendingMarket()
   const currentChain = useCurrentChain()
+  const { offers } = useLendingMarket()
   const router = useRouter()
 
   const breadcrumbs = useMemo(
@@ -63,7 +63,7 @@ export default function Lend() {
         >
           <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left opacity-70" 
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left opacity-70"
               suppressHydrationWarning
             >
               <th className="p-3 px-4 text-left">Lend</th>
@@ -87,10 +87,12 @@ export default function Lend() {
                   className="hover:bg-[#383838] cursor-pointer animate-enter-token"
                 >
                   <td className="p-4 text-left px-4 items-center">
-                    {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
+                    {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}
                   </td>
                   <td className="p-4 text-center px-4 items-center font-semibold">{offer.events.length}</td>
-                  <td className="p-4 text-center px-4 items-center  font-semibold">{dollars({ value: offer.liquidityOffer })}</td>
+                  <td className="p-4 text-center px-4 items-center  font-semibold">
+                    {dollars({ value: offer.liquidityOffer })}
+                  </td>
                   <td className="p-4 text-center px-4 items-center  font-semibold">
                     {dollars({ value: offer?.price ?? 0, decimals: 2 })}
                   </td>
@@ -104,7 +106,7 @@ export default function Lend() {
         </table>
       </ShowWhenTrue>
       <ShowWhenFalse when={Array.isArray(offers) && offers.length > 0}>
-       <Spinner/>
+        <Spinner />
       </ShowWhenFalse>
     </>
   )

@@ -15,8 +15,8 @@ import { useMemo } from "react"
 
 export default function Borrow() {
   const stats = useBorrowingMarketStats()
-  const { offers } = useBorrowMarket()
   const currentChain = useCurrentChain()
+  const { offers } = useBorrowMarket()
   const router = useRouter()
 
   const breadcrumbs = useMemo(
@@ -86,7 +86,7 @@ export default function Borrow() {
                   className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5"
                 >
                   <td className="p-4 text-left px-4 items-center">
-                    {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
+                    {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}
                   </td>
                   <td className="p-2 text-center px-4 items-center">{offer.events.length}</td>
                   <td className="p-2 text-center px-4 items-center">{dollars({ value: offer.liquidityOffer })}</td>

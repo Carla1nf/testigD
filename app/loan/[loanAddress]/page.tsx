@@ -49,7 +49,9 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
-  const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(loanAddress)
+  const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(loanAddress as Address)
+
+  console.log("loan", loan)
 
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
@@ -270,12 +272,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   // DATA STRUCTURE
   const chartValues = {
     historicalLender: calcPriceHistory(lendingPrices, loan?.lending?.amount ?? 0),
-    historicalCollateral: calcCollateralsPriceHistory(
-      collateral0Prices,
-      Number(collateral0?.amount ?? 0),
-      collateral0Prices,
-      0
-    ),
+    historicalCollateral: calcCollateralsPriceHistory(collateral0Prices, Number(collateral0?.amount ?? 0)),
     timestamps,
   }
 
@@ -519,6 +516,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                         token={collateral0Token}
                         amount={collateral0.amount}
                         className="text-xl"
+                        chainSlug={currentChain.slug}
                       />
                     ) : null}
                   </div>
@@ -534,7 +532,13 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
 
                   {lending && lendingToken ? (
                     <div className="-ml-[2px]">
-                      <DisplayToken size={32} token={lendingToken} amount={lending.amount} className="text-xl" />
+                      <DisplayToken
+                        size={32}
+                        token={lendingToken}
+                        amount={lending.amount}
+                        className="text-xl"
+                        chainSlug={currentChain.slug}
+                      />
                     </div>
                   ) : null}
                 </div>
@@ -570,6 +574,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                       amount={loan?.eachPayment}
                       className=""
                       displayOrder="AmountNameIcon"
+                      chainSlug={currentChain.slug}
                     />
                   </div>
                 </div>
@@ -582,6 +587,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                       amount={loan?.debtLeft}
                       className=""
                       displayOrder="AmountNameIcon"
+                      chainSlug={currentChain.slug}
                     />
                   </div>
                 </div>
