@@ -6,14 +6,15 @@ import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { dollars, percent } from "@/lib/display"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 // import styles from "./styles.module.css";
 
 export default function Home() {
   const { offers } = useLendingMarket()
   const router = useRouter()
+  const currentChain = useCurrentChain()
 
   return (
     <div>
@@ -93,7 +94,7 @@ export default function Home() {
               <div key={offer.tokenAddress} className="hover:bg-[#383838] rounded flex">
                 <div className="p-5"> {index + 1}. </div>
                 <td className="p-4 text-left px-4 items-center w-36">
-                  {offer.token ? <DisplayToken size={28} token={offer.token} /> : null}
+                  {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}
                 </td>
 
                 <td className="p-4 w-72 text-center font-semibold">{dollars({ value: offer.liquidityOffer })}</td>

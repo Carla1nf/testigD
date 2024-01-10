@@ -11,6 +11,7 @@ import { useState } from "react"
 import { Address } from "wagmi"
 import { Button } from "../ui/button"
 import DisplayToken from "./display-token"
+import useCurrentChain from "@/hooks/useCurrentChain"
 
 const DashboardActiveOffers = ({
   lending,
@@ -104,18 +105,18 @@ const DashboardActiveOffersTable = ({
 }
 
 const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Address; item: any }) => {
-  const { data: lender } = useOffer(address, item.address)
-  console.log("lender", lender)
+  const { data: offer } = useOffer(address, item.address)
+  const currentChain = useCurrentChain()
 
-  if (!lender) {
+  if (!offer) {
     return null
   }
 
   // @ts-ignore todo: ignored to help build, come back and check this is still true
-  const lenderToken = findTokenByAddress("fantom", lender.lenderToken)
+  const lenderToken = findTokenByAddress(currentChain.slug, offer.lenderToken)
 
-  const collateral0 = lender?.collaterals
-  const collateralToken0 = collateral0 ? findTokenByAddress("fantom", collateral0.address) : undefined
+  const collateral = offer?.collateral
+  const collateralToken = collateral ? findTokenByAddress(currentChain.slug, collateral.address) : undefined
 
   return (
     <tr
@@ -124,14 +125,14 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
     >
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
-        {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
+        {collateralToken ? <DisplayToken token={collateralToken} size={24} chainSlug={currentChain.slug} /> : null}
       </td>
       {/* Lending */}
       <td className="p-3 w-10 align-top text-center">
-        {lenderToken ? <DisplayToken token={lenderToken} size={24} /> : null}
+        {lenderToken ? <DisplayToken token={lenderToken} size={24} chainSlug={currentChain.slug} /> : null}
       </td>
-      <td className="p-3 align-top text-center">{percent({ value: Number(lender.interest) })}</td>
-      <td className="p-3 align-top text-center">{Number(lender.paymentCount)}</td>
+      <td className="p-3 align-top text-center">{percent({ value: Number(offer.interest) })}</td>
+      <td className="p-3 align-top text-center">{Number(offer.paymentCount)}</td>
     </tr>
   )
 }
@@ -139,13 +140,14 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
 const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Address; item: any }) => {
   const router = useRouter()
   const { data } = useOffer(address, item.address)
+  const currentChain = useCurrentChain()
 
   if (!data) {
     return null
   }
 
-  const lenderToken = data?.lending?.token
-  const collateralToken0 = data?.collaterals[0]?.token
+  const principleToken = data?.principle?.token
+  const collateralToken = data?.collateral?.token
 
   return (
     <tr
@@ -157,11 +159,11 @@ const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Addr
     >
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
-        {collateralToken0 ? <DisplayToken token={collateralToken0} size={24} /> : null}
+        {collateralToken ? <DisplayToken token={collateralToken} size={24} chainSlug={currentChain.slug} /> : null}
       </td>
       {/* Lending */}
       <td className="p-3 align-top text-center items-center">
-        {lenderToken ? <DisplayToken token={lenderToken} size={24} /> : null}
+        {principleToken ? <DisplayToken token={principleToken} size={24} chainSlug={currentChain.slug} /> : null}
       </td>
       <td className="p-3 align-top text-center">{percent({ value: Number(data.interest) })}</td>
       <td className="p-3 align-top text-center">{Number(data.paymentCount)}</td>

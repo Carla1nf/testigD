@@ -14,6 +14,7 @@ const DisplayToken = ({
   decimals = 2,
   className,
   displayOrder = "IconAmountName",
+  chainSlug = "fantom",
 }: {
   token: Token
   size: number
@@ -21,6 +22,7 @@ const DisplayToken = ({
   decimals?: number
   className?: string
   displayOrder?: DisplayOrder
+  chainSlug?: string
 }) => {
   const components: Record<ComponentKeys, JSX.Element | false | undefined> = {
     Icon: displayOrder.includes("Icon") && (
@@ -28,7 +30,7 @@ const DisplayToken = ({
         key="Icon"
         width={size ?? 24}
         height={size ?? 24}
-        chainSlug="fantom"
+        chainSlug={chainSlug}
         symbol={token?.symbol}
         className="mr-[2px]"
       />

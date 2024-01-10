@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import useCurrentChain from "@/hooks/useCurrentChain"
 import { Token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
@@ -28,6 +29,7 @@ const SelectToken = ({
   onAmountChange: (value: number | undefined) => void
 }) => {
   const [open, setOpen] = useState(false)
+  const currentChain = useCurrentChain()
 
   const ref = useRef(null)
 
@@ -37,7 +39,12 @@ const SelectToken = ({
         <PopoverTrigger asChild>
           <Button variant="create" role="combobox" aria-expanded={open} className="basis-2/3 justify-start pl-1">
             {selectedToken ? (
-              <DisplayToken token={selectedToken} size={24} className="text-base font-bold" />
+              <DisplayToken
+                token={selectedToken}
+                size={24}
+                className="text-base font-bold"
+                chainSlug={currentChain.slug}
+              />
             ) : (
               <span className="text-sm font-normal text-[#757575]">Select token...</span>
             )}
@@ -136,7 +143,7 @@ const SelectToken = ({
                   <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
                 </ShowWhenFalse>
 
-                <DisplayToken token={token} size={24} className="text-base font-bold" />
+                <DisplayToken token={token} size={24} className="text-base font-bold" chainSlug={currentChain.slug} />
               </CommandItem>
             ))}
           </CommandGroup>

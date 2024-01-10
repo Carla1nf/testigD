@@ -1,5 +1,6 @@
 import DisplayToken from "@/components/ux/display-token"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
+import useCurrentChain from "@/hooks/useCurrentChain"
 import { useOffer } from "@/hooks/useOffer"
 import { ltv, percent } from "@/lib/display"
 import { Token } from "@/lib/tokens"
@@ -9,6 +10,7 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const router = useRouter()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, event.address)
+  const currentChain = useCurrentChain()
 
   return (
     <tr
@@ -19,12 +21,19 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5"
     >
       <td className="p-4 text-left">
-        {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}
+        {token ? (
+          <DisplayToken size={28} token={token} amount={event.lendingAmount} chainSlug={currentChain.slug} />
+        ) : null}
       </td>
       <td className="p-3 text-left">
         <div className="flex flex-col gap-2">
           {offer?.collateral.token ? (
-            <DisplayToken size={28} token={offer?.collateral.token} amount={offer?.collateral.amount} />
+            <DisplayToken
+              size={28}
+              token={offer?.collateral.token}
+              chainSlug={currentChain.slug}
+              amount={offer?.collateral.amount}
+            />
           ) : null}
         </div>
       </td>

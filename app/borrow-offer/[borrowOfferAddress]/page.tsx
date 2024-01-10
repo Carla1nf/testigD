@@ -49,27 +49,23 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
   const borrowOfferAddress = params.borrowOfferAddress
   const config = useConfig()
   const { toast } = useToast()
-
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, borrowOfferAddress)
-  const isOwnerConnected = address === offer?.owner
-
   console.log("offer", offer)
 
+  const isOwnerConnected = address === offer?.owner
   const principle = offer?.principle
   const collateral = offer?.collateral
-
   const principleToken = principle ? principle?.token : undefined
   const collateralToken = collateral ? collateral?.token : undefined
-
   const principlePrices = useHistoricalTokenPrices(currentChain.slug, principleToken?.address as Address)
   const collateralPrices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
   const timestamps = principlePrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
   // check if we have the allowance to spend the lender token
   const { data: currentLendingTokenAllowance } = useContractRead({
-    address: principle?.address ?? "0x000",
+    address: principle?.address as Address,
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, DEBITA_ADDRESS],
@@ -106,7 +102,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
   const increaseAllowance = async () => {
     try {
       const { request } = await config.publicClient.simulateContract({
-        address: principle?.address ?? "",
+        address: principle?.address as Address,
         functionName: "approve",
         abi: erc20Abi,
         args: [DEBITA_ADDRESS, BigInt(principle?.amountRaw ?? 0)],
@@ -222,7 +218,12 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
       )
       result.push(
         <Link href={`/lend/${principleToken?.address}`} key="token">
-          <DisplayToken size={18} token={principleToken} className="hover:text-white/75" />
+          <DisplayToken
+            size={18}
+            token={principleToken}
+            chainSlug={currentChain.slug}
+            className="hover:text-white/75"
+          />
         </Link>
       )
       return result
@@ -379,7 +380,13 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
                 </div>
                 <div className="-ml-[2px]">
                   {collateral && collateralToken ? (
-                    <DisplayToken size={32} token={collateralToken} amount={collateral.amount} className="text-xl" />
+                    <DisplayToken
+                      size={32}
+                      token={collateralToken}
+                      amount={collateral.amount}
+                      chainSlug={currentChain.slug}
+                      className="text-xl"
+                    />
                   ) : null}
                 </div>
               </div>
@@ -393,7 +400,13 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
 
                 {principle && principleToken ? (
                   <div className="-ml-[2px]">
-                    <DisplayToken size={32} token={principleToken} amount={principle.amount} className="text-xl" />
+                    <DisplayToken
+                      size={32}
+                      token={principleToken}
+                      amount={principle.amount}
+                      chainSlug={currentChain.slug}
+                      className="text-xl"
+                    />
                   </div>
                 ) : null}
               </div>

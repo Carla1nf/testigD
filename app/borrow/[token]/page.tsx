@@ -44,7 +44,15 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           {/* Page title */}
           <div className="space-y-2 flex-row justify-center">
             <h1 className="text-3xl font-bold flex flex-row gap-2 items-center whitespace-nowrap">
-              Borrowing {token ? <DisplayToken size={28} token={token} className="flex-row-reverse gap-1" /> : null}
+              Borrowing{" "}
+              {token ? (
+                <DisplayToken
+                  size={28}
+                  token={token}
+                  chainSlug={currentChain.slug}
+                  className="flex-row-reverse gap-1"
+                />
+              ) : null}
             </h1>
           </div>
 

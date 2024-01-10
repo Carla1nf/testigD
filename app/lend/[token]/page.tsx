@@ -46,7 +46,15 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
           {/* Page title */}
           <div className="space-y-2 flex-row justify-center">
             <h1 className="text-3xl font-bold flex flex-row gap-2 items-center whitespace-nowrap">
-              Lending {token ? <DisplayToken size={28} token={token} className="flex-row-reverse gap-1" /> : null}
+              Lending{" "}
+              {token ? (
+                <DisplayToken
+                  size={28}
+                  token={token}
+                  className="flex-row-reverse gap-1"
+                  chainSlug={currentChain.slug}
+                />
+              ) : null}
             </h1>
           </div>
 
@@ -107,6 +115,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
 
 const TableRow = ({ event, token }: { event: any; token?: Token }) => {
   const router = useRouter()
+  const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, event.address)
   const collateral = offer?.collateral
@@ -121,12 +130,14 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
       className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b border-[#383838]/50"
     >
       <td className="p-4 text-left">
-        {token ? <DisplayToken size={28} token={token} amount={event.lendingAmount} /> : null}
+        {token ? (
+          <DisplayToken size={28} token={token} amount={event.lendingAmount} chainSlug={currentChain.slug} />
+        ) : null}
       </td>
       <td className="p-4 text-left">
         <div className="flex flex-col gap-2">
           {collateralToken ? (
-            <DisplayToken size={28} token={collateralToken} amount={collateral?.amount} />
+            <DisplayToken size={28} token={collateralToken} amount={collateral?.amount} chainSlug={currentChain.slug} />
           ) : (
             <div className="animate-pulse flex space-x-4">
               <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>

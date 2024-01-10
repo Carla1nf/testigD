@@ -59,6 +59,8 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         args: [],
       })) as string
 
+      console.log("lenderData", lenderData)
+
       const parsedData = LenderDataReceivedSchema.parse(lenderData)
 
       // We get WAY TOO MUCH DATA from this function, it will trip RPC limits at some point
@@ -71,12 +73,12 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       // we should process the data here, collateral tokens should be an array of grouped data, not as multiple arrays
       // lets go one step further and bring token info and pricing in as well. This will make the data much more useful
       // and simplify rendering.
-      const foundToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
+      const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
       const collateral = {
         address: parsedData.assetAddresses[1],
         amountRaw: parsedData.assetAmounts[1],
-        token: foundToken,
-        amount: fromDecimals(parsedData.assetAmounts[1], foundToken?.decimals ?? 18),
+        token: collateralToken,
+        amount: fromDecimals(parsedData.assetAmounts[1], collateralToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
@@ -84,28 +86,28 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       // cant use async map - hate them but need to use a for loop for that
       let totalCollateralValue = 0
 
-      const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-      collateral.price = _price.price ?? 0
+      const collateralPrice = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
+      collateral.price = collateralPrice.price ?? 0
       collateral.valueUsd = collateral.amount * collateral.price
       totalCollateralValue += collateral.valueUsd
 
       // lets do the same for the lender token
-      const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
+      const principleToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
       const principle = {
-        address: parsedData.assetAddresses[0],
-        amountRaw: parsedData.assetAmounts[0],
-        token: lenderToken,
-        amount: fromDecimals(parsedData.assetAmounts[0], lenderToken?.decimals ?? 18),
+        address: parsedData.assetAddresses[0] as Address,
+        amountRaw: parsedData.assetAmounts[0] as bigint,
+        token: principleToken,
+        amount: fromDecimals(parsedData.assetAmounts[0], principleToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
 
-      const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, principle.address as Address))
-      principle.price = price.price ?? 0
+      const principlePrice = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, principle.address as Address))
+      principle.price = principlePrice.price ?? 0
       principle.valueUsd = principle.amount * principle.price
 
-      const ratio = totalCollateralValue / principle.valueUsd
-      const ltv = (1 / ratio) * 100
+      const ratio = principle.valueUsd > 0 ? totalCollateralValue / principle.valueUsd : 0
+      const ltv = ratio ? (1 / ratio) * 100 : 0
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
 

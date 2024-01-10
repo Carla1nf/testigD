@@ -1,15 +1,14 @@
-import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
+import { LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { fromDecimals, tokenDecimals, tokenName, tokenSymbol } from "@/lib/erc20"
+import { Token, findTokenByAddress } from "@/lib/tokens"
 import { useQuery } from "@tanstack/react-query"
+import pick from "lodash.pick"
 import { getAddress } from "viem"
 import { Address } from "wagmi"
 import { readContract } from "wagmi/actions"
-import debitaAbi from "../abis/debita.json"
-import loanCreatedAbi from "../abis/v2/createdLoan.json"
 import ownershipsAbi from "../abis/ownerships.json"
-import { Token, findTokenByAddress } from "@/lib/tokens"
-import pick from "lodash.pick"
+import loanCreatedAbi from "../abis/v2/createdLoan.json"
 
 export type TokenValue = Token & {
   amount: number
@@ -17,7 +16,7 @@ export type TokenValue = Token & {
 }
 
 type Loan = {
-  loanAddress: Address
+  address: Address
   collateralOwnerId: number
   collaterals: TokenValue
   cooldown: bigint
@@ -34,7 +33,7 @@ type Loan = {
 
 export type LoanStatus = "Borrowed" | "Lent"
 
-export const useLoanValues = (address: `0x${string}` | undefined, index: number, status: LoanStatus) => {
+export const useLoanValues = (address: Address | undefined, index: number, status: LoanStatus) => {
   const useLoanValuesQuery = useQuery({
     queryKey: ["read-loan-values", address, status, index],
     queryFn: async () => {
@@ -145,8 +144,8 @@ export const useLoanValues = (address: `0x${string}` | undefined, index: number,
       } = loanData
 
       const loan: Loan = {
-        id: index,
-        collateralOwnerId: collateralOwnerID, // watchout for the name change here in ID!
+        address: address as Address,
+        collateralOwnerId: collateralOwnerID, // watch-out for the name change here in ID!
         collaterals: collaterals as TokenValue,
         cooldown,
         deadline,

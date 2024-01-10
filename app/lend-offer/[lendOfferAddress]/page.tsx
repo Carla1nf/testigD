@@ -102,7 +102,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const newPaymentCount = useRef<HTMLInputElement>(null)
   const newTimelap = useRef<HTMLInputElement>(null)
   const newInterest = useRef<HTMLInputElement>(null)
-
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const lendOfferAddress = params.lendOfferAddress
@@ -255,7 +254,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         address: OFFER_CREATED_ADDRESS,
         functionName: "acceptOfferAsBorrower",
         abi: createdOfferABI,
-        args: [toDecimals(amountToBorrow, offer?.collaterals.token?.decimals ?? 0), 0],
+        args: [toDecimals(amountToBorrow, collateralToken?.decimals ?? 0), 0],
         account: address,
 
         // chainId: currentChain?.chainId,
@@ -364,7 +363,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       )
       result.push(
         <Link href={`/borrow/${borrowingToken?.address}`} key="token">
-          <DisplayToken size={18} token={borrowingToken} className="hover:text-white/75" />
+          <DisplayToken
+            size={18}
+            token={borrowingToken}
+            className="hover:text-white/75"
+            chainSlug={currentChain.slug}
+          />
         </Link>
       )
       return result
@@ -570,6 +574,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           token={collateralToken}
                           amount={collateral.amount}
                           className="text-xl"
+                          chainSlug={currentChain.slug}
                         />
                       )}
                     </>
@@ -604,6 +609,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                             token={borrowingToken}
                             amount={principle.amount}
                             className="text-xl"
+                            chainSlug={currentChain.slug}
                           />
                         </div>
                       )}
