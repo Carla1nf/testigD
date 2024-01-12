@@ -118,107 +118,43 @@ export default function Create() {
           const _timelap = (86400 * context.durationDays) / context.numberOfPayments
           const _paymentCount = context.numberOfPayments
 
-          if (mode === "borrow") {
-            try {
-              const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-              const collateral1 = context.collateralAmount1
-                ? toDecimals(context.collateralAmount1, context.collateralToken1.decimals)
-                : BigInt(0)
-              const _wantedLenderToken = context.token.address
-              const collateralTokens = context.collateralToken0.address
-              const _wantedLenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+          try {
+            const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
 
-              //  Process collateral value
-              let value: bigint = context.collateralToken0.address === ZERO_ADDRESS ? BigInt(collateral0) : BigInt(0)
-              if (context?.collateralToken1?.address === ZERO_ADDRESS) {
-                value += BigInt(collateral1)
-              }
+            const _LenderToken = context.token.address
+            const _wantedCollateralTokens = context.collateralToken0.address
 
-              const { request } = await config.publicClient.simulateContract({
-                address: DEBITA_OFFER_FACTORY_ADDRESS,
-                functionName: "createOfferV2",
-                abi: offerFactoryABI,
-                args: [
-                  [_wantedLenderToken, collateralTokens],
-                  [_wantedLenderAmount, collateral0],
-                  [false, false /*  if assets are NFTs --> false for now*/],
-                  _interest,
-                  [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
-                  100 /*  value of wanted veNFTs --> 0 for now*/,
-                  _paymentCount,
-                  _timelap,
-                  [false, true], // [0] --> isLending, [1] --> isPerpetual
-                  "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
-                ],
-                account: address,
-                gas: BigInt(3300000),
-              })
+            const _wantedCollateralAmount = collateral0
+            const _LenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
-              const executed = await writeContract(request)
-              console.log("createCollateralOffer", executed)
-              const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-              console.log("transaction", transaction)
+            // calculate value
 
-              /*if (executed) {
-                const CollateralID = (await readContract({
-                  address: DEBITA_ADDRESS,
-                  functionName: "Collateral_OF_ID",
-                  abi: debitaAbi,
-                  args: [],
-                })) as bigint
-                setId(Number(CollateralID))
-                return Promise.resolve({ ...executed, mode: "borrow" })
-              } */
+            const { request } = await config.publicClient.simulateContract({
+              address: DEBITA_OFFER_FACTORY_ADDRESS,
+              functionName: "createOfferV2",
+              abi: offerFactoryABI,
+              args: [
+                [_LenderToken, _wantedCollateralTokens],
+                [_LenderAmount, _wantedCollateralAmount],
+                [false, false /*  if assets are NFTs --> false for now*/],
+                _interest,
+                [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
+                100 /*  value of wanted veNFTs --> 0 for now*/,
+                _paymentCount,
+                _timelap,
+                [mode === "lend", true], // [0] --> isLending, [1] --> isPerpetual
+                "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
+              ],
+              account: address,
+              gas: BigInt(3300000),
+            })
 
-              throw "createCollateralOffer->failed"
+            const executed = await writeContract(request)
+            console.log("createLenderOption", executed)
+            const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+            console.log("transaction", transaction)
 
-              // return allowance0
-            } catch (error: any) {
-              console.log("error", error)
-
-              return Promise.reject({ error: error.message })
-            }
-          }
-
-          if (mode === "lend") {
-            try {
-              const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-
-              const _LenderToken = context.token.address
-              const _wantedCollateralTokens = context.collateralToken0.address
-
-              const _wantedCollateralAmount = collateral0
-              const _LenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
-
-              // calculate value
-              const value = context.token.address === ZERO_ADDRESS ? _LenderAmount : BigInt(0)
-
-              const { request } = await config.publicClient.simulateContract({
-                address: DEBITA_OFFER_FACTORY_ADDRESS,
-                functionName: "createOfferV2",
-                abi: offerFactoryABI,
-                args: [
-                  [_LenderToken, _wantedCollateralTokens],
-                  [_LenderAmount, _wantedCollateralAmount],
-                  [false, false /*  if assets are NFTs --> false for now*/],
-                  _interest,
-                  [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
-                  100 /*  value of wanted veNFTs --> 0 for now*/,
-                  _paymentCount,
-                  _timelap,
-                  [true, true], // [0] --> isLending, [1] --> isPerpetual
-                  "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
-                ],
-                account: address,
-                gas: BigInt(3300000),
-              })
-
-              const executed = await writeContract(request)
-              console.log("createLenderOption", executed)
-              const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-              console.log("transaction", transaction)
-
-              /*  if (executed) {
+            /*  if (executed) {
                 const LenderID = (await readContract({
                   address: DEBITA_ADDRESS,
                   functionName: "Lender_OF_ID",
@@ -232,11 +168,10 @@ export default function Create() {
               throw "createLenderOption->failed"
 
               // return allowance0 */
-            } catch (error: any) {
-              console.log("createLenderOption->error", error)
+          } catch (error: any) {
+            console.log("createLenderOption->error", error)
 
-              return Promise.reject({ error: error.message, mode: "lend" })
-            }
+            return Promise.reject({ error: error.message, mode: "lend" })
           }
         }),
         checkingLendAllowance: fromPromise(async ({ input: { context } }) => {
