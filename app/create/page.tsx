@@ -121,11 +121,11 @@ export default function Create() {
           try {
             const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
 
-            const _LenderToken = context.token.address
-            const _wantedCollateralTokens = context.collateralToken0.address
+            const lenderAddress = context.token.address
+            const collateralAddress = context.collateralToken0.address
 
-            const _wantedCollateralAmount = collateral0
-            const _LenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+            const collateralAmount = collateral0
+            const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
             // calculate value
 
@@ -134,8 +134,8 @@ export default function Create() {
               functionName: "createOfferV2",
               abi: offerFactoryABI,
               args: [
-                [_LenderToken, _wantedCollateralTokens],
-                [_LenderAmount, _wantedCollateralAmount],
+                [lenderAddress, collateralAddress],
+                [lenderAmount, collateralAmount],
                 [false, false /*  if assets are NFTs --> false for now*/],
                 _interest,
                 [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
