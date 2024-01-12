@@ -17,7 +17,7 @@ import { useOffer } from "@/hooks/useOffer"
 import { dollars, ltv, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { fixedDecimals } from "@/lib/utils"
+import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
@@ -561,8 +561,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             </div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
-              <div className="flex flex-col gap-3">
-                <div>Provide Collateral</div>
+              <div className={cn("flex flex-col gap-3", lendMachineState.matches("isOwner") ? "order-last" : null)}>
+                {lendMachineState.matches("isOwner") ? (
+                  <div>User Provides Collateral</div>
+                ) : (
+                  <div>You Provide Collateral</div>
+                )}
                 <div className="-ml-[px]">
                   {collateral && collateralToken ? (
                     <>
@@ -596,7 +600,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                <div>To Borrow</div>
+                {lendMachineState.matches("isOwner") ? <div>You are Lending</div> : <div>To Borrow</div>}
 
                 <>
                   {principle && borrowingToken ? (
