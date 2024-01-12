@@ -30,6 +30,7 @@ import { modeMachine } from "./mode-machine"
 import { toDecimals } from "@/lib/erc20"
 import pluralize from "pluralize"
 import Link from "next/link"
+import { decodeEventLog, parseAbi } from "viem"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -47,8 +48,26 @@ export default function Create() {
 
   // MODE MACHINE
   const [modeState, modeSend] = useMachine(modeMachine)
+  const [offerAddress, setAddress] = useState("")
 
   // CREATE BORROW MACHINE
+
+  const setOfferAddress = async (tx: any) => {
+    let decoded = {}
+    console.log("deconding..")
+    try {
+      decoded = decodeEventLog({
+        abi: parseAbi(["event CreateOffer(address indexed owner, address indexed _add, bool indexed senderIsLender)"]),
+        data: tx?.logs[2].data,
+        topics: tx?.logs[2].topics,
+      })
+      setAddress(decoded?.args._add)
+      console.log("withdrawFromVault->decoded", decoded)
+    } catch (error) {
+      console.log("withdrawFromVault->decode error", error)
+    }
+  }
+
   const [machineState, machineSend] = useMachine(
     machine.provide({
       actors: {
@@ -153,21 +172,7 @@ export default function Create() {
             console.log("createLenderOption", executed)
             const transaction = await config.publicClient.waitForTransactionReceipt(executed)
             console.log("transaction", transaction)
-
-            /*  if (executed) {
-                const LenderID = (await readContract({
-                  address: DEBITA_ADDRESS,
-                  functionName: "Lender_OF_ID",
-                  abi: debitaAbi,
-                  args: [],
-                })) as bigint
-                setId(Number(LenderID));
-                return Promise.resolve({ ...executed, mode: "lend" })
-              }
-
-              throw "createLenderOption->failed"
-
-              // return allowance0 */
+            setOfferAddress(transaction)
           } catch (error: any) {
             console.log("createLenderOption->error", error)
 
@@ -747,7 +752,7 @@ export default function Create() {
                 <Button variant="secondary" className="px-12" onClick={back}>
                   Back
                 </Button>
-                <Link href={`/${modeState.matches("borrow") ? "borrow-offer" : "lend-offer"}/${id + 1}`}>
+                <Link href={`/${modeState.matches("borrow") ? "borrow-offer" : "lend-offer"}/${offerAddress}`}>
                   <Button variant="action" className="px-12">
                     View Offer
                   </Button>

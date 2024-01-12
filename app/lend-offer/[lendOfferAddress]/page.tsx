@@ -29,8 +29,10 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
-import erc20Abi from "../../../abis/erc20.json"
+import erc20Abi from "@/abis/erc20.json"
+
 import { lendOfferMachine } from "./lend-offer-machine"
+import { decodeEventLog, parseAbi } from "viem"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -66,37 +68,12 @@ const calcCollateralsPriceHistory = (prices0: any, amount0: number, prices1: any
   return []
 }
 
-function getAcceptCollateralOfferValue(collateralData: any) {
-  if (!collateralData) {
-    return 0
-  }
-  const collaterals = collateralData?.collaterals
-
-  const isCollateralZero = collaterals?.address === ZERO_ADDRESS
-
-  if (isCollateralZero) {
-    return Number(collaterals[0].amountRaw)
-  }
-
-  return 0
-}
-
-function getAcceptLendingOfferValue(values: any) {
-  if (!values) {
-    return 0
-  }
-  if (values?.principle?.address === ZERO_ADDRESS) {
-    return Number(values?.principle?.amount ?? 0)
-  }
-
-  return 0
-}
-
 export default function LendOffer({ params }: { params: { lendOfferAddress: Address } }) {
   const config = useConfig()
   const { toast } = useToast()
   const [amountToBorrow, setAmountToBorrow] = useState(0)
   const [editing, setEditing] = useState(false)
+
   const newCollateralAmount = useRef<HTMLInputElement>(null)
   const newBorrowAmount = useRef<HTMLInputElement>(null)
   const newPaymentCount = useRef<HTMLInputElement>(null)
@@ -262,7 +239,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         address: OFFER_CREATED_ADDRESS,
         functionName: "acceptOfferAsBorrower",
         abi: createdOfferABI,
-        args: [toDecimals(amountToBorrow, collateralToken?.decimals ?? 0), 0],
+        args: [toDecimals(amountToBorrow, principle?.token?.decimals ?? 0), 0],
         account: address,
 
         // chainId: currentChain?.chainId,
