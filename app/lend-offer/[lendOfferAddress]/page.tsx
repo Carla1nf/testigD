@@ -523,7 +523,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </div>
               </ShowWhenFalse>
               <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer ml-auto">
                   <input
                     type="checkbox"
                     value=""
