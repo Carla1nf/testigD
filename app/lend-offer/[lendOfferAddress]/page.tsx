@@ -137,6 +137,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     })
     const executed = await writeContract(request)
     console.log(executed)
+    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+    console.log("transaction", transaction)
   }
 
   const editOffer = async () => {
@@ -165,6 +167,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
     const executed = await writeContract(request)
     console.log(executed)
+    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+    console.log("transaction", transaction)
 
     /* args: [[newAmountLending, newAmountCollateral], [newInterest,
       newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT], */
@@ -184,6 +188,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
       const executed = await writeContract(request)
       console.log("cancelLenderOffer→executed", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
       toast({
         variant: "success",
@@ -214,6 +220,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
       const executed = await writeContract(request)
       console.log("increaseAllowance→executed", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
       toast({
         variant: "success",
@@ -263,6 +271,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
       const executed = await writeContract(request)
       console.log("userAcceptOffer→executed", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
       toast({
         variant: "success",

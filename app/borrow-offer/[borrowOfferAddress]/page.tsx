@@ -85,6 +85,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
 
       const executed = await writeContract(request)
       console.log("cancelLenderOffer→executed", executed)
+      writeContract
 
       toast({
         variant: "success",
@@ -112,6 +113,8 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
 
       const executed = await writeContract(request)
       console.log("increaseAllowance→executed", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
       toast({
         variant: "success",
@@ -143,6 +146,8 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
 
       const executed = await writeContract(request)
       console.log("userAcceptOffer→executed", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
       toast({
         variant: "success",

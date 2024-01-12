@@ -97,6 +97,8 @@ export default function Create() {
 
           const executed = await writeContract(request)
           // console.log("approveBorrowAllowance", executed)
+          const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+          console.log("transaction", transaction)
 
           return { ...executed, mode: "borrow" }
         }),
@@ -154,6 +156,8 @@ export default function Create() {
 
               const executed = await writeContract(request)
               console.log("createCollateralOffer", executed)
+              const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+              console.log("transaction", transaction)
 
               /*if (executed) {
                 const CollateralID = (await readContract({
@@ -211,6 +215,8 @@ export default function Create() {
 
               const executed = await writeContract(request)
               console.log("createLenderOption", executed)
+              const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+              console.log("transaction", transaction)
 
               /*  if (executed) {
                 const LenderID = (await readContract({
@@ -278,6 +284,8 @@ export default function Create() {
 
           const executed = await writeContract(request)
           // console.log("approveLendAllowance", executed)
+          const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+          console.log("transaction", transaction)
 
           return Promise.resolve({ ...executed, mode: "lend" })
         }),

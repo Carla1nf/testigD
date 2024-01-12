@@ -91,6 +91,8 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             })
 
             const result = await writeContract(request)
+            const transaction = await config.publicClient.waitForTransactionReceipt(result)
+            console.log("transaction", transaction)
             await refetchLoan()
             return Promise.resolve(result)
           } catch (error) {
@@ -114,6 +116,8 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             })
 
             const result = await writeContract(request)
+            const transaction = await config.publicClient.waitForTransactionReceipt(result)
+            console.log("transaction", transaction)
             await refetchLoan()
             return Promise.resolve(result)
           } catch (error) {}
@@ -135,6 +139,8 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             })
 
             const result = await writeContract(request)
+            const transaction = await config.publicClient.waitForTransactionReceipt(result)
+            console.log("transaction", transaction)
             await refetchLoan()
             return Promise.resolve(result)
           } catch (error) {}
@@ -152,6 +158,8 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             abi: erc20Abi,
             args: [LOAN_CREATED_ADDRESS, loan?.paymentAmountRaw],
           })
+          const transaction = await config.publicClient.waitForTransactionReceipt(result)
+          console.log("transaction", transaction)
           await refetchLoan()
           return result
         }),
@@ -180,6 +188,8 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             })
 
             const result = await writeContract(request)
+            const transaction = await config.publicClient.waitForTransactionReceipt(result)
+            console.log("transaction", transaction)
 
             // now we get the loan data again!
             await refetchLoan()
