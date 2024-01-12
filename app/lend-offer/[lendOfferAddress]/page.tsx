@@ -177,7 +177,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     }
   }
 
-  const increaseAllowance = async () => {
+  const userIncreaseAllowance = async () => {
     try {
       if (collateral?.address === ZERO_ADDRESS) {
         return true
@@ -274,7 +274,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       actors: {
         acceptOffer: fromPromise(userAcceptOffer),
         cancelOffer: fromPromise(cancelOffer),
-        increaseAllowance: fromPromise(increaseAllowance),
+        userIncreaseAllowance: fromPromise(userIncreaseAllowance),
       },
       actions: {
         userIncreasedAllowance: (params) => {
@@ -465,7 +465,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     Cancel Offer
                   </Button>
                 </ShowWhenTrue>
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.error")}>
+                <ShowWhenTrue when={lendMachineState.matches("isOwner.errorCancellingOffer")}>
                   <Button
                     variant="error"
                     className="h-full w-full gap-2"
