@@ -1,4 +1,5 @@
 import { useControlledAddress } from "@/hooks/useControlledAddress"
+import useCurrentChain from "@/hooks/useCurrentChain"
 import { LoanStatus } from "@/hooks/useLoanValues"
 import { useOffer } from "@/hooks/useOffer"
 import { percent } from "@/lib/display"
@@ -11,7 +12,6 @@ import { useState } from "react"
 import { Address } from "wagmi"
 import { Button } from "../ui/button"
 import DisplayToken from "./display-token"
-import useCurrentChain from "@/hooks/useCurrentChain"
 
 const DashboardActiveOffers = ({
   lending,
@@ -105,8 +105,9 @@ const DashboardActiveOffersTable = ({
 }
 
 const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Address; item: any }) => {
-  const { data: offer } = useOffer(address, item.address)
+  const router = useRouter()
   const currentChain = useCurrentChain()
+  const { data: offer } = useOffer(address, item.address)
 
   if (!offer) {
     return null
@@ -122,6 +123,9 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
     <tr
       className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 hover:bg-[#383838] cursor-pointer"
       key={item.address}
+      onClick={() => {
+        router.push(`/lend-offer/${item.address}`)
+      }}
     >
       {/* Collateral */}
       <td className="p-3 flex flex-col gap-1 items-center">
@@ -139,8 +143,8 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
 
 const DashboardActiveOffersTableBorrowItem = ({ address, item }: { address: Address; item: any }) => {
   const router = useRouter()
-  const { data } = useOffer(address, item.address)
   const currentChain = useCurrentChain()
+  const { data } = useOffer(address, item.address)
 
   if (!data) {
     return null
