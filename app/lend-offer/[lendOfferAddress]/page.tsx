@@ -29,10 +29,8 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
-import erc20Abi from "@/abis/erc20.json"
-
-import { lendOfferMachine } from "./lend-offer-machine"
-import { decodeEventLog, parseAbi } from "viem"
+import erc20Abi from "../../../abis/erc20.json"
+import { machine } from "./lend-offer-machine"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -72,8 +70,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const config = useConfig()
   const { toast } = useToast()
   const [amountToBorrow, setAmountToBorrow] = useState(0)
-  const [editing, setEditing] = useState(false)
-
   const newCollateralAmount = useRef<HTMLInputElement>(null)
   const newBorrowAmount = useRef<HTMLInputElement>(null)
   const newPaymentCount = useRef<HTMLInputElement>(null)
@@ -274,7 +270,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   // OWNER - CANCEL OFFER
   // USER - ACCEPT OFFER
   const [lendMachineState, lendMachineSend] = useMachine(
-    lendOfferMachine.provide({
+    machine.provide({
       actors: {
         acceptOffer: fromPromise(userAcceptOffer),
         cancelOffer: fromPromise(cancelOffer),
@@ -458,7 +454,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               </div>
               <div>
                 {/* Cancel the offer */}
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.idle")}>
+                <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
                   <Button
                     variant="action"
                     className="h-full w-full"
@@ -514,15 +510,19 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
             <div className="text-xl mb-4 font-bold flex items-center gap-5">
               Lending Offer
-              <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
+              <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
                 <div
-                  onClick={async () => setEditing(!editing)}
+                  onClick={async () => {
+                    lendMachineState.matches("isOwner.editing")
+                      ? lendMachineSend({ type: "owner.cancel" })
+                      : lendMachineSend({ type: "owner.editing" })
+                  }}
                   className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300"
                 >
-                  <div>{editing ? "Cancel" : "Edit Offer"}</div>
+                  <div>{lendMachineState.matches("isOwner.editing") ? "Cancel" : "Edit Offer"}</div>
                 </div>
-              </ShowWhenFalse>
-              <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
+              </ShowWhenTrue>
+              <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
                 <label className="relative inline-flex items-center cursor-pointer ml-auto">
                   <input
                     type="checkbox"
@@ -534,7 +534,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
                 </label>
-              </ShowWhenFalse>
+              </ShowWhenTrue>
             </div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
@@ -547,7 +547,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <div className="-ml-[px]">
                   {collateral && collateralToken ? (
                     <>
-                      {editing ? (
+                      {lendMachineState.matches("isOwner.editing") ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
@@ -582,7 +582,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <>
                   {principle && borrowingToken ? (
                     <>
-                      {editing ? (
+                      {lendMachineState.matches("isOwner.editing") ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
@@ -621,8 +621,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="grid grid-cols-3 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Payments Am.</div>
-                {editing ? (
-                  <div className="flex items-center gap-2 animate-enter-div">
+                <ShowWhenTrue when={lendMachineState.matches("isOwner.editing")}>
+                  <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
                       type="number"
@@ -632,14 +632,15 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       defaultValue={Number(offer?.paymentCount ?? 0)}
                     />
                   </div>
-                ) : (
+                </ShowWhenTrue>
+                <ShowWhenFalse when={lendMachineState.matches("isOwner.editing")}>
                   <div className="text-base">{Number(offer?.paymentCount ?? 0)}</div>
-                )}
+                </ShowWhenFalse>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Payments Every</div>
-                {editing ? (
-                  <div className="flex items-center gap-2 animate-enter-div">
+                <ShowWhenTrue when={lendMachineState.matches("isOwner.editing")}>
+                  <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
                       type="number"
@@ -649,15 +650,16 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       defaultValue={Number(offer?.numberOfLoanDays ?? 0)}
                     />
                   </div>
-                ) : (
+                </ShowWhenTrue>
+                <ShowWhenFalse when={lendMachineState.matches("isOwner.editing")}>
                   <div className="text-base">
                     {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                   </div>
-                )}
+                </ShowWhenFalse>
               </div>
-              <div className="border border-[#41353B] rounded-sm p-2">
+              <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
                 <div className="text-[#DCB5BC]">Perpetual</div>
-                <div className="text-base">{yesNo(offer?.perpetual)}</div>
+                <div className={cn("text-base")}>{yesNo(offer?.perpetual)}</div>
               </div>
             </div>
 
@@ -665,8 +667,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Total Interest</div>
-                {editing ? (
-                  <div className="flex items-center gap-2 animate-enter-div">
+                <ShowWhenTrue when={lendMachineState.matches("isOwner.editing")}>
+                  <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
                       type="number"
@@ -676,14 +678,15 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       defaultValue={Number((offer?.interest ?? 0) * 100)}
                     />
                   </div>
-                ) : (
+                </ShowWhenTrue>
+                <ShowWhenFalse when={lendMachineState.matches("isOwner.editing")}>
                   <div className="text-base">
                     {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
                     {percent({ value: offer?.interest ?? 0 })})
                   </div>
-                )}
+                </ShowWhenFalse>
               </div>
-              <div className="border border-[#41353B] rounded-sm p-2">
+              <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
                 <div className="text-base">
                   {offer?.isNFT[0] ? (
@@ -795,15 +798,15 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               </ShowWhenTrue>
 
               <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
-                {editing ? (
+                {lendMachineState.matches("isOwner.editing") ? (
                   <Button
                     variant="action"
-                    className="h-full w-full"
+                    className="h-full w-1/2"
                     onClick={() => {
                       editOffer()
                     }}
                   >
-                    Confirm
+                    Update Offer
                   </Button>
                 ) : (
                   ""
