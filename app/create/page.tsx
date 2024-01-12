@@ -724,15 +724,7 @@ export default function Create() {
 
           <ShowWhenTrue when={machineState.matches("creating")}>
             <div className="px-4">
-              <Alert variant="info">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Action required</AlertTitle>
-                <AlertDescription>Please confirm the transaction in your wallet</AlertDescription>
-              </Alert>
-              <div className="mt-8 flex justify-between">
-                <Button variant="secondary" className="px-12" onClick={back}>
-                  Back
-                </Button>
+              <div className="mt-8 flex justify-end">
                 <Button variant="action" className="px-12">
                   Confirming
                   <SpinnerIcon className="ml-2 animate-spin-slow" />
