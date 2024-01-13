@@ -43,7 +43,9 @@ export default function LeaderBoardPage() {
               <>
                 {index == 0 ? null : (
                   <div key={index} className=" bg-pink-400/10 h-12 flex rounded-lg items-center  font-bold text-sm">
-                    <div className="w-full px-4 flex">1. {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}</div>
+                    <div className="w-full px-4 flex">
+                      {index}. {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
+                    </div>
                     <div className="w-full">{item[1]}</div>
                     <div className="w-full">
                       {(12000000 / Number(data?.pointsPerAddress[0][1])) * Number(item[1])} DBT
