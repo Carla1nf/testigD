@@ -43,6 +43,8 @@ export default function LeaderBoardPage() {
           </div>
           <div className=" bg-purple-400/10 h-14 flex rounded-lg items-center  font-bold text-sm"></div>
           <div className=" bg-purple-400/10 h-14 rounded-lg"></div>
+          <div className=" bg-gray-600/10 h-14 rounded-lg"></div>
+          <div className=" bg-gray-600/10 h-14 rounded-lg"></div>
         </div>
         <div className="w-10/12">
           <div className="flex flex-col w-full gap-3 text-gray-200">
