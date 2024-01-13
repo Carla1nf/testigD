@@ -805,7 +805,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       ref={newInterestRef}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new interest`}
-                      defaultValue={Number((offer?.interest ?? 0) * 100)}
+                      defaultValue={Number(offer?.interest ?? 0) * 100}
                       onChange={(e) => {
                         setNewInterest(Number(e.target.value))
                       }}
@@ -816,7 +816,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <ShowWhenFalse when={shouldShowEditOfferForm}>
                   <div className="text-base">
                     {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
-                    {percent({ value: offer?.interest ?? 0 })})
+                    {percent({ value: Number(offer?.interest ?? 0) })})
                   </div>
                 </ShowWhenFalse>
               </div>
