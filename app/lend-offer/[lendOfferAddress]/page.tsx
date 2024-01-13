@@ -91,12 +91,21 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
-  // check if we have the allowance to spend the collateral token
-  const { data: currentCollateral0TokenAllowance } = useContractRead({
+  // check if the viewer/user/borrower has the allowance to spend the collateral token
+  const { data: currentCollateralTokenAllowance } = useContractRead({
     address: (collateral?.address ?? "") as Address,
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, OFFER_CREATED_ADDRESS],
+  })
+
+  // check if the owner has the allowance to spend the principle token when the offer is updated
+  const { data: currentPrincipleTokenAllowance } = useContractRead({
+    address: (principle?.address ?? "") as Address,
+    functionName: "allowance",
+    abi: erc20Abi,
+    args: [address, OFFER_CREATED_ADDRESS],
+    watch: true,
   })
 
   const interactPerpetual = async () => {
@@ -177,7 +186,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     }
   }
 
-  const userIncreaseAllowance = async () => {
+  /**
+   * This action increases the collateral allowance, it is used by the user/borrower who will pay the collateral to begin the loan
+   * @returns
+   */
+  const increaseCollateralAllowance = async () => {
     try {
       if (collateral?.address === ZERO_ADDRESS) {
         return true
@@ -211,6 +224,27 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         // tx: executed,
       })
       console.log("increaseAllowance→error", error)
+      throw error
+    }
+  }
+
+  const checkPrincipleAllowance = async () => {
+    try {
+      if (principle?.address === ZERO_ADDRESS) {
+        return Promise.reject()
+      }
+
+      if (currentPrincipleTokenAllowance === undefined) {
+        return Promise.resolve()
+      }
+
+      if (Number(currentPrincipleTokenAllowance) >= Number(principle?.amountRaw ?? 0)) {
+        return Promise.resolve()
+      }
+
+      return Promise.reject()
+    } catch (error: any) {
+      console.log("checkPrincipleAllowance", error)
       throw error
     }
   }
@@ -269,50 +303,42 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   // STATE MACHINE
   // OWNER - CANCEL OFFER
   // USER - ACCEPT OFFER
-  const [lendMachineState, lendMachineSend] = useMachine(
+  const [state, send] = useMachine(
     machine.provide({
       actors: {
         acceptOffer: fromPromise(userAcceptOffer),
         cancelOffer: fromPromise(cancelOffer),
-        userIncreaseAllowance: fromPromise(userIncreaseAllowance),
-      },
-      actions: {
-        userIncreasedAllowance: (params) => {
-          console.log("action→userIncreasedAllowance→params", params)
-        },
-        userAcceptedOffer: (params) => {
-          console.log("actions→userAcceptedOffer→params", params)
-        },
-        ownerCancelledOffer: (params) => {
-          console.log("actions→ownerCancelledOffer→params", params)
-        },
+        increaseCollateralAllowance: fromPromise(increaseCollateralAllowance),
+        checkPrincipleAllowance: fromPromise(checkPrincipleAllowance),
       },
     })
   )
+
+  console.log("state.value", state.value)
 
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
   useEffect(() => {
     // if the user is not the owner
-    if (isOwnerConnected && lendMachineState.matches("isNotOwner")) {
-      lendMachineSend({ type: "owner" })
+    if (isOwnerConnected && state.matches("isNotOwner")) {
+      send({ type: "owner" })
     }
 
     if (!isOwnerConnected) {
-      lendMachineSend({ type: "not.owner" })
+      send({ type: "not.owner" })
 
       // dual collateral mode
       if (collateral) {
         // do they have the required allowance to pay for the offer?
-        if (currentCollateral0TokenAllowance === undefined) {
+        if (currentCollateralTokenAllowance === undefined) {
           return
         }
-        if (Number(currentCollateral0TokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
-          lendMachineSend({ type: "user.has.allowance" })
+        if (Number(currentCollateralTokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
+          send({ type: "user.has.allowance" })
           return
         }
-        if (!lendMachineState.matches("isNotOwner.notEnoughAllowance")) {
-          lendMachineSend({ type: "user.not.has.allowance" })
+        if (!state.matches("isNotOwner.notEnoughAllowance")) {
+          send({ type: "user.not.has.allowance" })
           return
         }
       }
@@ -320,19 +346,19 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       // single collateral mode
       if (collateral) {
         // do they have the required allowance to pay for the offer?
-        if (currentCollateral0TokenAllowance === undefined) {
+        if (currentCollateralTokenAllowance === undefined) {
           return
         }
-        if (Number(currentCollateral0TokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
-          lendMachineSend({ type: "user.has.allowance" })
+        if (Number(currentCollateralTokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
+          send({ type: "user.has.allowance" })
           return
         }
-        if (!lendMachineState.matches("isNotOwner.notEnoughAllowance")) {
-          lendMachineSend({ type: "user.not.has.allowance" })
+        if (!state.matches("isNotOwner.notEnoughAllowance")) {
+          send({ type: "user.not.has.allowance" })
         }
       }
     }
-  }, [isOwnerConnected, currentCollateral0TokenAllowance, lendMachineState, lendMachineSend, collateral])
+  }, [isOwnerConnected, currentCollateralTokenAllowance, state, send, collateral])
 
   // BREADCRUMBS
   // CONFIG
@@ -445,7 +471,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         </div>
         <div className="space-y-8 max-w-xl w-full xl:ml-16">
           {/* Owners can cancel the offer */}
-          <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
+          <ShowWhenTrue when={state.matches("isOwner")}>
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are the Owner
@@ -454,23 +480,23 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               </div>
               <div>
                 {/* Cancel the offer */}
-                <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
+                <ShowWhenTrue when={state.matches("isOwner")}>
                   <Button
                     variant="action"
                     className="h-full w-full"
                     onClick={() => {
-                      lendMachineSend({ type: "owner.cancel" })
+                      send({ type: "owner.cancel" })
                     }}
                   >
                     Cancel Offer
                   </Button>
                 </ShowWhenTrue>
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.errorCancellingOffer")}>
+                <ShowWhenTrue when={state.matches("isOwner.errorCancellingOffer")}>
                   <Button
                     variant="error"
                     className="h-full w-full gap-2"
                     onClick={() => {
-                      lendMachineSend({ type: "owner.retry" })
+                      send({ type: "owner.retry" })
                     }}
                   >
                     <XCircle className="h-5 w-5" /> Cancel Failed - Retry?
@@ -478,7 +504,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </ShowWhenTrue>
 
                 {/* Cancelling the offer */}
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.cancelling")}>
+                <ShowWhenTrue when={state.matches("isOwner.cancelling")}>
                   <Button variant="action" className="h-full w-full">
                     Cancelling
                     <SpinnerIcon className="ml-2 animate-spin-slow" />
@@ -486,7 +512,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </ShowWhenTrue>
 
                 {/* Offer cancelled */}
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.cancelled")}>
+                <ShowWhenTrue when={state.matches("isOwner.cancelled")}>
                   <div className="h-full w-full inline-flex bg-success text-white gap-2 items-center justify-center border border-white/25 rounded-md">
                     <CheckCircle className="w-5 h-5" /> Cancelled
                   </div>
@@ -496,7 +522,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           </ShowWhenTrue>
 
           {/* Non owners can see who the owner is */}
-          <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
+          <ShowWhenTrue when={state.matches("isNotOwner")}>
             <div className="flex justify-between gap-8">
               <div className="bg-[#21232B]/40 border-2 border-white/10 p-4 w-full rounded-xl flex gap-2 items-center justify-center  ">
                 You could borrow {borrowingToken?.symbol} from
@@ -510,19 +536,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
             <div className="text-xl mb-4 font-bold flex items-center gap-5">
               Lending Offer
-              <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
+              <ShowWhenTrue when={state.matches("isOwner")}>
                 <div
                   onClick={async () => {
-                    lendMachineState.matches("isOwner.editing")
-                      ? lendMachineSend({ type: "owner.cancel" })
-                      : lendMachineSend({ type: "owner.editing" })
+                    state.matches("isOwner.editing") ? send({ type: "owner.cancel" }) : send({ type: "owner.editing" })
                   }}
                   className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300"
                 >
-                  <div>{lendMachineState.matches("isOwner.editing") ? "Cancel" : "Edit Offer"}</div>
+                  <div>{state.matches("isOwner.editing") ? "Cancel" : "Edit Offer"}</div>
                 </div>
               </ShowWhenTrue>
-              <ShowWhenTrue when={lendMachineState.matches("isOwner")}>
+              <ShowWhenTrue when={state.matches("isOwner")}>
                 <label className="relative inline-flex items-center cursor-pointer ml-auto">
                   <input
                     type="checkbox"
@@ -538,16 +562,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             </div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
-              <div className={cn("flex flex-col gap-3", lendMachineState.matches("isOwner") ? "order-last" : null)}>
-                {lendMachineState.matches("isOwner") ? (
-                  <div>User Provides Collateral</div>
-                ) : (
-                  <div>You Provide Collateral</div>
-                )}
+              <div className={cn("flex flex-col gap-3", state.matches("isOwner") ? "order-last" : null)}>
+                {state.matches("isOwner") ? <div>User Provides Collateral</div> : <div>You Provide Collateral</div>}
                 <div className="-ml-[px]">
                   {collateral && collateralToken ? (
                     <>
-                      {lendMachineState.matches("isOwner.editing") ? (
+                      {state.matches("isOwner.editing") ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
@@ -577,12 +597,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                {lendMachineState.matches("isOwner") ? <div>You are Lending</div> : <div>To Borrow</div>}
+                {state.matches("isOwner") ? <div>You are Lending</div> : <div>To Borrow</div>}
 
                 <>
                   {principle && borrowingToken ? (
                     <>
-                      {lendMachineState.matches("isOwner.editing") ? (
+                      {state.matches("isOwner.editing") ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
@@ -621,7 +641,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="grid grid-cols-3 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Payments Am.</div>
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.editing")}>
+                <ShowWhenTrue when={state.matches("isOwner.editing")}>
                   <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
@@ -633,13 +653,13 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     />
                   </div>
                 </ShowWhenTrue>
-                <ShowWhenFalse when={lendMachineState.matches("isOwner.editing")}>
+                <ShowWhenFalse when={state.matches("isOwner.editing")}>
                   <div className="text-base">{Number(offer?.paymentCount ?? 0)}</div>
                 </ShowWhenFalse>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Payments Every</div>
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.editing")}>
+                <ShowWhenTrue when={state.matches("isOwner.editing")}>
                   <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
@@ -651,7 +671,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     />
                   </div>
                 </ShowWhenTrue>
-                <ShowWhenFalse when={lendMachineState.matches("isOwner.editing")}>
+                <ShowWhenFalse when={state.matches("isOwner.editing")}>
                   <div className="text-base">
                     {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                   </div>
@@ -667,7 +687,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Total Interest</div>
-                <ShowWhenTrue when={lendMachineState.matches("isOwner.editing")}>
+                <ShowWhenTrue when={state.matches("isOwner.editing")}>
                   <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
@@ -679,7 +699,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     />
                   </div>
                 </ShowWhenTrue>
-                <ShowWhenFalse when={lendMachineState.matches("isOwner.editing")}>
+                <ShowWhenFalse when={state.matches("isOwner.editing")}>
                   <div className="text-base">
                     {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
                     {percent({ value: offer?.interest ?? 0 })})
@@ -705,15 +725,15 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
             {/* Buttons */}
             <div className="mt-8 flex justify-center">
-              <ShowWhenTrue when={lendMachineState.matches("isNotOwner")}>
+              <ShowWhenTrue when={state.matches("isNotOwner")}>
                 <>
                   {/* Show the Increase Allowance button when the user doesn't not have enough allowance */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.notEnoughAllowance")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.notEnoughAllowance")}>
                     <Button
                       variant={"action"}
                       className="px-16"
                       onClick={async () => {
-                        lendMachineSend({ type: "user.allowance.increase" })
+                        send({ type: "user.allowance.increase" })
                       }}
                     >
                       Accept Offer
@@ -721,7 +741,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </ShowWhenTrue>
 
                   {/* Show the Increasing Allowance spinner button while performing an increase allowance transaction */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.increaseAllowance")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.increaseAllowance")}>
                     <Button variant={"action"} className="px-16">
                       Increasing Allowance
                       <SpinnerIcon className="ml-2 animate-spin-slow" />
@@ -729,12 +749,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </ShowWhenTrue>
 
                   {/* Increasing Allowance Failed - Allow the user to try increasing allowance again */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.increaseAllowanceError")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.increaseAllowanceError")}>
                     <Button
                       variant="error"
                       className="h-full w-full gap-2"
                       onClick={() => {
-                        lendMachineSend({ type: "user.allowance.increase.retry" })
+                        send({ type: "user.allowance.increase.retry" })
                       }}
                     >
                       <XCircle className="h-5 w-5" />
@@ -743,7 +763,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </ShowWhenTrue>
 
                   {/* User has enough allowance, show them the accept offer button */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.canAcceptOffer")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
                     <div className="flex gap-10">
                       <input
                         className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
@@ -757,7 +777,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         variant={"action"}
                         className="px-16"
                         onClick={async () => {
-                          lendMachineSend({ type: "user.accept.offer" })
+                          send({ type: "user.accept.offer" })
                         }}
                       >
                         Accept Offer
@@ -766,7 +786,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </ShowWhenTrue>
 
                   {/* Show the Accepting Offer spinner while we are accepting the offer */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.acceptingOffer")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.acceptingOffer")}>
                     <Button variant={"action"} className="px-16">
                       Accepting Offer...
                       <SpinnerIcon className="ml-2 animate-spin-slow" />
@@ -774,12 +794,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </ShowWhenTrue>
 
                   {/* Accepted offer failed - Allow the user tor try accepting the offer again */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.acceptingOfferError")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.acceptingOfferError")}>
                     <Button
                       variant="error"
                       className="h-full w-full gap-2"
                       onClick={() => {
-                        lendMachineSend({ type: "user.accept.offer.retry" })
+                        send({ type: "user.accept.offer.retry" })
                       }}
                     >
                       <XCircle className="h-5 w-5" />
@@ -788,7 +808,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </ShowWhenTrue>
 
                   {/* The offer is accepted */}
-                  <ShowWhenTrue when={lendMachineState.matches("isNotOwner.offerAccepted")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.offerAccepted")}>
                     <Button variant={"success"} className="px-16 gap-2">
                       <CheckCircle className="w-5 h-5" />
                       Offer Accepted
@@ -797,21 +817,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </>
               </ShowWhenTrue>
 
-              <ShowWhenFalse when={lendMachineState.matches("isNotOwner")}>
-                {lendMachineState.matches("isOwner.editing") ? (
-                  <Button
-                    variant="action"
-                    className="h-full w-1/2"
-                    onClick={() => {
-                      editOffer()
-                    }}
-                  >
-                    Update Offer
-                  </Button>
-                ) : (
-                  ""
-                )}
-              </ShowWhenFalse>
+              <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                <Button
+                  variant="action"
+                  className="h-full w-1/2"
+                  onClick={() => {
+                    send({ type: "owner.update.offer" })
+                  }}
+                >
+                  Update Offer
+                </Button>
+              </ShowWhenTrue>
             </div>
           </div>
 

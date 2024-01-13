@@ -28,7 +28,7 @@ export const machine = createMachine(
           notEnoughAllowance: {
             on: {
               "user.allowance.increase": {
-                target: "userIncreaseAllowance",
+                target: "increaseCollateralAllowance",
               },
             },
           },
@@ -36,12 +36,10 @@ export const machine = createMachine(
             invoke: {
               input: {},
               src: "acceptOffer",
+              id: "acceptOffer",
               onDone: [
                 {
                   target: "offerAccepted",
-                  actions: {
-                    type: "userAcceptedOffer",
-                  },
                 },
               ],
               onError: [
@@ -51,17 +49,14 @@ export const machine = createMachine(
               ],
             },
           },
-          userIncreaseAllowance: {
+          increaseCollateralAllowance: {
             invoke: {
               input: {},
-              src: "userIncreaseAllowance",
-              id: "userIncreaseAllowance",
+              src: "increaseCollateralAllowance",
+              id: "increaseCollateralAllowance",
               onDone: [
                 {
                   target: "canAcceptOffer",
-                  actions: {
-                    type: "userIncreasedAllowance",
-                  },
                 },
               ],
               onError: [
@@ -83,8 +78,8 @@ export const machine = createMachine(
           },
           increaseAllowanceError: {
             on: {
-              "user.allowance.increase.retry": {
-                target: "userIncreaseAllowance",
+              "user.increase.collateral.allowance.retry": {
+                target: "increaseCollateralAllowance",
               },
             },
           },
@@ -115,9 +110,6 @@ export const machine = createMachine(
               onDone: [
                 {
                   target: "cancelled",
-                  actions: {
-                    type: "ownerCancelledOffer",
-                  },
                 },
               ],
               onError: [
@@ -133,7 +125,7 @@ export const machine = createMachine(
                 target: "idle",
               },
               "owner.update.offer": {
-                target: "checkAllowance",
+                target: "checkPrincipleAllowance",
               },
             },
           },
@@ -147,9 +139,10 @@ export const machine = createMachine(
               },
             },
           },
-          checkAllowance: {
+          checkPrincipleAllowance: {
             invoke: {
-              src: "checkAllowance",
+              src: "checkPrincipleAllowance",
+              id: "checkPrincipleAllowance",
               input: {},
               onDone: [
                 {
@@ -158,7 +151,7 @@ export const machine = createMachine(
               ],
               onError: [
                 {
-                  target: "increaseAllowance",
+                  target: "increasePrincipleAllowance",
                 },
               ],
             },
@@ -180,14 +173,14 @@ export const machine = createMachine(
               ],
             },
           },
-          increaseAllowance: {
+          increasePrincipleAllowance: {
             invoke: {
               input: {},
-              src: "ownerIncreaseAllowance",
-              id: "ownerIncreaseAllowance",
+              src: "increasePrincipleAllowance",
+              id: "increasePrincipleAllowance",
               onError: [
                 {
-                  target: "increaseAllowanceError",
+                  target: "increasePrincipleAllowanceError",
                 },
               ],
               onDone: [
@@ -204,10 +197,10 @@ export const machine = createMachine(
               },
             },
           },
-          increaseAllowanceError: {
+          increasePrincipleAllowanceError: {
             on: {
-              "owner.allowance.increase.retry": {
-                target: "increaseAllowance",
+              "owner.increase.principle.allowance.retry": {
+                target: "increasePrincipleAllowance",
               },
             },
           },
@@ -224,7 +217,6 @@ export const machine = createMachine(
         | { type: "user.has.allowance" }
         | { type: "user.not.has.allowance" }
         | { type: "user.allowance.increase" }
-        | { type: "user.allowance.increase.retry" }
         | { type: "user.accept.offer" }
         | { type: "user.accept.offer.retry" }
         | { type: "owner" }
@@ -233,36 +225,30 @@ export const machine = createMachine(
         | { type: "not.owner" }
         | { type: "owner.editing" }
         | { type: "owner.update.offer" }
-        | { type: "owner.allowance.increase.retry" }
-        | { type: "owner.update.offer.retry" },
+        | { type: "owner.update.offer.retry" }
+        | { type: "owner.increase.principle.allowance.retry" }
+        | { type: "user.increase.collateral.allowance.retry" },
     },
   },
   {
-    actions: {
-      userIncreasedAllowance: ({ context, event }) => {},
-      userAcceptedOffer: ({ context, event }) => {},
-      ownerCancelledOffer: ({ context, event }) => {},
-    },
+    actions: {},
     actors: {
-      increaseAllowance: createMachine({
-        /* ... */
-      }),
       acceptOffer: createMachine({
         /* ... */
       }),
       cancelOffer: createMachine({
         /* ... */
       }),
-      checkAllowance: createMachine({
-        /* ... */
-      }),
       updateOffer: createMachine({
         /* ... */
       }),
-      userIncreaseAllowance: createMachine({
+      checkPrincipleAllowance: createMachine({
         /* ... */
       }),
-      ownerIncreaseAllowance: createMachine({
+      increasePrincipleAllowance: createMachine({
+        /* ... */
+      }),
+      increaseCollateralAllowance: createMachine({
         /* ... */
       }),
     },
