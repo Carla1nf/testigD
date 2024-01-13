@@ -59,7 +59,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         args: [],
       })) as string
 
-      console.log("lenderData", lenderData)
+      // console.log("lenderData", lenderData)
 
       const parsedData = LenderDataReceivedSchema.parse(lenderData)
 
@@ -68,7 +68,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         return null
       }
 
-      console.log("parsedData.assetAddresses", parsedData.assetAddresses)
+      // console.log("parsedData.assetAddresses", parsedData.assetAddresses)
 
       // we should process the data here, collateral tokens should be an array of grouped data, not as multiple arrays
       // lets go one step further and bring token info and pricing in as well. This will make the data much more useful
