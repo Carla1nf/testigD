@@ -54,7 +54,7 @@ export default function Create() {
 
   const setOfferAddress = async (tx: any) => {
     let decoded = {}
-    console.log("deconding..")
+    console.log("decoding..")
     try {
       decoded = decodeEventLog({
         abi: parseAbi(["event CreateOffer(address indexed owner, address indexed _add, bool indexed senderIsLender)"]),
@@ -236,6 +236,7 @@ export default function Create() {
 
   // console.log("context", machineState.context)
   console.log("machineState.value", machineState.value)
+  console.log("modeState.value", modeState.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
@@ -336,11 +337,11 @@ export default function Create() {
           }}
         >
           <TabsList className="bg-[#252324] rounded-b-none gap-2">
-            <TabsTrigger value="borrow" className="px-12">
-              Borrow
-            </TabsTrigger>
             <TabsTrigger value="lend" className="px-12">
               Lend
+            </TabsTrigger>
+            <TabsTrigger value="borrow" className="px-12">
+              Borrow
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -349,58 +350,60 @@ export default function Create() {
       {/* Form */}
       <ShowWhenTrue when={machineState.matches("form")}>
         <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-          {/* Collateral token 0 */}
-          <div className="">
-            <div className="flex justify-between items-center">
-              <ShowWhenTrue when={modeState.matches("borrow")}>
-                <Label variant="create">Your Collateral Token</Label>
-              </ShowWhenTrue>
-              <ShowWhenTrue when={modeState.matches("lend")}>
-                <Label variant="create">Wanted Collateral Token</Label>
-              </ShowWhenTrue>
-              <TokenValuation
-                token={machineState.context.collateralToken0}
-                price={machineState.context.collateralPrice0}
-                amount={Number(machineState.context.collateralAmount0)}
-                value={machineState.context.collateralValue0}
-                className="mb-2 italic"
+          <div className={cn("flex gap-6", modeState.matches("lend") ? "flex-col-reverse" : "flex-col")}>
+            {/* Collateral token 0 */}
+            <div className="">
+              <div className="flex justify-between items-center">
+                <ShowWhenTrue when={modeState.matches("borrow")}>
+                  <Label variant="create">Your Collateral Token</Label>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={modeState.matches("lend")}>
+                  <Label variant="create">Wanted Collateral Token</Label>
+                </ShowWhenTrue>
+                <TokenValuation
+                  token={machineState.context.collateralToken0}
+                  price={machineState.context.collateralPrice0}
+                  amount={Number(machineState.context.collateralAmount0)}
+                  value={machineState.context.collateralValue0}
+                  className="mb-2 italic"
+                />
+              </div>
+              <SelectToken
+                tokens={tokens}
+                amount={machineState.context.collateralAmount0}
+                defaultToken={ftm as Token}
+                selectedToken={machineState.context.collateralToken0}
+                onSelectToken={onSelectCollateralToken0}
+                onAmountChange={onSelectCollateralAmount0}
               />
             </div>
-            <SelectToken
-              tokens={tokens}
-              amount={machineState.context.collateralAmount0}
-              defaultToken={ftm as Token}
-              selectedToken={machineState.context.collateralToken0}
-              onSelectToken={onSelectCollateralToken0}
-              onAmountChange={onSelectCollateralAmount0}
-            />
-          </div>
 
-          {/* Wanted borrow token */}
-          <div className="">
-            <div className="flex justify-between items-center">
-              <ShowWhenTrue when={modeState.matches("borrow")}>
-                <Label variant="create">Wanted Borrow Token</Label>
-              </ShowWhenTrue>
-              <ShowWhenTrue when={modeState.matches("lend")}>
-                <Label variant="create">Your Lending Token</Label>
-              </ShowWhenTrue>
-              <TokenValuation
-                token={machineState.context.token}
-                price={machineState.context.tokenPrice}
-                amount={Number(machineState.context.tokenAmount)}
-                value={Number(machineState.context.tokenValue)}
-                className="mb-2 italic"
+            {/* Wanted borrow token */}
+            <div className="">
+              <div className="flex justify-between items-center">
+                <ShowWhenTrue when={modeState.matches("borrow")}>
+                  <Label variant="create">Wanted Borrow Token</Label>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={modeState.matches("lend")}>
+                  <Label variant="create">Your Lending Token</Label>
+                </ShowWhenTrue>
+                <TokenValuation
+                  token={machineState.context.token}
+                  price={machineState.context.tokenPrice}
+                  amount={Number(machineState.context.tokenAmount)}
+                  value={Number(machineState.context.tokenValue)}
+                  className="mb-2 italic"
+                />
+              </div>
+              <SelectToken
+                tokens={tokens}
+                amount={machineState.context.tokenAmount}
+                selectedToken={machineState.context.token}
+                defaultToken={usdc as Token}
+                onSelectToken={onSelectToken}
+                onAmountChange={onSelectTokenAmount}
               />
             </div>
-            <SelectToken
-              tokens={tokens}
-              amount={machineState.context.tokenAmount}
-              selectedToken={machineState.context.token}
-              defaultToken={usdc as Token}
-              onSelectToken={onSelectToken}
-              onAmountChange={onSelectTokenAmount}
-            />
           </div>
 
           {/* LTV Ratio */}

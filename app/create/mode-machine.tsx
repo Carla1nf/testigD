@@ -2,7 +2,7 @@ import { createMachine } from "xstate"
 
 export const modeMachine = createMachine({
   id: "mode",
-  initial: "borrow",
+  initial: "lend",
   types: {} as {
     events: { type: "mode" }
   },
