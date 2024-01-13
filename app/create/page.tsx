@@ -31,6 +31,8 @@ import { toDecimals } from "@/lib/erc20"
 import pluralize from "pluralize"
 import Link from "next/link"
 import { decodeEventLog, parseAbi } from "viem"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
+import DisplayNetwork from "@/components/ux/display-network"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -320,12 +322,19 @@ export default function Create() {
   const actualInterest = totalLoanInterest - loanFee
   const interestPerDay = actualInterest / durationDays / 100
 
+  const breadcrumbs = useMemo(() => {
+    const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
+
+    return result
+  }, [currentChain])
+
   return (
     <div className="animate-enter-div">
-      <h1 className="">Create</h1>
-      <p className="mb-16">
-        Let&apos;s keep this simple for now, we will just create a form and hook it up to the xstate machine
-      </p>
+      {/* Page header */}
+      <div className="@container mb-8 space-y-4">
+        <Breadcrumbs items={breadcrumbs} />
+        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Create Offer</h1>
+      </div>
 
       {/* We can only switch modes when the filling out the form or confirming the offer */}
       <ShowWhenTrue when={machineState.matches("form") || machineState.matches("confirmation")}>
