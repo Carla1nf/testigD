@@ -138,12 +138,10 @@ export default function Create() {
           const _paymentCount = context.numberOfPayments
 
           try {
-            const collateral0 = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
+            const collateralAmount = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
 
             const lenderAddress = context.token.address
             const collateralAddress = context.collateralToken0.address
-
-            const collateralAmount = collateral0
             const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
             // calculate value
@@ -165,7 +163,7 @@ export default function Create() {
                 "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
               ],
               account: address,
-              gas: BigInt(3300000),
+              gas: BigInt(4000000),
             })
 
             const executed = await writeContract(request)
@@ -234,7 +232,6 @@ export default function Create() {
   )
 
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
-  const [id, setId] = useState(0)
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   // console.log("context", machineState.context)
