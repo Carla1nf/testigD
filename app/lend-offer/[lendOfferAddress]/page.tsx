@@ -399,6 +399,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const canAlterEditUpdateForm =
     state.matches("isOwner.editing") || state.matches("isOwner.errorIncreasingPrincipleAllowance")
 
+  const canShowCancelOfferButton =
+    state.matches("isOwner.idle") ||
+    state.matches("isOwner.editing") ||
+    state.matches("isOwner.checkPrincipleAllowance") ||
+    state.matches("isOwner.increasePrincipleAllowance") ||
+    state.matches("isOwner.errorIncreasingPrincipleAllowance")
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
   useEffect(() => {
@@ -574,7 +580,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               </div>
               <div>
                 {/* Cancel the offer */}
-                <ShowWhenTrue when={state.matches("isOwner")}>
+                <ShowWhenTrue when={canShowCancelOfferButton}>
                   <Button
                     variant="action"
                     className="h-full w-full"
