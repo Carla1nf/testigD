@@ -238,7 +238,7 @@ export default function Create() {
 
   // console.log("context", machineState.context)
   console.log("machineState.value", machineState.value)
-  console.log("modeState.value", modeState.value)
+  // console.log("modeState.value", modeState.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.

@@ -13,6 +13,11 @@ export const tokenSchema = z.object({
   isNative: z.boolean(),
   isLp: z.boolean(),
   icon: z.string(),
+  nft: z.object({
+    isNft: z.boolean(),
+    underlying: ethereumAddressSchema.optional(),
+    description: z.string().optional(),
+  }),
 })
 
 export type Token = z.infer<typeof tokenSchema>
@@ -30,6 +35,11 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: true,
       isLp: false,
       icon: "/files/tokens/fantom/ftm-native.svg",
+      nft: {
+        nft: {
+          isNft: false,
+        },
+      },
     },
     {
       name: "FTM",
@@ -40,6 +50,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: true,
       isLp: false,
       icon: "/files/tokens/fantom/ftm-native.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "axlUSDC",
@@ -50,6 +63,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/axlUSDC.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "EQUAL",
@@ -60,6 +76,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/equal.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "BEETS",
@@ -70,6 +89,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/beets.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "BOO",
@@ -80,6 +102,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/boo.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "MUMMY",
@@ -90,6 +115,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/mmy.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "WIGO",
@@ -100,6 +128,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/wigo.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "STG",
@@ -110,6 +141,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/stg.svg",
+      nft: {
+        isNft: false,
+      },
     },
     {
       name: "fSonic LP",
@@ -120,6 +154,9 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: true,
       icon: "/files/tokens/fantom/lp-fsonic.svg",
+      nft: {
+        isNft: false,
+      },
     },
 
     {
@@ -131,6 +168,24 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/rats.png",
+      nft: {
+        isNft: true,
+      },
+    },
+    {
+      name: "Vested EQUAL",
+      symbol: "veEQUAL",
+      decimals: 18,
+      address: "0x8313f3551c4d3984ffbadfb42f780d0c8763ce94",
+      chainId: fantom.id,
+      isNative: false,
+      isLp: false,
+      icon: "/files/tokens/fantom/ve-equal.png",
+      nft: {
+        isNft: true,
+        underlying: "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6",
+        description: "",
+      },
     },
   ],
 }
