@@ -131,31 +131,49 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     console.log("transaction", transaction)
   }
 
-  const editOffer = async () => {
-    const newBorrow = borrowingToken ? Number(newBorrowAmount) * 10 ** borrowingToken?.decimals : 0
-    const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
+  const updateOffer = async () => {
+    try {
+      const newBorrow = borrowingToken ? Number(newBorrowAmount) * 10 ** borrowingToken?.decimals : 0
+      const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
 
-    const { request } = await config.publicClient.simulateContract({
-      address: OFFER_CREATED_ADDRESS,
-      functionName: "editOffer",
-      abi: createdOfferABI,
-      args: [
-        [newBorrow, newCollateral],
-        [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
-        0,
-        0,
-      ],
-      account: address, // gas: BigInt(900000),
-      // chainId: currentChain?.chainId,
-    })
+      const { request } = await config.publicClient.simulateContract({
+        address: OFFER_CREATED_ADDRESS,
+        functionName: "editOffer",
+        abi: createdOfferABI,
+        args: [
+          [newBorrow, newCollateral],
+          [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
+          0,
+          0,
+        ],
+        account: address, // gas: BigInt(900000),
+        // chainId: currentChain?.chainId,
+      })
 
-    const executed = await writeContract(request)
-    console.log(executed)
-    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-    console.log("transaction", transaction)
+      const executed = await writeContract(request)
+      console.log(executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
-    /* args: [[newAmountLending, newAmountCollateral], [newInterest,
-      newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT], */
+      toast({
+        variant: "success",
+        title: "Offer Updated",
+        description: "You have updated the offer.",
+        // tx: executed,
+      })
+
+      /* args: [[newAmountLending, newAmountCollateral], [newInterest,
+        newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT], */
+    } catch (error) {
+      console.log("updateOffer→error", error)
+      toast({
+        variant: "error",
+        title: "Error Updating Offer",
+        description: prettifyRpcError({ error, nativeTokenSymbol: currentChain?.symbol }),
+        // tx: executed,
+      })
+      throw error
+    }
   }
 
   const cancelOffer = async () => {
@@ -362,6 +380,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         increaseCollateralAllowance: fromPromise(increaseCollateralAllowance),
         checkPrincipleAllowance: fromPromise(checkPrincipleAllowance),
         increasePrincipleAllowance: fromPromise(increasePrincipleAllowance),
+        updateOffer: fromPromise(updateOffer),
       },
     })
   )
