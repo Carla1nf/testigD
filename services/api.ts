@@ -4,7 +4,7 @@ import z from "zod"
 
 const GetDataElementSchema = z.tuple([z.string(), z.number(), z.number(), z.string(), z.string()])
 const GetDataNestedArraySchema = z.array(GetDataElementSchema)
-const GetDataSchema = z.tuple([GetDataNestedArraySchema, GetDataNestedArraySchema, z.number()])
+const GetDataSchema = z.tuple([GetDataNestedArraySchema, GetDataNestedArraySchema, z.number(), z.any(), z.any()])
 
 /**
  * event LenderOfferCreated(
@@ -109,6 +109,8 @@ const GetDataResponse = z.object({
   lend: z.array(LenderOfferCreatedSchema),
   borrow: z.array(CollateralOfferCreatedSchema),
   totalLiquidityLent: z.number(),
+  pointsPerAddress: z.array(z.array(z.string(), z.number())),
+  pointsPerToken: z.array(z.array(z.string(), z.number())),
 })
 
 export type GetDataResponse = z.infer<typeof GetDataResponse>
@@ -172,6 +174,8 @@ const transformGetDataResponse = (response: GetData): GetDataResponse => {
       })
     }),
     totalLiquidityLent: response[2] / 100,
+    pointsPerAddress: response[3],
+    pointsPerToken: response[4],
   }
 }
 
