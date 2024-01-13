@@ -240,7 +240,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         return Promise.resolve()
       }
 
-      if (Number(currentPrincipleTokenAllowance) >= Number(principle?.amountRaw ?? 0)) {
+      const borrowAmountRaw = Number(newBorrowAmount) * 10 ** (borrowingToken?.decimals ?? 18)
+
+      if (Number(currentPrincipleTokenAllowance) >= Number(borrowAmountRaw ?? 0)) {
         return Promise.resolve()
       }
 
@@ -260,16 +262,16 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       console.log("increasePrincipleAllowance")
       console.log("principle?.address", collateral?.address)
 
-      const amountRaw = Number(newBorrowAmount) * 10 ** (borrowingToken?.decimals ?? 18)
+      const borrowAmountRaw = Number(newBorrowAmount) * 10 ** (borrowingToken?.decimals ?? 18)
 
       console.log("newBorrowAmount", newBorrowAmount)
-      console.log("amountRaw", amountRaw)
+      console.log("borrowAmountRaw", borrowAmountRaw)
 
       const { request } = await config.publicClient.simulateContract({
         address: (principle?.address ?? "") as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [OFFER_CREATED_ADDRESS, BigInt(amountRaw ?? 0)],
+        args: [OFFER_CREATED_ADDRESS, BigInt(borrowAmountRaw ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -968,10 +970,21 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   </div>
                 </ShowWhenTrue>
                 <ShowWhenTrue when={state.matches("isOwner.updatingOffer")}>
-                  <Button variant="action" className="h-full w-1/2">
-                    Updating Offer
-                    <SpinnerIcon className="ml-2 animate-spin-slow" />
-                  </Button>
+                  <div className="flex justify-between w-full">
+                    <Button
+                      variant="ghost"
+                      className=""
+                      onClick={() => {
+                        send({ type: "cancel" })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button variant="action" className="h-full px-8">
+                      Updating Offer
+                      <SpinnerIcon className="ml-2 animate-spin-slow" />
+                    </Button>
+                  </div>
                 </ShowWhenTrue>
               </ShowWhenTrue>
             </div>

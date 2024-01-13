@@ -172,6 +172,11 @@ export const machine = createMachine(
                 },
               ],
             },
+            on: {
+              cancel: {
+                target: "editing",
+              },
+            },
           },
           increasePrincipleAllowance: {
             invoke: {
