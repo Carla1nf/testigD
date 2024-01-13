@@ -141,9 +141,9 @@ export const machine = createMachine(
           },
           checkPrincipleAllowance: {
             invoke: {
+              input: {},
               src: "checkPrincipleAllowance",
               id: "checkPrincipleAllowance",
-              input: {},
               onDone: [
                 {
                   target: "updatingOffer",
@@ -158,9 +158,9 @@ export const machine = createMachine(
           },
           updatingOffer: {
             invoke: {
+              input: {},
               src: "updateOffer",
               id: "updateOffer",
-              input: {},
               onDone: [
                 {
                   target: "idle",
@@ -178,16 +178,21 @@ export const machine = createMachine(
               input: {},
               src: "increasePrincipleAllowance",
               id: "increasePrincipleAllowance",
-              onError: [
-                {
-                  target: "increasePrincipleAllowanceError",
-                },
-              ],
               onDone: [
                 {
                   target: "updatingOffer",
                 },
               ],
+              onError: [
+                {
+                  target: "errorIncreasingPrincipleAllowance",
+                },
+              ],
+            },
+            on: {
+              cancel: {
+                target: "editing",
+              },
             },
           },
           errorUpdatingOffer: {
@@ -197,10 +202,13 @@ export const machine = createMachine(
               },
             },
           },
-          increasePrincipleAllowanceError: {
+          errorIncreasingPrincipleAllowance: {
             on: {
               "owner.increase.principle.allowance.retry": {
                 target: "increasePrincipleAllowance",
+              },
+              cancel: {
+                target: "editing",
               },
             },
           },
@@ -216,18 +224,19 @@ export const machine = createMachine(
       events: {} as
         | { type: "user.has.allowance" }
         | { type: "user.not.has.allowance" }
-        | { type: "user.allowance.increase" }
         | { type: "user.accept.offer" }
+        | { type: "user.allowance.increase" }
         | { type: "user.accept.offer.retry" }
+        | { type: "user.increase.collateral.allowance.retry" }
         | { type: "owner" }
         | { type: "owner.cancel" }
-        | { type: "owner.retry" }
-        | { type: "not.owner" }
         | { type: "owner.editing" }
         | { type: "owner.update.offer" }
+        | { type: "owner.retry" }
         | { type: "owner.update.offer.retry" }
         | { type: "owner.increase.principle.allowance.retry" }
-        | { type: "user.increase.collateral.allowance.retry" },
+        | { type: "not.owner" }
+        | { type: "cancel" },
     },
   },
   {

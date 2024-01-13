@@ -70,11 +70,19 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const config = useConfig()
   const { toast } = useToast()
   const [amountToBorrow, setAmountToBorrow] = useState(0)
-  const newCollateralAmount = useRef<HTMLInputElement>(null)
-  const newBorrowAmount = useRef<HTMLInputElement>(null)
-  const newPaymentCount = useRef<HTMLInputElement>(null)
-  const newTimelap = useRef<HTMLInputElement>(null)
-  const newInterest = useRef<HTMLInputElement>(null)
+  const newCollateralAmountRef = useRef<HTMLInputElement>(null)
+  const newBorrowAmountRef = useRef<HTMLInputElement>(null)
+  const newPaymentCountRef = useRef<HTMLInputElement>(null)
+  const newTimelapRef = useRef<HTMLInputElement>(null)
+  const newInterestRef = useRef<HTMLInputElement>(null)
+
+  // for now we will set values into state, this might go into a machine soon, let's see
+  const [newCollateralAmount, setNewCollateralAmount] = useState(0)
+  const [newBorrowAmount, setNewBorrowAmount] = useState(0)
+  const [newPaymentCount, setNewPaymentCount] = useState(0)
+  const [newTimelap, setNewTimelap] = useState(0)
+  const [newInterest, setNewInterest] = useState(0)
+
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const lendOfferAddress = params.lendOfferAddress
@@ -124,22 +132,16 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   }
 
   const editOffer = async () => {
-    const newBorrow = borrowingToken ? Number(newBorrowAmount.current?.value) * 10 ** borrowingToken?.decimals : 0
+    const newBorrow = borrowingToken ? Number(newBorrowAmount) * 10 ** borrowingToken?.decimals : 0
+    const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
 
-    const newCollateral = collateralToken
-      ? Number(newCollateralAmount.current?.value) * 10 ** collateralToken?.decimals
-      : 0
     const { request } = await config.publicClient.simulateContract({
       address: OFFER_CREATED_ADDRESS,
       functionName: "editOffer",
       abi: createdOfferABI,
       args: [
         [newBorrow, newCollateral],
-        [
-          Number(newInterest.current?.value) * 100,
-          Number(newPaymentCount.current?.value),
-          Number(newTimelap.current?.value) * 86400,
-        ],
+        [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
         0,
         0,
       ],
@@ -187,7 +189,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   }
 
   /**
-   * This action increases the collateral allowance, it is used by the user/borrower who will pay the collateral to begin the loan
+   * This action increases the collateral allowance, it is used by the user/borrower who will deposit the collateral to begin the loan
    * @returns
    */
   const increaseCollateralAllowance = async () => {
@@ -245,6 +247,53 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       return Promise.reject()
     } catch (error: any) {
       console.log("checkPrincipleAllowance", error)
+      throw error
+    }
+  }
+
+  const increasePrincipleAllowance = async () => {
+    try {
+      if (principle?.address === ZERO_ADDRESS) {
+        return Promise.reject("Unknown principle token")
+      }
+
+      console.log("increasePrincipleAllowance")
+      console.log("principle?.address", collateral?.address)
+
+      const amountRaw = Number(newBorrowAmount) * 10 ** (borrowingToken?.decimals ?? 18)
+
+      console.log("newBorrowAmount", newBorrowAmount)
+      console.log("amountRaw", amountRaw)
+
+      const { request } = await config.publicClient.simulateContract({
+        address: (principle?.address ?? "") as Address,
+        functionName: "approve",
+        abi: erc20Abi,
+        args: [OFFER_CREATED_ADDRESS, BigInt(amountRaw ?? 0)],
+        account: address,
+      })
+      // console.log("increaseAllowance→request", request)
+
+      const executed = await writeContract(request)
+      console.log("increasePrincipleAllowance→executed", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
+
+      toast({
+        variant: "success",
+        title: "Allowance Increased",
+        description: "You have increased the allowance and can now update the offer.",
+        // tx: executed,
+      })
+      return executed
+    } catch (error: any) {
+      toast({
+        variant: "error",
+        title: "Allowance Error",
+        description: prettifyRpcError({ error, nativeTokenSymbol: currentChain?.symbol }),
+        // tx: executed,
+      })
+      console.log("increasePrincipleAllowance→error", error)
       throw error
     }
   }
@@ -310,11 +359,24 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         cancelOffer: fromPromise(cancelOffer),
         increaseCollateralAllowance: fromPromise(increaseCollateralAllowance),
         checkPrincipleAllowance: fromPromise(checkPrincipleAllowance),
+        increasePrincipleAllowance: fromPromise(increasePrincipleAllowance),
       },
     })
   )
 
   console.log("state.value", state.value)
+
+  const shouldShowEditOfferForm =
+    state.matches("isOwner.editing") ||
+    state.matches("isOwner.checkPrincipleAllowance") ||
+    state.matches("isOwner.increasePrincipleAllowance") ||
+    state.matches("isOwner.errorIncreasingPrincipleAllowance") ||
+    state.matches("isOwner.updateOffer") ||
+    state.matches("isOwner.updatingOffer") ||
+    state.matches("isOwner.errorUpdatingOffer")
+
+  const canAlterEditUpdateForm =
+    state.matches("isOwner.editing") || state.matches("isOwner.errorIncreasingPrincipleAllowance")
 
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
@@ -359,6 +421,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       }
     }
   }, [isOwnerConnected, currentCollateralTokenAllowance, state, send, collateral])
+
+  // initialise the state values whenever we enter the isOwner.editing state
+  useEffect(() => {
+    if (state.matches("isOwner.editing")) {
+      setNewCollateralAmount(collateral?.amount ?? 0)
+      setNewBorrowAmount(principle?.amount ?? 0)
+      setNewPaymentCount(offer?.paymentCount ?? 0)
+      setNewTimelap(offer?.numberOfLoanDays ?? 0)
+      setNewInterest(offer?.interest ?? 0)
+    }
+  }, [collateral?.amount, offer?.interest, offer?.numberOfLoanDays, offer?.paymentCount, principle?.amount, state])
 
   // BREADCRUMBS
   // CONFIG
@@ -567,16 +640,20 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <div className="-ml-[px]">
                   {collateral && collateralToken ? (
                     <>
-                      {state.matches("isOwner.editing") ? (
+                      {shouldShowEditOfferForm ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
                             max={offer?.isNFT[1] ? 1 : 10000000000000}
                             type="number"
-                            ref={newCollateralAmount}
+                            ref={newCollateralAmountRef}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                             placeholder={`new ${collateralToken.symbol} amount`}
                             defaultValue={collateral.amount}
+                            onChange={(e) => {
+                              setNewCollateralAmount(Number(e.target.value))
+                            }}
+                            disabled={!canAlterEditUpdateForm}
                           />
                           {collateralToken.symbol}
                         </div>
@@ -602,16 +679,20 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <>
                   {principle && borrowingToken ? (
                     <>
-                      {state.matches("isOwner.editing") ? (
+                      {shouldShowEditOfferForm ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
                             type="number"
                             max={offer?.isNFT[0] ? 1 : 10000000000000}
-                            ref={newBorrowAmount}
+                            ref={newBorrowAmountRef}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                             placeholder={`new ${borrowingToken.symbol} amount`}
                             defaultValue={principle.amount}
+                            onChange={(e) => {
+                              setNewBorrowAmount(Number(e.target.value))
+                            }}
+                            disabled={!canAlterEditUpdateForm}
                           />
                           {borrowingToken.symbol}
                         </div>
@@ -641,37 +722,45 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="grid grid-cols-3 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Payments Am.</div>
-                <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                <ShowWhenTrue when={shouldShowEditOfferForm}>
                   <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
                       type="number"
-                      ref={newPaymentCount}
+                      ref={newPaymentCountRef}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new amount`}
                       defaultValue={Number(offer?.paymentCount ?? 0)}
+                      onChange={(e) => {
+                        setNewPaymentCount(Number(e.target.value))
+                      }}
+                      disabled={!canAlterEditUpdateForm}
                     />
                   </div>
                 </ShowWhenTrue>
-                <ShowWhenFalse when={state.matches("isOwner.editing")}>
+                <ShowWhenFalse when={shouldShowEditOfferForm}>
                   <div className="text-base">{Number(offer?.paymentCount ?? 0)}</div>
                 </ShowWhenFalse>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Payments Every</div>
-                <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                <ShowWhenTrue when={shouldShowEditOfferForm}>
                   <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
                       type="number"
-                      ref={newTimelap}
+                      ref={newTimelapRef}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new timelap`}
                       defaultValue={Number(offer?.numberOfLoanDays ?? 0)}
+                      onChange={(e) => {
+                        setNewTimelap(Number(e.target.value))
+                      }}
+                      disabled={!canAlterEditUpdateForm}
                     />
                   </div>
                 </ShowWhenTrue>
-                <ShowWhenFalse when={state.matches("isOwner.editing")}>
+                <ShowWhenFalse when={shouldShowEditOfferForm}>
                   <div className="text-base">
                     {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                   </div>
@@ -687,19 +776,23 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="mt-4 grid grid-cols-2 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Total Interest</div>
-                <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                <ShowWhenTrue when={shouldShowEditOfferForm}>
                   <div className="flex items-center gap-2 animate-enter-div mt-1">
                     <input
                       min={0}
                       type="number"
-                      ref={newInterest}
+                      ref={newInterestRef}
                       className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                       placeholder={`new interest`}
                       defaultValue={Number((offer?.interest ?? 0) * 100)}
+                      onChange={(e) => {
+                        setNewInterest(Number(e.target.value))
+                      }}
+                      disabled={!canAlterEditUpdateForm}
                     />
                   </div>
                 </ShowWhenTrue>
-                <ShowWhenFalse when={state.matches("isOwner.editing")}>
+                <ShowWhenFalse when={shouldShowEditOfferForm}>
                   <div className="text-base">
                     {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
                     {percent({ value: offer?.interest ?? 0 })})
@@ -754,7 +847,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       variant="error"
                       className="h-full w-full gap-2"
                       onClick={() => {
-                        send({ type: "user.allowance.increase.retry" })
+                        send({ type: "user.increase.collateral.allowance.retry" })
                       }}
                     >
                       <XCircle className="h-5 w-5" />
@@ -817,16 +910,69 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </>
               </ShowWhenTrue>
 
-              <ShowWhenTrue when={state.matches("isOwner.editing")}>
-                <Button
-                  variant="action"
-                  className="h-full w-1/2"
-                  onClick={() => {
-                    send({ type: "owner.update.offer" })
-                  }}
-                >
-                  Update Offer
-                </Button>
+              <ShowWhenTrue when={shouldShowEditOfferForm}>
+                <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                  <Button
+                    variant="action"
+                    className="h-full w-1/2"
+                    onClick={() => {
+                      send({ type: "owner.update.offer" })
+                    }}
+                  >
+                    Update Offer
+                  </Button>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={state.matches("isOwner.checkPrincipleAllowance")}>
+                  <Button variant="action" className="h-full w-1/2">
+                    Update Offer
+                  </Button>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={state.matches("isOwner.increasePrincipleAllowance")}>
+                  <div className="flex justify-between w-full">
+                    <Button
+                      variant="ghost"
+                      className=""
+                      onClick={() => {
+                        send({ type: "cancel" })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button variant="action" className="h-full w-1/2">
+                      Increase Allowance
+                      <SpinnerIcon className="ml-2 animate-spin-slow" />
+                    </Button>
+                  </div>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={state.matches("isOwner.errorIncreasingPrincipleAllowance")}>
+                  <div className="flex justify-between w-full">
+                    <Button
+                      variant="ghost"
+                      className=""
+                      onClick={() => {
+                        send({ type: "cancel" })
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="error"
+                      className="px-12 gap-2"
+                      onClick={() => {
+                        send({ type: "owner.increase.principle.allowance.retry" })
+                      }}
+                    >
+                      <XCircle className="h-5 w-5" />
+                      Increase Allowance Failed - Retry?
+                    </Button>
+                  </div>
+                </ShowWhenTrue>
+                <ShowWhenTrue when={state.matches("isOwner.updatingOffer")}>
+                  <Button variant="action" className="h-full w-1/2">
+                    Updating Offer
+                    <SpinnerIcon className="ml-2 animate-spin-slow" />
+                  </Button>
+                </ShowWhenTrue>
               </ShowWhenTrue>
             </div>
           </div>
