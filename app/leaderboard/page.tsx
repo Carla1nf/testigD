@@ -2,14 +2,17 @@
 
 import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
-import { findInternalTokenByAddress } from "@/lib/tokens"
+import { Token, findInternalTokenByAddress, getAllTokens } from "@/lib/tokens"
 import { useDebitaDataQuery } from "@/services/queries"
 
 export default function LeaderBoardPage() {
   const { data, isSuccess } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
 
-  const token = findInternalTokenByAddress(currentChain.slug, "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6")
+  const getToken = (address: string): Token => {
+    const token = findInternalTokenByAddress(currentChain.slug, address)
+    return token ? token : getAllTokens(currentChain.slug)[0]
+  }
 
   return (
     <div className="flex flex-col gap-12">
@@ -21,11 +24,11 @@ export default function LeaderBoardPage() {
           </div>
         </div>
         <div className=" w-full flex md:flex-row flex-col md:items-center gap-7 justify-end">
-          <div className="bg-black/20  h-10 rounded flex items-center font-semibold gap-2 px-7">
+          <div className="bg-gray-500/10 h-10 rounded-xl flex items-center font-semibold gap-2 px-7">
             <div className="text-sm text-gray-400">Season bounties: </div>
             <div>12,000,000 DBT </div>
           </div>
-          <div className="bg-black/20  h-10 rounded flex items-center font-semibold gap-2 px-7">
+          <div className="bg-gray-500/10 h-10 rounded-xl flex items-center font-semibold gap-2 px-7">
             <div className="text-sm text-gray-400">Time left:</div>
             <div>30d 20h 13m </div>
           </div>
@@ -42,15 +45,24 @@ export default function LeaderBoardPage() {
             return (
               <>
                 {index == 0 ? null : (
-                  <div key={index} className=" bg-pink-400/10 h-12 flex rounded-lg items-center  font-bold text-sm">
-                    <div className="w-full px-4 flex">
-                      {index}. {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
+                  <>
+                    <div
+                      key={index}
+                      className={`${
+                        index % 2 == 0 ? "" : "bg-gray-500/10"
+                      }  h-10 flex animate-enter-div rounded items-center   text-sm`}
+                    >
+                      <div className="w-full px-4 flex gap-3">
+                        <div className="text-gray-400"> {index}.</div>{" "}
+                        {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
+                      </div>
+                      <div className="w-full font-bold">{item[1]}</div>
+                      <div className="w-full flex gap-2">
+                        {((12000000 / Number(data?.pointsPerAddress[0][1])) * Number(item[1])).toFixed(1)}
+                        <div className="text-gray-400 font-bold">DBT</div>
+                      </div>
                     </div>
-                    <div className="w-full">{item[1]}</div>
-                    <div className="w-full">
-                      {(12000000 / Number(data?.pointsPerAddress[0][1])) * Number(item[1])} DBT
-                    </div>
-                  </div>
+                  </>
                 )}
               </>
             )
@@ -63,12 +75,25 @@ export default function LeaderBoardPage() {
               <div className="w-full">Lend</div>
               <div className="w-full">Borrow</div>
             </div>
-            <div className="h-12 flex items-center">
-              <div className="w-full ">
-                {token ? <DisplayToken size={28} token={token} chainSlug={currentChain.slug} /> : null}
+            {data?.pointsPerToken.map((item, index) => {
+              return (
+                <div className="h-10 flex items-center">
+                  <div className="w-full ">
+                    <DisplayToken size={28} token={getToken(item[0])} chainSlug={currentChain.slug} />
+                  </div>
+                  <div className="w-full font-semibold">x{(Number(item[1]) / 100).toFixed(2)}</div>
+                  <div className="w-full font-semibold">x{(Number(item[2]) / 100).toFixed(2)}</div>
+                </div>
+              )
+            })}
+
+            <div className="h-10 flex items-center">
+              <div className="w-full flex gap-2 items-center">
+                <div className="h-8 w-8 bg-gray-800 rounded-full"></div>
+                <div>Others</div>
               </div>
-              <div className="w-full font-semibold">x1.67</div>
-              <div className="w-full font-semibold">x2.15</div>
+              <div className="w-full font-semibold">x1.00</div>
+              <div className="w-full font-semibold">x1.00</div>
             </div>
           </div>
         </div>

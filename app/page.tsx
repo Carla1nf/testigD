@@ -34,7 +34,7 @@ export default function Home() {
                   Launch app
                 </Button>
                 <Button className="bg-black/30 text-white" variant="secondary">
-                  <span>Watch how Debita v1.0 works</span>
+                  <span>Watch how Debita V2 works</span>
                 </Button>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function Home() {
       <div className="flex flex-col gap-10 ml-16 mt-28">
         <div className="p-5 font-bold text-2xl">Debita Markets</div>
         <div className="flex">
-          {["Fantom", "Base"].map((chain, index) => {
+          {["Fantom"].map((chain, index) => {
             return (
               <div
                 key={chain}

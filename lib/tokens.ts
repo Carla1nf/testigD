@@ -36,9 +36,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isLp: false,
       icon: "/files/tokens/fantom/ftm-native.svg",
       nft: {
-        nft: {
-          isNft: false,
-        },
+        isNft: false,
       },
     },
     {
