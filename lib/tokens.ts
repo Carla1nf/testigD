@@ -182,6 +182,8 @@ export const INTERNAL_TOKENS: Tokens = {
       nft: {
         isNft: true,
         underlying: "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6",
+        info: "0x12345678",
+        infoType: "VeToken",
         description: "",
       },
     },
