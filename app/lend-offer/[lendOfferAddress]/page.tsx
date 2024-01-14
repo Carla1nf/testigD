@@ -32,6 +32,7 @@ import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
 import { machine } from "./lend-offer-machine"
 import OwnerCancelButtons from "./components/owner-cancel-buttons"
+import NotOwnerInfo from "./components/not-owner-info"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -573,66 +574,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         <div className="space-y-8 max-w-xl w-full xl:ml-16">
           {/* Owners can cancel the offer */}
           <OwnerCancelButtons state={state} send={send} />
-          {/* <ShowWhenTrue when={state.matches("isOwner")}>
-            <div className="grid grid-cols-2 justify-between gap-8">
-              <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
-                You are the Owner
-                <PersonIcon className="w-6 h-6" />
-                {/* {shortAddress(collateralData?.owner)} */}
-              </div>
-              <div>
-                {/* Cancel the offer */}
-                <ShowWhenTrue when={canShowCancelOfferButton}>
-                  <Button
-                    variant="action"
-                    className="h-full w-full"
-                    onClick={() => {
-                      send({ type: "owner.cancel" })
-                    }}
-                  >
-                    Cancel Offer
-                  </Button>
-                </ShowWhenTrue>
-                <ShowWhenTrue when={state.matches("isOwner.errorCancellingOffer")}>
-                  <Button
-                    variant="error"
-                    className="h-full w-full gap-2"
-                    onClick={() => {
-                      send({ type: "owner.retry" })
-                    }}
-                  >
-                    <XCircle className="h-5 w-5" /> Cancel Failed - Retry?
-                  </Button>
-                </ShowWhenTrue>
-
-                {/* Cancelling the offer */}
-                <ShowWhenTrue when={state.matches("isOwner.cancelling")}>
-                  <Button variant="action" className="h-full w-full">
-                    Cancelling
-                    <SpinnerIcon className="ml-2 animate-spin-slow" />
-                  </Button>
-                </ShowWhenTrue>
-
-                {/* Offer cancelled */}
-                <ShowWhenTrue when={state.matches("isOwner.cancelled")}>
-                  <div className="h-full w-full inline-flex bg-success text-white gap-2 items-center justify-center border border-white/25 rounded-md">
-                    <CheckCircle className="w-5 h-5" /> Cancelled
-                  </div>
-                </ShowWhenTrue>
-              </div>
-            </div>
-          </ShowWhenTrue> */}
 
           {/* Non owners can see who the owner is */}
-          <ShowWhenTrue when={state.matches("isNotOwner")}>
-            <div className="flex justify-between gap-8">
-              <div className="bg-[#21232B]/40 border-2 border-white/10 p-4 w-full rounded-xl flex gap-2 items-center justify-center  ">
-                You could borrow {borrowingToken?.symbol} from
-                <PersonIcon className="w-6 h-6" />
-                {shortAddress(offer?.owner as Address)}
-              </div>
-            </div>
-          </ShowWhenTrue>
+          <NotOwnerInfo state={state} borrowingToken={borrowingToken} ownerAddress={offer?.owner as Address} />
 
           {/* Form Panel */}
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
