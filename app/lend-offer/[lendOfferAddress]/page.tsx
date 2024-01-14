@@ -31,6 +31,7 @@ import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
 import { machine } from "./lend-offer-machine"
+import OwnerCancelButtons from "./components/owner-cancel-buttons"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
