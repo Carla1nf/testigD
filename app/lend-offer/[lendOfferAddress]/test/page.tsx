@@ -13,6 +13,7 @@ import { LucideArrowRight } from "lucide-react"
 import { useEffect, useState } from "react"
 import { fromPromise } from "xstate"
 import { machine } from "../lend-offer-machine"
+import OwnerCancelButtons from "../components/owner-cancel-buttons"
 
 const { inspect } = createBrowserInspector()
 
@@ -116,6 +117,8 @@ export default function TestLendOffer() {
       })}
 
       <div className="text-2xl">Components</div>
+      <div className="text-xl">OwnerCancelButtons</div>
+      <OwnerCancelButtons state={state} send={send} />
     </div>
   )
 }

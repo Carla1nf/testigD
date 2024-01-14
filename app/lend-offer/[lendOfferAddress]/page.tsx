@@ -571,7 +571,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         </div>
         <div className="space-y-8 max-w-xl w-full xl:ml-16">
           {/* Owners can cancel the offer */}
-          <ShowWhenTrue when={state.matches("isOwner")}>
+          <OwnerCancelButtons state={state} send={send} />
+          {/* <ShowWhenTrue when={state.matches("isOwner")}>
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are the Owner
@@ -619,7 +620,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </ShowWhenTrue>
               </div>
             </div>
-          </ShowWhenTrue>
+          </ShowWhenTrue> */}
 
           {/* Non owners can see who the owner is */}
           <ShowWhenTrue when={state.matches("isNotOwner")}>
