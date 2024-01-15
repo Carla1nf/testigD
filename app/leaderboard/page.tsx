@@ -1,6 +1,7 @@
 "use client"
 
 import DisplayToken from "@/components/ux/display-token"
+import Stat from "@/components/ux/stat"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { Token, findInternalTokenByAddress, getAllTokens } from "@/lib/tokens"
 import { useDebitaDataQuery } from "@/services/queries"
@@ -24,14 +25,8 @@ export default function LeaderBoardPage() {
           </div>
         </div>
         <div className=" w-full flex md:flex-row flex-col md:items-center gap-7 justify-end">
-          <div className="bg-gray-500/10 h-10 rounded-xl flex items-center font-semibold gap-2 px-7">
-            <div className="text-sm text-gray-400">Season bounties: </div>
-            <div>12,000,000 DBT </div>
-          </div>
-          <div className="bg-gray-500/10 h-10 rounded-xl flex items-center font-semibold gap-2 px-7">
-            <div className="text-sm text-gray-400">Time left:</div>
-            <div>30d 20h 13m </div>
-          </div>
+          <Stat value={"12,000,000 DBT"} title={"Season bounties"} Icon={null} />
+          <Stat value={"30d 20h 13m"} title={"Time left"} Icon={null} />
         </div>
       </div>
       <div className="flex w-full gap-12">

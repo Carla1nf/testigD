@@ -581,7 +581,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           {/* Form Panel */}
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
             <div className="text-xl mb-4 font-bold flex items-center gap-5">
-              Lending Offer
               <ShowWhenTrue when={state.matches("isOwner")}>
                 <div
                   onClick={async () => {
