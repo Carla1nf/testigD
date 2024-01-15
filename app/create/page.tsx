@@ -27,7 +27,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { decodeEventLog, parseAbi } from "viem"
 import { useConfig } from "wagmi"
 import { readContract, writeContract } from "wagmi/actions"
-import { fromPromise } from "xstate"
+import { fromPromise, setup } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { machine } from "./create-offer-machine"
@@ -70,171 +70,181 @@ export default function Create() {
     }
   }
 
-  const [machineState, machineSend] = useMachine(
+  const checkBorrowingAllowance = async ({ input: { context } }) => {
+    // We need to know if we have enough allowance to create the offer
+    // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+    // collateralAmount of collateralToken
+    if (context.collateralToken.address === ZERO_ADDRESS) {
+      return Promise.resolve({ nativeToken: true, mode: "borrow" })
+    }
+
+    const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
+
+    const currentAllowance = (await readContract({
+      address: context.collateralToken.address,
+      functionName: "allowance",
+      abi: erc20Abi,
+      args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
+    })) as bigint
+
+    if (BigInt(currentAllowance) >= amountRequired) {
+      return Promise.resolve({ currentAllowance, amountRequired, mode: "borrow" })
+    }
+
+    throw "not enough allowance"
+  }
+
+  const approveBorrowAllowance = async ({ input: { context } }) => {
+    // We need to know if we have enough allowance to create the offer
+    // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+    // collateralAmount of collateralToken
+    if (context.collateralToken.address === ZERO_ADDRESS) {
+      return Promise.resolve({ nativeToken: true, mode: "borrow" })
+    }
+
+    const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
+
+    const { request } = await config.publicClient.simulateContract({
+      address: context.collateralToken.address,
+      functionName: "approve",
+      abi: erc20Abi,
+      args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
+      account: address,
+    })
+
+    const executed = await writeContract(request)
+    // console.log("approveBorrowAllowance", executed)
+    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+    console.log("transaction", transaction)
+
+    return { ...executed, mode: "borrow" }
+  }
+
+  const creatingOffer = async ({ input }) => {
+    console.log("creatingOffer")
+    console.log("input", input)
+    const { context, event } = input
+
+    console.log("context", context)
+    console.log("event", event)
+
+    const mode = event.output.mode === "borrow" ? "borrow" : "lend"
+    console.log("mode", mode)
+
+    //  value used in both modes
+    const _interest = context.interestPercent * 100
+    const _timelap = (86400 * context.durationDays) / context.numberOfPayments
+    const _paymentCount = context.numberOfPayments
+
+    try {
+      const collateralAmount = toDecimals(context.collateralAmount, context.collateralToken.decimals)
+
+      const lenderAddress = context.token.address
+      const collateralAddress = context.collateralToken.address
+      const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+
+      // calculate value
+
+      const { request } = await config.publicClient.simulateContract({
+        address: DEBITA_OFFER_FACTORY_ADDRESS,
+        functionName: "createOfferV2",
+        abi: offerFactoryABI,
+        args: [
+          [lenderAddress, collateralAddress],
+          [lenderAmount, collateralAmount],
+          [false, false /*  if assets are NFTs --> false for now*/],
+          _interest,
+          [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
+          100 /*  value of wanted veNFTs --> 0 for now*/,
+          _paymentCount,
+          _timelap,
+          [mode === "lend", true], // [0] --> isLending, [1] --> isPerpetual
+          "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
+        ],
+        account: address,
+        gas: BigInt(4000000),
+      })
+
+      const executed = await writeContract(request)
+      console.log("createLenderOption", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
+      setOfferAddress(transaction)
+    } catch (error: any) {
+      console.log("createLenderOption->error", error)
+
+      return Promise.reject({ error: error.message, mode: "lend" })
+    }
+  }
+
+  const checkingLendAllowance = async ({ input: { context } }) => {
+    // We need to know if we have enough allowance to create the offer
+    // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+    // collateralAmount of collateralToken
+    if (context.token.address === ZERO_ADDRESS) {
+      return Promise.resolve({ nativeToken: true, mode: "lend" })
+    }
+    const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+    const currentAllowance = (await readContract({
+      address: context.token.address,
+      functionName: "allowance",
+      abi: erc20Abi,
+      args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
+    })) as bigint
+
+    if (BigInt(currentAllowance) >= amountRequired) {
+      return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
+    }
+
+    throw "not enough allowance"
+
+    // return allowance0
+  }
+
+  const approveLendAllowance = async ({ input: { context } }) => {
+    // We need to know if we have enough allowance to create the offer
+    // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+
+    // collateralAmount of collateralToken
+    if (context.token.address === ZERO_ADDRESS) {
+      return Promise.resolve({ nativeToken: true, mode: "lend" })
+    }
+
+    const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+
+    const { request } = await config.publicClient.simulateContract({
+      address: context.token.address,
+      functionName: "approve",
+      abi: erc20Abi,
+      args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
+      account: address,
+    })
+
+    const executed = await writeContract(request)
+    // console.log("approveLendAllowance", executed)
+    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+    console.log("transaction", transaction)
+
+    return Promise.resolve({ ...executed, mode: "lend" })
+  }
+
+  const [state, send] = useMachine(
     machine.provide({
       actors: {
-        checkingBorrowAllowance: fromPromise(async ({ input: { context } }) => {
-          // We need to know if we have enough allowance to create the offer
-          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
-
-          // collateralAmount0 of collateralToken0
-          if (context.collateralToken0.address === ZERO_ADDRESS) {
-            return Promise.resolve({ nativeToken: true, mode: "borrow" })
-          }
-
-          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-
-          const currentAllowance = (await readContract({
-            address: context.collateralToken0.address,
-            functionName: "allowance",
-            abi: erc20Abi,
-            args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
-          })) as bigint
-
-          if (BigInt(currentAllowance) >= amountRequired) {
-            return Promise.resolve({ currentAllowance, amountRequired, mode: "borrow" })
-          }
-
-          throw "not enough allowance"
-        }),
-        approveBorrowAllowance: fromPromise(async ({ input: { context } }) => {
-          // We need to know if we have enough allowance to create the offer
-          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
-
-          // collateralAmount0 of collateralToken0
-          if (context.collateralToken0.address === ZERO_ADDRESS) {
-            return Promise.resolve({ nativeToken: true, mode: "borrow" })
-          }
-
-          const amountRequired = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-
-          const { request } = await config.publicClient.simulateContract({
-            address: context.collateralToken0.address,
-            functionName: "approve",
-            abi: erc20Abi,
-            args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
-            account: address,
-          })
-
-          const executed = await writeContract(request)
-          // console.log("approveBorrowAllowance", executed)
-          const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-          console.log("transaction", transaction)
-
-          return { ...executed, mode: "borrow" }
-        }),
-        creatingOffer: fromPromise(async ({ input }) => {
-          console.log("creatingOffer")
-          console.log("input", input)
-          const { context, event } = input
-
-          console.log("context", context)
-          console.log("event", event)
-
-          const mode = event.output.mode === "borrow" ? "borrow" : "lend"
-          console.log("mode", mode)
-
-          //  value used in both modes
-          const _interest = context.interestPercent * 100
-          const _timelap = (86400 * context.durationDays) / context.numberOfPayments
-          const _paymentCount = context.numberOfPayments
-
-          try {
-            const collateralAmount = toDecimals(context.collateralAmount0, context.collateralToken0.decimals)
-
-            const lenderAddress = context.token.address
-            const collateralAddress = context.collateralToken0.address
-            const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
-
-            // calculate value
-
-            const { request } = await config.publicClient.simulateContract({
-              address: DEBITA_OFFER_FACTORY_ADDRESS,
-              functionName: "createOfferV2",
-              abi: offerFactoryABI,
-              args: [
-                [lenderAddress, collateralAddress],
-                [lenderAmount, collateralAmount],
-                [false, false /*  if assets are NFTs --> false for now*/],
-                _interest,
-                [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
-                100 /*  value of wanted veNFTs --> 0 for now*/,
-                _paymentCount,
-                _timelap,
-                [mode === "lend", true], // [0] --> isLending, [1] --> isPerpetual
-                "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
-              ],
-              account: address,
-              gas: BigInt(4000000),
-            })
-
-            const executed = await writeContract(request)
-            console.log("createLenderOption", executed)
-            const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-            console.log("transaction", transaction)
-            setOfferAddress(transaction)
-          } catch (error: any) {
-            console.log("createLenderOption->error", error)
-
-            return Promise.reject({ error: error.message, mode: "lend" })
-          }
-        }),
-        checkingLendAllowance: fromPromise(async ({ input: { context } }) => {
-          // We need to know if we have enough allowance to create the offer
-          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
-
-          // collateralAmount0 of collateralToken0
-          if (context.token.address === ZERO_ADDRESS) {
-            return Promise.resolve({ nativeToken: true, mode: "lend" })
-          }
-          const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
-          const currentAllowance = (await readContract({
-            address: context.token.address,
-            functionName: "allowance",
-            abi: erc20Abi,
-            args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
-          })) as bigint
-
-          if (BigInt(currentAllowance) >= amountRequired) {
-            return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
-          }
-
-          throw "not enough allowance"
-
-          // return allowance0
-        }),
-        approveLendAllowance: fromPromise(async ({ input: { context } }) => {
-          // We need to know if we have enough allowance to create the offer
-          // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
-
-          // collateralAmount0 of collateralToken0
-          if (context.token.address === ZERO_ADDRESS) {
-            return Promise.resolve({ nativeToken: true, mode: "lend" })
-          }
-
-          const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
-
-          const { request } = await config.publicClient.simulateContract({
-            address: context.token.address,
-            functionName: "approve",
-            abi: erc20Abi,
-            args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
-            account: address,
-          })
-
-          const executed = await writeContract(request)
-          // console.log("approveLendAllowance", executed)
-          const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-          console.log("transaction", transaction)
-
-          return Promise.resolve({ ...executed, mode: "lend" })
-        }),
+        checkingBorrowAllowance: fromPromise(checkBorrowingAllowance),
+        approveBorrowAllowance: fromPromise(approveBorrowAllowance),
+        creatingOffer: fromPromise(creatingOffer),
+        checkingLendAllowance: fromPromise(checkingLendAllowance),
+        approveLendAllowance: fromPromise(approveLendAllowance),
       },
     })
   )
 
-  const collateralNfts = useNftInfo({ address, token: machineState?.context?.collateralToken0 })
-  const tokenNfts = useNftInfo({ address, token: machineState?.context?.token })
+  const collateralNfts = useNftInfo({ address, token: state?.context?.collateralToken })
+  const tokenNfts = useNftInfo({ address, token: state?.context?.token })
   console.log("tokenNfts", tokenNfts)
 
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
@@ -254,22 +264,22 @@ export default function Create() {
     if (
       ltvCustomInputRef &&
       ltvCustomInputRef.current &&
-      machineState.context.ltvRatio !== parseFloat(ltvCustomInputValue) &&
+      state.context.ltvRatio !== parseFloat(ltvCustomInputValue) &&
       !ltvCustomInputRef.current.matches(":focus")
     ) {
-      setLtvCustomInputValue(fixedDecimals(machineState?.context?.ltvRatio ?? 0, 3).toString())
+      setLtvCustomInputValue(fixedDecimals(state?.context?.ltvRatio ?? 0, 3).toString())
     }
-  }, [machineState.context.ltvRatio, ltvCustomInputValue])
+  }, [state.context.ltvRatio, ltvCustomInputValue])
 
   // Default tokens
   useEffect(() => {
-    if (ftm && machineState.context.collateralToken0 === undefined) {
-      machineSend({ type: "collateralToken0", value: ftm })
+    if (ftm && state.context.collateralToken === undefined) {
+      send({ type: "collateralToken", value: ftm })
     }
-    if (usdc && machineState.context.token === undefined) {
-      machineSend({ type: "token", value: usdc })
+    if (usdc && state.context.token === undefined) {
+      send({ type: "token", value: usdc })
     }
-  }, [ftm, usdc, machineState.context.collateralToken0, machineSend, machineState.context.token])
+  }, [ftm, usdc, state.context.collateralToken, send, state.context.token])
 
   // TOKENS
   const tokens = useMemo(() => {
@@ -285,63 +295,63 @@ export default function Create() {
   const onSelectCollateralToken0 = useCallback(
     (token: Token | null) => {
       if (token) {
-        machineSend({ type: "collateralToken0", value: token })
+        send({ type: "collateralToken", value: token })
       }
     },
-    [machineSend]
+    [send]
   )
 
   const onSelectCollateralAmount0 = useCallback(
     (value: number | undefined) => {
-      machineSend({ type: "collateralAmount0", value })
+      send({ type: "collateralAmount", value })
     },
-    [machineSend]
+    [send]
   )
 
   const onSelectToken = useCallback(
     (token: Token | null) => {
       if (token) {
-        machineSend({ type: "token", value: token })
+        send({ type: "token", value: token })
       }
     },
-    [machineSend]
+    [send]
   )
 
   // one for collateral another for token?
   const onSelectCollateralUserNft = useCallback(
     (userNft: UserNftInfo | null) => {
       if (userNft) {
-        machineSend({ type: "collateralUserNft", value: userNft })
+        send({ type: "collateralUserNft", value: userNft })
       }
     },
-    [machineSend]
+    [send]
   )
   const onSelectTokenUserNft = useCallback(
     (userNft: UserNftInfo | null) => {
       if (userNft) {
-        machineSend({ type: "tokenUserNft", value: userNft })
+        send({ type: "tokenUserNft", value: userNft })
       }
     },
-    [machineSend]
+    [send]
   )
 
   const onSelectTokenAmount = useCallback(
     (value: number | undefined) => {
-      machineSend({ type: "tokenAmount", value })
+      send({ type: "tokenAmount", value })
     },
-    [machineSend]
+    [send]
   )
 
   const back = useCallback(() => {
-    machineSend({ type: "back" })
-  }, [machineSend])
+    send({ type: "back" })
+  }, [send])
 
   // quick calcs - move to machine later
-  const numberOfPayments = Number(machineState.context.numberOfPayments)
-  const durationDays = Number(machineState.context.durationDays)
+  const numberOfPayments = Number(state.context.numberOfPayments)
+  const durationDays = Number(state.context.durationDays)
   const daysPerPayment = durationDays / numberOfPayments
-  const loanAmount = Number(machineState.context.tokenAmount)
-  const totalLoanInterest = loanAmount * (Number(machineState.context.interestPercent) / 100)
+  const loanAmount = Number(state.context.tokenAmount)
+  const totalLoanInterest = loanAmount * (Number(state.context.interestPercent) / 100)
   const loanFee = totalLoanInterest * 0.06
   const actualInterest = totalLoanInterest - loanFee
   const interestPerDay = actualInterest / durationDays / 100
@@ -362,7 +372,7 @@ export default function Create() {
         </div>
 
         {/* We can only switch modes when the filling out the form or confirming the offer */}
-        <ShowWhenTrue when={machineState.matches("form") || machineState.matches("confirmation")}>
+        <ShowWhenTrue when={state.matches("form") || state.matches("confirmation")}>
           <Tabs
             defaultValue={modeState.value as "lend" | "borrow"}
             className=""
@@ -382,7 +392,7 @@ export default function Create() {
         </ShowWhenTrue>
 
         {/* Form */}
-        <ShowWhenTrue when={machineState.matches("form")}>
+        <ShowWhenTrue when={state.matches("form")}>
           <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
             <div className={cn("flex gap-6", modeState.matches("lend") ? "flex-col-reverse" : "flex-col")}>
               {/* Collateral token 0 */}
@@ -395,19 +405,19 @@ export default function Create() {
                     <Label variant="create">Wanted Collateral Token</Label>
                   </ShowWhenTrue>
                   <TokenValuation
-                    token={machineState.context.collateralToken0}
-                    price={machineState.context.collateralPrice0}
-                    amount={Number(machineState.context.collateralAmount0)}
-                    value={machineState.context.collateralValue0}
+                    token={state.context.collateralToken}
+                    price={state.context.collateralPrice}
+                    amount={Number(state.context.collateralAmount)}
+                    value={state.context.collateralValue}
                     className="mb-2 italic"
                   />
                 </div>
                 <SelectToken
                   tokens={tokens}
-                  amount={machineState.context.collateralAmount0}
+                  amount={state.context.collateralAmount}
                   defaultToken={ftm as Token}
-                  selectedToken={machineState.context.collateralToken0}
-                  selectedUserNft={machineState.context.collateralUserNft}
+                  selectedToken={state.context.collateralToken}
+                  selectedUserNft={state.context.collateralUserNft}
                   onSelectToken={onSelectCollateralToken0}
                   onAmountChange={onSelectCollateralAmount0}
                   userNftInfo={collateralNfts}
@@ -425,18 +435,18 @@ export default function Create() {
                     <Label variant="create">Your Lending Token</Label>
                   </ShowWhenTrue>
                   <TokenValuation
-                    token={machineState.context.token}
-                    price={machineState.context.tokenPrice}
-                    amount={Number(machineState.context.tokenAmount)}
-                    value={Number(machineState.context.tokenValue)}
+                    token={state.context.token}
+                    price={state.context.tokenPrice}
+                    amount={Number(state.context.tokenAmount)}
+                    value={Number(state.context.tokenValue)}
                     className="mb-2 italic"
                   />
                 </div>
                 <SelectToken
                   tokens={tokens}
-                  amount={machineState.context.tokenAmount}
-                  selectedToken={machineState.context.token}
-                  selectedUserNft={machineState.context.tokenUserNft}
+                  amount={state.context.tokenAmount}
+                  selectedToken={state.context.token}
+                  selectedUserNft={state.context.tokenUserNft}
                   defaultToken={usdc as Token}
                   onSelectToken={onSelectToken}
                   onAmountChange={onSelectTokenAmount}
@@ -451,34 +461,34 @@ export default function Create() {
               <Label variant="create">LTV Ratio</Label>
               <div className="grid grid-cols-5 gap-4">
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltv25") ? "option" : "option-muted"}
+                  variant={state.matches("form.ltvRatio.ltv25") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
-                    machineSend({ type: "forceLtvRatio", value: 0.25 })
+                    send({ type: "forceLtvRatio", value: 0.25 })
                   }}
                 >
                   25%
                 </Button>
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltv50") ? "option" : "option-muted"}
+                  variant={state.matches("form.ltvRatio.ltv50") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
-                    machineSend({ type: "forceLtvRatio", value: 0.5 })
+                    send({ type: "forceLtvRatio", value: 0.5 })
                   }}
                 >
                   50%
                 </Button>
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltv75") ? "option" : "option-muted"}
+                  variant={state.matches("form.ltvRatio.ltv75") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
-                    machineSend({ type: "forceLtvRatio", value: 0.75 })
+                    send({ type: "forceLtvRatio", value: 0.75 })
                   }}
                 >
                   75%
                 </Button>
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltvcustom") ? "option" : "option-muted"}
+                  variant={state.matches("form.ltvRatio.ltvcustom") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
                     if (ltvCustomInputRef && ltvCustomInputRef.current) {
@@ -492,17 +502,17 @@ export default function Create() {
                   <Input
                     ref={ltvCustomInputRef}
                     type="number"
-                    variant={machineState.matches("form.ltvRatio.ltvcustom") ? "option" : "option-muted"}
+                    variant={state.matches("form.ltvRatio.ltvcustom") ? "option" : "option-muted"}
                     className="text-center"
                     placeholder="0"
                     value={ltvCustomInputValue}
                     onFocus={() => {
-                      machineSend({ type: "ltv.custom" })
+                      send({ type: "ltv.custom" })
                     }}
                     onBlur={() => {
                       const value = parseFloat(ltvCustomInputValue || "0")
                       if (!Number.isNaN(value)) {
-                        machineSend({ type: "forceLtvRatio", value: value / 100 })
+                        send({ type: "forceLtvRatio", value: value / 100 })
                       }
                     }}
                     onChange={(e) => {
@@ -511,7 +521,7 @@ export default function Create() {
                         setLtvCustomInputValue(e.target.value)
                         const value = parseFloat(e.target.value || "0")
                         if (!Number.isNaN(value)) {
-                          machineSend({ type: "forceLtvRatio", value: value / 100 })
+                          send({ type: "forceLtvRatio", value: value / 100 })
                         }
                       }
                     }}
@@ -526,9 +536,9 @@ export default function Create() {
                 <NumberInput
                   min={0}
                   max={100000}
-                  send={machineSend}
+                  send={send}
                   event="interestPercent"
-                  initialValue={machineState.context.interestPercent}
+                  initialValue={state.context.interestPercent}
                   minFractionDigits={2}
                 />
               </div>
@@ -536,7 +546,7 @@ export default function Create() {
               <div className="flex flex-col gap-2">
                 <Label variant="create">Estimated APR (%)</Label>
                 <div className="text-[#9F9F9F] text-lg font-bold">
-                  {displayEstimatedApr(machineState.context.estimatedApr)}
+                  {displayEstimatedApr(state.context.estimatedApr)}
                 </div>
               </div>
               <div className="flex flex-col gap-1">
@@ -544,9 +554,9 @@ export default function Create() {
                 <NumberInput
                   min={0}
                   max={365}
-                  send={machineSend}
+                  send={send}
                   event="durationDays"
-                  initialValue={machineState.context.durationDays}
+                  initialValue={state.context.durationDays}
                   minFractionDigits={0}
                 />
               </div>
@@ -556,9 +566,9 @@ export default function Create() {
                 <NumberInput
                   min={0}
                   max={10}
-                  send={machineSend}
+                  send={send}
                   event="numberOfPayments"
-                  initialValue={machineState.context.numberOfPayments}
+                  initialValue={state.context.numberOfPayments}
                   minFractionDigits={0}
                 />
               </div>
@@ -568,9 +578,9 @@ export default function Create() {
               <Button
                 variant="action"
                 className="px-12"
-                disabled={!machineState.can({ type: "next" })}
+                disabled={!state.can({ type: "next" })}
                 onClick={() => {
-                  machineSend({ type: "next" })
+                  send({ type: "next" })
                 }}
               >
                 Next
@@ -591,14 +601,14 @@ export default function Create() {
       */}
         <ShowWhenTrue
           when={
-            machineState.matches("confirmation") ||
-            machineState.matches("checkingBorrowAllowance") ||
-            machineState.matches("approveBorrowAllowance") ||
-            machineState.matches("checkingLendAllowance") ||
-            machineState.matches("approveLendAllowance") ||
-            machineState.matches("creating") ||
-            machineState.matches("created") ||
-            machineState.matches("error")
+            state.matches("confirmation") ||
+            state.matches("checkingBorrowAllowance") ||
+            state.matches("approveBorrowAllowance") ||
+            state.matches("checkingLendAllowance") ||
+            state.matches("approveLendAllowance") ||
+            state.matches("creating") ||
+            state.matches("created") ||
+            state.matches("error")
           }
         >
           <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
@@ -634,17 +644,17 @@ export default function Create() {
               <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">Interest</Label>
                 <div className="font-bold text-base text-[#D0D0D0] mb-1">
-                  {fixedDecimals(actualInterest, 3)} {machineState.context.token?.symbol}
+                  {fixedDecimals(actualInterest, 3)} {state.context.token?.symbol}
                 </div>
                 <div className="text-[10px] text-[#9F9F9F] italic">
-                  ({fixedDecimals(loanFee, 6)} {machineState.context.token?.symbol} fee)
+                  ({fixedDecimals(loanFee, 6)} {state.context.token?.symbol} fee)
                 </div>
               </div>
 
               <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">Estimated APR (%)</Label>
                 <div className="font-bold text-base text-[#D0D0D0] mb-1">
-                  {displayEstimatedApr(machineState.context.estimatedApr)}
+                  {displayEstimatedApr(state.context.estimatedApr)}
                 </div>
                 <div className="text-[10px] text-[#9F9F9F] italic">
                   {percent({ value: interestPerDay, decimalsWhenGteOne: 4, decimalsWhenLessThanOne: 4 })} per day
@@ -660,7 +670,7 @@ export default function Create() {
                 <Label variant="create">Collateral Value</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
                   {dollars({
-                    value: machineState.context.collateralValue0 + Number(machineState?.context?.collateralValue1),
+                    value: state.context.collateralValue + Number(state?.context?.collateralValue1),
                   })}
                 </div>
               </div>
@@ -668,7 +678,7 @@ export default function Create() {
               <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">LTV Ratio</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
-                  {fixedDecimals(Number(machineState.context.ltvRatio), 2)}
+                  {fixedDecimals(Number(state.context.ltvRatio), 2)}
                 </div>
               </div>
 
@@ -676,14 +686,14 @@ export default function Create() {
                 <Label variant="create">Loan Value</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
                   {dollars({
-                    value: Number(machineState?.context?.tokenValue),
+                    value: Number(state?.context?.tokenValue),
                   })}
                 </div>
               </div>
             </div>
 
             {/* We will show different buttons depending on the state */}
-            <ShowWhenTrue when={machineState.matches("confirmation")}>
+            <ShowWhenTrue when={state.matches("confirmation")}>
               <div className="mt-8 p-4 flex justify-between">
                 <Button variant="secondary" className="px-12" onClick={back}>
                   Back
@@ -692,7 +702,7 @@ export default function Create() {
                   variant="action"
                   className="px-12"
                   onClick={() => {
-                    machineSend({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
+                    send({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
                   }}
                 >
                   Confirm
@@ -700,9 +710,7 @@ export default function Create() {
               </div>
             </ShowWhenTrue>
 
-            <ShowWhenTrue
-              when={machineState.matches("checkingBorrowAllowance") || machineState.matches("checkingLendAllowance")}
-            >
+            <ShowWhenTrue when={state.matches("checkingBorrowAllowance") || state.matches("checkingLendAllowance")}>
               <div className="mt-8 p-4 flex justify-between">
                 <Button variant="secondary" className="px-12" onClick={back}>
                   Back
@@ -714,9 +722,7 @@ export default function Create() {
               </div>
             </ShowWhenTrue>
 
-            <ShowWhenTrue
-              when={machineState.matches("approveBorrowAllowance") || machineState.matches("approveLendAllowance")}
-            >
+            <ShowWhenTrue when={state.matches("approveBorrowAllowance") || state.matches("approveLendAllowance")}>
               <div className="px-4 mt-4">
                 <Alert variant="info">
                   <AlertCircle className="h-4 w-4" />
@@ -736,10 +742,7 @@ export default function Create() {
             </ShowWhenTrue>
 
             <ShowWhenTrue
-              when={
-                machineState.matches("checkingBorrowAllowanceError") ||
-                machineState.matches("checkingLendAllowanceError")
-              }
+              when={state.matches("checkingBorrowAllowanceError") || state.matches("checkingLendAllowanceError")}
             >
               <div className="px-4">
                 <Alert variant="warning">
@@ -757,7 +760,7 @@ export default function Create() {
                     variant="error"
                     className="px-12 gap-2"
                     onClick={() => {
-                      machineSend({ type: "retry" })
+                      send({ type: "retry" })
                     }}
                   >
                     <XCircle className="h-5 w-5" />
@@ -767,7 +770,7 @@ export default function Create() {
               </div>
             </ShowWhenTrue>
 
-            <ShowWhenTrue when={machineState.matches("creating")}>
+            <ShowWhenTrue when={state.matches("creating")}>
               <div className="px-4">
                 <div className="mt-8 flex justify-end">
                   <Button variant="action" className="px-12">
@@ -778,7 +781,7 @@ export default function Create() {
               </div>
             </ShowWhenTrue>
 
-            <ShowWhenTrue when={machineState.matches("created")}>
+            <ShowWhenTrue when={state.matches("created")}>
               <div className="px-4">
                 <Alert variant="success">
                   <AlertCircle className="h-4 w-4" />
@@ -801,7 +804,7 @@ export default function Create() {
               </div>
             </ShowWhenTrue>
 
-            <ShowWhenTrue when={machineState.matches("error")}>
+            <ShowWhenTrue when={state.matches("error")}>
               <div className="px-4">
                 <Alert variant="warning">
                   <AlertCircle className="h-4 w-4" />
@@ -818,7 +821,7 @@ export default function Create() {
                     variant="error"
                     className="px-12 gap-2"
                     onClick={() => {
-                      machineSend({ type: "retry" })
+                      send({ type: "retry" })
                     }}
                   >
                     <XCircle className="h-5 w-5" />

@@ -38,15 +38,10 @@ export const machine = createMachine(
     initial: "form",
     context: ({ input }: { input: any }) => {
       return {
-        collateralToken0: input?.collateralToken0 ?? undefined,
-        collateralAmount0: undefined,
-        collateralPrice0: 0,
-        collateralValue0: 0, // value = amount * price
-
-        collateralToken1: input?.collateralToken1 ?? undefined,
-        collateralAmount1: undefined,
-        collateralPrice1: 0,
-        collateralValue1: 0, // value = amount * price
+        collateralToken: input?.collateralToken ?? undefined,
+        collateralAmount: undefined,
+        collateralPrice: 0,
+        collateralValue: 0, // value = amount * price
 
         token: input?.token ?? undefined,
         tokenAmount: undefined,
@@ -80,10 +75,10 @@ export const machine = createMachine(
                   input: ({ context, event }) => ({ context, event }),
                   src: fromPromise(async ({ input: { context, event } }) => {
                     const desiredLtv = Number(event.value)
-                    if (context?.collateralValue0 || context?.collateralValue1) {
+                    if (context?.collateralValue || context?.collateralValue1) {
                       // Calculate the amount of token needed to satisfy the desired LTV ratio
                       // This will be used to determine the amount of token to borrow
-                      const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
+                      const totalCollateralValue = Number(context.collateralValue) + Number(context.collateralValue1)
                       const desiredTokenValue = Number(totalCollateralValue) * desiredLtv
                       const desiredTokenAmount = Number(desiredTokenValue) / Number(context.tokenPrice)
                       return desiredTokenAmount
@@ -107,15 +102,15 @@ export const machine = createMachine(
               forceLtvRatio: { target: ".calculating" },
             },
           },
-          collateralToken0: {
+          collateralToken: {
             initial: "idle",
             states: {
               idle: {
                 on: {
-                  collateralToken0: {
+                  collateralToken: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setCollateralToken0"],
+                    actions: ["setCollateralToken"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -125,12 +120,12 @@ export const machine = createMachine(
                   input: ({ context }) => ({ context }),
                   src: fromPromise(async ({ input: { context } }) => {
                     return fetchPrice({
-                      event: { slug: chainIdToSlug(context.collateralToken0.chainId), token: context.collateralToken0 },
+                      event: { slug: chainIdToSlug(context.collateralToken.chainId), token: context.collateralToken },
                     })
                   }),
                   onDone: {
                     target: "selected",
-                    actions: ["setCollateralPrice0", "setCollateralValue0", "updateLTV", "raiseLTV"],
+                    actions: ["setCollateralPrice", "setCollateralValue", "updateLTV", "raiseLTV"],
                   },
                   onError: {
                     target: "idle",
@@ -139,35 +134,10 @@ export const machine = createMachine(
               },
               selected: {
                 on: {
-                  collateralToken0: {
+                  collateralToken: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setCollateralToken0"],
-                    description: "event must contain a valid token",
-                  },
-                },
-              },
-            },
-          },
-          collateralToken1: {
-            initial: "idle",
-            states: {
-              idle: {
-                on: {
-                  collateralToken1: {
-                    target: "selected",
-                    guard: "isValidToken",
-                    actions: ["setCollateralToken1", "updateLTV", "raiseLTV", "updateChartValues", "validateForm"],
-                    description: "event must contain a valid token",
-                  },
-                },
-              },
-              selected: {
-                on: {
-                  collateralToken1: {
-                    target: "selected",
-                    guard: "isValidToken",
-                    actions: ["setCollateralToken1", "updateLTV", "raiseLTV", "updateChartValues", "validateForm"],
+                    actions: ["setCollateralToken"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -209,58 +179,33 @@ export const machine = createMachine(
                   token: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setToken"], // "updateLTV", "updateChartValues", "validateForm"
+                    actions: ["setToken"],
                     description: "event must contain a valid token",
                   },
                 },
               },
             },
           },
-          collateralAmount0: {
+          collateralAmount: {
             initial: "idle",
             states: {
               idle: {
                 on: {
-                  collateralAmount0: {
+                  collateralAmount: {
                     target: "hasValue",
                     guard: "isParsedFloat",
-                    actions: ["setCollateralAmount0", "setCollateralValue0", "updateLTV", "raiseLTV", "validateForm"],
+                    actions: ["setCollateralAmount0", "setCollateralValue", "updateLTV", "raiseLTV", "validateForm"],
                     description: "Must be an float value 0 or above",
                   },
                 },
               },
               hasValue: {
                 on: {
-                  collateralAmount0: {
+                  collateralAmount: {
                     target: "hasValue",
                     guard: "isParsedFloat",
-                    actions: ["setCollateralAmount0", "setCollateralValue0", "updateLTV", "raiseLTV", "validateForm"],
+                    actions: ["setCollateralAmount0", "setCollateralValue", "updateLTV", "raiseLTV", "validateForm"],
                     description: "Must be an float value 0 or above",
-                  },
-                },
-              },
-            },
-          },
-          collateralAmount1: {
-            initial: "idle",
-            states: {
-              idle: {
-                on: {
-                  collateralAmount1: {
-                    target: "hasValue",
-                    guard: "isNonNegativeInteger",
-                    actions: ["setCollateralValue1", "updateLTV", "raiseLTV", "validateForm"],
-                    description: "Must be an integer value 0 or above",
-                  },
-                },
-              },
-              hasValue: {
-                on: {
-                  collateralAmount1: {
-                    target: "hasValue",
-                    guard: "isNonNegativeInteger",
-                    actions: ["setCollateralValue1", "updateLTV", "raiseLTV", "validateForm"],
-                    description: "Must be an integer value 0 or above",
                   },
                 },
               },
@@ -299,7 +244,7 @@ export const machine = createMachine(
                   numberOfPayments: {
                     target: "hasValue",
                     guard: "isValidNumberOfPayments",
-                    actions: ["setNumberOfPayments", "calculateEsitmatedApr", "validateForm"],
+                    actions: ["setNumberOfPayments", "calculateEstimatedApr", "validateForm"],
                     description: "Must be an integer value between 0 and 10",
                   },
                 },
@@ -309,7 +254,7 @@ export const machine = createMachine(
                   numberOfPayments: {
                     target: "hasValue",
                     guard: "isValidNumberOfPayments",
-                    actions: ["setNumberOfPayments", "calculateEsitmatedApr", "validateForm"],
+                    actions: ["setNumberOfPayments", "calculateEstimatedApr", "validateForm"],
                     description: "Must be an integer value between 0 and 10",
                   },
                 },
@@ -324,7 +269,7 @@ export const machine = createMachine(
                   durationDays: {
                     target: "hasValue",
                     guard: "isValidDurationDays",
-                    actions: ["setDurationDays", "calculateEsitmatedApr", "validateForm"],
+                    actions: ["setDurationDays", "calculateEstimatedApr", "validateForm"],
                     description: "Must be an integer between 0 and 365",
                   },
                 },
@@ -334,7 +279,7 @@ export const machine = createMachine(
                   durationDays: {
                     target: "hasValue",
                     guard: "isValidDurationDays",
-                    actions: ["setDurationDays", "calculateEsitmatedApr", "validateForm"],
+                    actions: ["setDurationDays", "calculateEstimatedApr", "validateForm"],
                     description: "Must be an integer between 0 and 365",
                   },
                 },
@@ -350,7 +295,7 @@ export const machine = createMachine(
                   interestPercent: {
                     target: "hasValue",
                     guard: "isNonNegativeInteger",
-                    actions: ["setInterestPercent", "calculateEsitmatedApr", "validateForm"],
+                    actions: ["setInterestPercent", "calculateEstimatedApr", "validateForm"],
                     description: "Must be an integer value 0 or above",
                   },
                 },
@@ -461,16 +406,10 @@ export const machine = createMachine(
     types: {} as {
       context: {
         // four fields per token
-        collateralToken0: Token | undefined
-        collateralAmount0: number | undefined
-        collateralPrice0: number
-        collateralValue0: number
-
-        // four fields per token
-        collateralToken1: Token | undefined
-        collateralAmount1: number | undefined
-        collateralPrice1: number
-        collateralValue1: number | undefined
+        collateralToken: Token | undefined
+        collateralAmount: number | undefined
+        collateralPrice: number
+        collateralValue: number
 
         // four fields per token
         token: Token | undefined
@@ -486,11 +425,9 @@ export const machine = createMachine(
       }
       events:
         | { type: "token"; value: Token }
-        | { type: "collateralToken0"; value: Token }
-        | { type: "collateralToken1"; value: Token }
+        | { type: "collateralToken"; value: Token }
         // AMOUNTS
-        | { type: "collateralAmount0"; value: number | undefined }
-        | { type: "collateralAmount1"; value: number | undefined }
+        | { type: "collateralAmount"; value: number | undefined }
         | { type: "tokenAmount"; value: number | undefined }
         // OTHER EVENTS
         | { type: "back" }
@@ -511,16 +448,8 @@ export const machine = createMachine(
   {
     actions: {
       // TOKENS
-      setCollateralToken0: assign({
-        collateralToken0: ({ event }) => {
-          if (event && "value" in event) {
-            return parseToken(event.value)
-          }
-          return undefined
-        },
-      }),
-      setCollateralToken1: assign({
-        collateralToken1: ({ event }) => {
+      setCollateralToken: assign({
+        collateralToken: ({ event }) => {
           if (event && "value" in event) {
             return parseToken(event.value)
           }
@@ -537,15 +466,7 @@ export const machine = createMachine(
       }),
       // AMOUNTS
       setCollateralAmount0: assign({
-        collateralAmount0: ({ event }) => {
-          if (event && "value" in event) {
-            return Number(event.value)
-          }
-          return 0
-        },
-      }),
-      setCollateralAmount1: assign({
-        collateralAmount1: ({ event }) => {
+        collateralAmount: ({ event }) => {
           if (event && "value" in event) {
             return Number(event.value)
           }
@@ -561,16 +482,8 @@ export const machine = createMachine(
         },
       }),
       // PRICES
-      setCollateralPrice0: assign({
-        collateralPrice0: ({ event }) => {
-          if (event && "output" in event) {
-            return Number(event.output)
-          }
-          return 0
-        },
-      }),
-      setCollateralPrice1: assign({
-        collateralPrice1: ({ event }) => {
+      setCollateralPrice: assign({
+        collateralPrice: ({ event }) => {
           if (event && "output" in event) {
             return Number(event.output)
           }
@@ -586,18 +499,10 @@ export const machine = createMachine(
         },
       }),
       // VALUES
-      setCollateralValue0: assign({
-        collateralValue0: ({ context }) => {
-          if (context?.collateralAmount0 && context?.collateralPrice0) {
-            return Number(context.collateralAmount0) * Number(context.collateralPrice0)
-          }
-          return 0
-        },
-      }),
-      setCollateralValue1: assign({
-        collateralValue1: ({ context }) => {
-          if (context?.collateralAmount1 && context?.collateralPrice1) {
-            return Number(context.collateralAmount1) * Number(context.collateralPrice1)
+      setCollateralValue: assign({
+        collateralValue: ({ context }) => {
+          if (context?.collateralAmount && context?.collateralPrice) {
+            return Number(context.collateralAmount) * Number(context.collateralPrice)
           }
           return 0
         },
@@ -613,8 +518,8 @@ export const machine = createMachine(
       // OTHER SETTERS
       updateLTV: assign({
         ltvRatio: ({ context }) => {
-          if (context?.collateralValue0 && context?.tokenValue) {
-            const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
+          if (context?.collateralValue && context?.tokenValue) {
+            const totalCollateralValue = Number(context.collateralValue)
             const ltvValue = totalCollateralValue / context.tokenValue
             return roundIfClose(Number(1 / ltvValue) * 100, 0.05)
           }
@@ -645,7 +550,7 @@ export const machine = createMachine(
         const amount = Number(fixedDecimals(event?.output ?? 0, 2))
         return { type: "tokenAmount", value: amount }
       }),
-      calculateEsitmatedApr: assign({
+      calculateEstimatedApr: assign({
         estimatedApr: ({ context }) => {
           if (context?.durationDays && context?.interestPercent) {
             const apr = ((Number(context.interestPercent) / Number(context.durationDays)) * 365) / 100
@@ -660,8 +565,6 @@ export const machine = createMachine(
       setDurationDays: assign({ durationDays: ({ event }) => Number(event?.value ?? 0) }),
       // @ts-ignore
       setInterestPercent: assign({ interestPercent: ({ event }) => Number(event?.value ?? 0) }),
-      updateChartValues: ({ context, event }) => {},
-      validateForm: ({ context, event }) => {},
     },
     actors: {
       createBorrowOffer: fromPromise(async () => {
@@ -675,10 +578,8 @@ export const machine = createMachine(
     guards: {
       isFormComplete: ({ context }, params) => {
         return Boolean(
-          context.collateralToken0 &&
-            context.collateralAmount0 &&
-            // context.collateralAmount1 &&
-            // context.collateralToken1 &&
+          context.collateralToken &&
+            context.collateralAmount &&
             context.token &&
             context.tokenAmount &&
             context.durationDays &&
