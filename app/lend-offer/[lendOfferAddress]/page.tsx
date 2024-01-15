@@ -840,8 +840,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
                     <div className="flex gap-10 items-center justify-center">
                       <div className="flex flex-col gap-1">
-                        <div className="flex gap-1 items-center">
-                          <div className="text-gray-300 text-sm"> Collateral:</div>
+                        <div className="flex gap-1 items-center italic opacity-80">
+                          <div className=" text-sm"> Collateral:</div>
                           {collateral && collateralToken ? (
                             <DisplayToken
                               size={20}
