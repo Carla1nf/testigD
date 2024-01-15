@@ -4,16 +4,19 @@
  * Test machine and UI components page for the lend-offer route
  */
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useInternalToken } from "@/hooks/useInternalToken"
 import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import { LucideArrowRight } from "lucide-react"
 import { useEffect, useState } from "react"
 import { fromPromise } from "xstate"
-import { machine } from "../lend-offer-machine"
+import NotOwnerInfo from "../components/not-owner-info"
 import OwnerCancelButtons from "../components/owner-cancel-buttons"
+import { machine } from "../lend-offer-machine"
+import { Token } from "@/lib/tokens"
 
 const { inspect } = createBrowserInspector()
 
@@ -25,6 +28,8 @@ export default function TestLendOffer() {
     resolve: () => void
     reject: (reason?: any) => void
   } | null>(null)
+
+  const borrowingToken = useInternalToken("fantom", "WFTM") as Token
 
   // Function to wait for the state change
   const waitForStateChange = (): Promise<void> => {
@@ -119,6 +124,12 @@ export default function TestLendOffer() {
       <div className="text-2xl">Components</div>
       <div className="text-xl">OwnerCancelButtons</div>
       <OwnerCancelButtons state={state} send={send} />
+      <div className="text-xl">NotOwnerInfo</div>
+      <NotOwnerInfo
+        state={state}
+        borrowingToken={borrowingToken}
+        ownerAddress={"0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"}
+      />
     </div>
   )
 }

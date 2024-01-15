@@ -83,12 +83,12 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
       {/* Render token table (secondary level - specific token selected)  */}
       <ShowWhenTrue when={Array.isArray(marketOffers) && marketOffers.length > 0}>
         <table
-          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
+          className="w-full flex flex-row flex-no-wrap rounded-lg overflow-hidden md:inline-table"
           suppressHydrationWarning
         >
-          <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
+          <thead className="text-white  text-sm" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left"
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left  font-bold text-gray-500/80 border-b-2 border-neutral-500/20"
               suppressHydrationWarning
             >
               <th className="p-3 text-left">Lend</th>
@@ -103,8 +103,8 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
-            {events?.map((event: any) => {
-              return <TableRow event={event} token={token} key={event.address} />
+            {events?.map((event: any, index: number) => {
+              return <TableRow event={event} token={token} key={event.address} _index={index} />
             })}
           </tbody>
         </table>
@@ -113,7 +113,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   )
 }
 
-const TableRow = ({ event, token }: { event: any; token?: Token }) => {
+const TableRow = ({ event, token, _index }: { event: any; token?: Token; _index: number }) => {
   const router = useRouter()
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
@@ -127,7 +127,9 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         router.push(`/borrow-offer/${event.address}`)
       }}
       key={`${offer?.principle?.token?.symbol}_${event.address}`}
-      className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b border-[#383838]/50"
+      className={` ${
+        _index % 2 == 1 ? "" : "bg-stone-500/5"
+      } hover:bg-slate-500/10 cursor-pointer animate-enter-token border-b border-[#383838]/50`}
     >
       <td className="p-4 text-left">
         {token ? (

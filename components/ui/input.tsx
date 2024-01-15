@@ -13,6 +13,8 @@ const inputVariants = cva(
         "create-secondary": "bg-[#342F49] rounded-md text-white border-none hover:border-none",
         action: "action-gradient rounded-md text-white border-none hover:border-none",
         "action-muted": "action-gradient-muted rounded-md text-white/50",
+        option: "bg-black/70",
+        "option-muted": "bg-black/30 text-white/50",
       },
     },
     defaultVariants: {

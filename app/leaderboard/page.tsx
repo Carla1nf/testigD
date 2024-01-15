@@ -49,7 +49,7 @@ export default function LeaderBoardPage() {
                     <div
                       key={index}
                       className={`${
-                        index % 2 == 0 ? "" : "bg-gray-500/10"
+                        index % 2 == 0 ? "" : "bg-stone-500/5"
                       }  h-10 flex animate-enter-div rounded items-center   text-sm`}
                     >
                       <div className="w-full px-4 flex gap-3">

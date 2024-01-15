@@ -329,7 +329,7 @@ export default function Create() {
   }, [currentChain])
 
   return (
-    <div className="flex gap-6">
+    <div className="flex md:flex-row  flex-col gap-6">
       <div className="animate-enter-div">
         {/* Page header */}
         <div className="@container mb-8 space-y-4">
@@ -421,7 +421,7 @@ export default function Create() {
               <Label variant="create">LTV Ratio</Label>
               <div className="grid grid-cols-5 gap-4">
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltv25") ? "action" : "action-muted"}
+                  variant={machineState.matches("form.ltvRatio.ltv25") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
                     machineSend({ type: "forceLtvRatio", value: 0.25 })
@@ -430,7 +430,7 @@ export default function Create() {
                   25%
                 </Button>
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltv50") ? "action" : "action-muted"}
+                  variant={machineState.matches("form.ltvRatio.ltv50") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
                     machineSend({ type: "forceLtvRatio", value: 0.5 })
@@ -439,7 +439,7 @@ export default function Create() {
                   50%
                 </Button>
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltv75") ? "action" : "action-muted"}
+                  variant={machineState.matches("form.ltvRatio.ltv75") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
                     machineSend({ type: "forceLtvRatio", value: 0.75 })
@@ -448,7 +448,7 @@ export default function Create() {
                   75%
                 </Button>
                 <Button
-                  variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}
+                  variant={machineState.matches("form.ltvRatio.ltvcustom") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
                     if (ltvCustomInputRef && ltvCustomInputRef.current) {
@@ -462,7 +462,7 @@ export default function Create() {
                   <Input
                     ref={ltvCustomInputRef}
                     type="number"
-                    variant={machineState.matches("form.ltvRatio.ltvcustom") ? "action" : "action-muted"}
+                    variant={machineState.matches("form.ltvRatio.ltvcustom") ? "option" : "option-muted"}
                     className="text-center"
                     placeholder="0"
                     value={ltvCustomInputValue}
@@ -491,7 +491,7 @@ export default function Create() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 gap-y-8 my-4">
-              <div className="">
+              <div className="flex flex-col gap-1">
                 <Label variant="create">Interest on Loan (%)</Label>
                 <NumberInput
                   min={0}
@@ -503,13 +503,13 @@ export default function Create() {
                 />
               </div>
 
-              <div className="flex flex-col justify-between">
+              <div className="flex flex-col gap-2">
                 <Label variant="create">Estimated APR (%)</Label>
                 <div className="text-[#9F9F9F] text-lg font-bold">
                   {displayEstimatedApr(machineState.context.estimatedApr)}
                 </div>
               </div>
-              <div className="">
+              <div className="flex flex-col gap-1">
                 <Label variant="create">Loan Duration (days)</Label>
                 <NumberInput
                   min={0}
@@ -521,7 +521,7 @@ export default function Create() {
                 />
               </div>
 
-              <div className="">
+              <div className="flex flex-col gap-1">
                 <Label variant="create">Total Payments</Label>
                 <NumberInput
                   min={0}
@@ -579,16 +579,15 @@ export default function Create() {
                     <ShowWhenTrue when={modeState.matches("borrow")}>Confirm Borrow Offer</ShowWhenTrue>
                     <ShowWhenTrue when={modeState.matches("lend")}>Confirm Lend Offer</ShowWhenTrue>
                   </div>
-                  <CheckCircle2 className="stroke-[#5E568F] flex-grow" />
                 </div>
-                <DebitaIcon className="h-11 w-11 flex-basis-1" />
+                <DebitaIcon className="h-9 w-9 flex-basis-1" />
               </div>
 
               {/* <hr className="h-px mt-4 bg-[#4D4348] border-0" /> */}
             </div>
 
             <div className="grid grid-cols-2 gap-x-16 gap-y-4">
-              <div className="border border-white/10 rounded-sm p-2 col-span-2">
+              <div className="border border-white/10 rounded-sm p-2 px-2 md:pr-32 col-span-2">
                 <Label variant="create">Payments</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
                   <ShowWhenTrue when={numberOfPayments === 1}>
@@ -801,7 +800,15 @@ export default function Create() {
           </div>
         </ShowWhenTrue>
       </div>
-      <div className="flex flex-col  pt-8"></div>
+      <div className="flex flex-col md:w-1/2 w-full  md:mt-36">
+        <div className="bg-[#21232B]/40 border-2 flex flex-col gap-2  w-full border-white/10  py-2 px-3 rounded-lg h-28 ">
+          <div>Disclaimer</div>
+          <div className="text-gray-400">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+            dolore magna aliqua.
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -841,9 +848,9 @@ const NumberInput = ({
       decrementButtonIcon={<LucideMinus className="h-3 w-4 stroke-2" />}
       pt={{
         root: { className: "flex flex-row gap-2" },
-        input: { root: { className: "bg-[#352E49] px-1 py-1 max-w-[100px] rounded-md text-center" } },
-        decrementButton: { className: "order-first action-gradient px-2 py-2 rounded-md" },
-        incrementButton: { className: "order-last action-gradient px-2 rounded-md py-2" },
+        input: { root: { className: "bg-black/30 px-1 py-1.5 max-w-[100px] rounded-md text-center" } },
+        decrementButton: { className: "order-first bg-black/80 px-2 py-2 rounded-md" },
+        incrementButton: { className: "order-last bg-black/80 px-2 rounded-md py-2" },
       }}
       minFractionDigits={minFractionDigits}
     />

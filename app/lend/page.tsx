@@ -38,7 +38,7 @@ export default function Lend() {
           <div className="grid grid-cols-3 gap-8">
             <Stat
               value={dollars({ value: stats.available, decimals: 0 })}
-              title={"Available"}
+              title={"Available liquidity"}
               Icon={<AvailableIcon className="w-10 h-10 fill-white" />}
             />
             <Stat
@@ -48,7 +48,7 @@ export default function Lend() {
             />
             <Stat
               value={dollars({ value: stats.totalLiquidityLent, decimals: 0 })}
-              title={"Total Lent"}
+              title={"Total lent"}
               Icon={<TotalLentIcon className="w-10 h-10 fill-white" />}
             />
           </div>
@@ -58,12 +58,12 @@ export default function Lend() {
       {/* Render token table (top level)  */}
       <ShowWhenTrue when={Array.isArray(offers) && offers.length > 0}>
         <table
-          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table animate-enter-div"
+          className="w-full flex flex-row flex-no-wrap rounded-lg overflow-hidden  md:inline-table animate-enter-div"
           suppressHydrationWarning
         >
-          <thead className="text-white opacity-60 font-medium text-sm" suppressHydrationWarning>
+          <thead className="text-white text-sm" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left opacity-70"
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left font-bold text-gray-500/80 border-b-2 border-neutral-500/20 "
               suppressHydrationWarning
             >
               <th className="p-3 px-4 text-left">Lend</th>
@@ -74,7 +74,7 @@ export default function Lend() {
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none animate-enter-div">
-            {offers?.map((offer: any) => {
+            {offers?.map((offer: any, index: number) => {
               if (!offer.token) {
                 return null
               }
@@ -84,7 +84,9 @@ export default function Lend() {
                     router.push(`/lend/${offer.token.address}`)
                   }}
                   key={`${offer.token.symbol}_${offer.token.address}`}
-                  className="hover:bg-[#383838] cursor-pointer animate-enter-token"
+                  className={`${
+                    index % 2 == 1 ? "" : "bg-stone-500/5"
+                  } hover:bg-slate-500/10 cursor-pointer animate-enter-token`}
                 >
                   <td className="p-4 text-left px-4 items-center">
                     {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}

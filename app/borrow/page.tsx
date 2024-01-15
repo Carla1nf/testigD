@@ -37,7 +37,7 @@ export default function Borrow() {
           <div className="grid grid-cols-3 gap-8">
             <Stat
               value={dollars({ value: stats.available, decimals: 0 })}
-              title={"Available"}
+              title={"Available liquidity"}
               Icon={<AvailableIcon className="w-10 h-10 fill-white" />}
             />
             <Stat
@@ -57,23 +57,23 @@ export default function Borrow() {
       {/* Render token table (top level)  */}
       <ShowWhenTrue when={Array.isArray(offers) && offers.length > 0}>
         <table
-          className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
+          className="w-full flex flex-row flex-no-wrap  rounded-lg overflow-hidden md:inline-table"
           suppressHydrationWarning
         >
-          <thead className="text-white" suppressHydrationWarning>
+          <thead className="text-white text-sm" suppressHydrationWarning>
             <tr
-              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left opacity-60 "
+              className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left   font-bold text-gray-500/80 border-b-2 border-neutral-500/20"
               suppressHydrationWarning
             >
-              <th className="p-3 px-4 text-left font-normal">Borrow</th>
-              <th className="p-3 px-4 text-center font-normal">Offers</th>
-              <th className="p-3 px-4 text-center font-normal">Liquidity Offers</th>
-              <th className="p-3 px-4 text-center font-normal">Price</th>
-              <th className="p-3 px-4 text-center font-normal">Avg Interest</th>
+              <th className="p-3 px-4 text-left ">Borrow</th>
+              <th className="p-3 px-4 text-center ">Offers</th>
+              <th className="p-3 px-4 text-center ">Liquidity Offers</th>
+              <th className="p-3 px-4 text-center ">Price</th>
+              <th className="p-3 px-4 text-center ">Avg Interest</th>
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
-            {offers?.map((offer: any) => {
+            {offers?.map((offer: any, index: number) => {
               if (!offer.token) {
                 return null
               }
@@ -83,7 +83,9 @@ export default function Borrow() {
                     router.push(`/borrow/${offer.token.address}`)
                   }}
                   key={`${offer.token.symbol}_${offer.token.address}`}
-                  className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5"
+                  className={` ${
+                    index % 2 == 1 ? "" : "bg-stone-500/5"
+                  } hover:bg-slate-500/10 rounded cursor-pointer animate-enter-token border-b-2 border-gray-500/5`}
                 >
                   <td className="p-4 text-left px-4 items-center">
                     {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}

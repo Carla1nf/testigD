@@ -17,16 +17,14 @@ const Stat = ({
   return (
     <>
       {/* desktop - left align design */}
-      <div className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-5 rounded-lg  flex-row justify-center items-center h-full hidden md:flex shadow-lg shadow-neutral-950/30">
+      <div className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-3 rounded-lg  flex-row items-center h-full hidden md:flex shadow-lg shadow-neutral-950/30">
         <div className="text-left grow">
-          <div className="text-xs md:font-bold text-gray-400">{title}</div>
-          <div className="text-xs md:text-lg font-bold text-[#A957A4]">
+          <div className="text-xs font-semibold text-gray-400 ">{title}</div>
+          <div className="text-xs md:text-lg font-bold text-white">
             {value === undefined ? <Skeleton className="h-[80px] w-[200px]" /> : value}
           </div>
         </div>
-        <div className="h-10 w-10 rounded-lg flex items-center justify-center ">
-          <div className="scale-[0.8] opacity-40 ">{Icon}</div>
-        </div>
+        <div className="h-10 w-10 rounded-lg flex items-center justify-center "></div>
       </div>
       {/* mobile / tablets - centralised design */}
       <div

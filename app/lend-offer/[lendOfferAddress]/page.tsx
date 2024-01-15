@@ -32,6 +32,7 @@ import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
 import { machine } from "./lend-offer-machine"
 import OwnerCancelButtons from "./components/owner-cancel-buttons"
+import NotOwnerInfo from "./components/not-owner-info"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -575,6 +576,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           <OwnerCancelButtons state={state} send={send} />
 
           {/* Non owners can see who the owner is */}
+          <NotOwnerInfo state={state} borrowingToken={borrowingToken} ownerAddress={offer?.owner as Address} />
 
           {/* Form Panel */}
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">

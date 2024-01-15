@@ -281,7 +281,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
       {/* Page header */}
       <div className="@container mb-8 space-y-4">
         <Breadcrumbs items={breadcrumbs} />
-        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Loan</h1>
+        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Offer</h1>
       </div>
 
       {/* Page content */}
@@ -312,7 +312,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
           {/* Owners can cancel the offer */}
           <ShowWhenTrue when={borrowMachineState.matches("isOwner")}>
             <div className="grid grid-cols-2 justify-between gap-8 mt-1">
-              <div className="bg-[#21232B] border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
+              <div className="bg-[#21232B]/40 border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are the Owner
                 <PersonIcon className="w-6 h-6" />
                 {/* {shortAddress(offer?.owner)} */}
@@ -363,7 +363,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
           {/* Non owners can see who the owner is */}
           <ShowWhenTrue when={borrowMachineState.matches("isNotOwner")}>
             <div className="flex justify-between gap-8 mt-1">
-              <div className="bg-[#21232B] border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
+              <div className="bg-[#21232B]/40 border-2 border-white/10 p-3 w-full rounded-md flex gap-2 items-center justify-center ">
                 You are lending to
                 <PersonIcon className="w-6 h-6" />
                 {shortAddress(offer?.owner as Address)}
@@ -372,13 +372,12 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
           </ShowWhenTrue>
 
           {/* Form Panel */}
-          <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
-            <div className="text-xl mb-4 font-bold">Borrow Offer</div>
+          <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-md">
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="flex flex-col gap-3">
                 <div>
-                  Collateral
+                  Secured collateral
                   <span className="text-white/50 text-xs italic ml-2">
                     {dollars({ value: offer?.totalCollateralValue ?? 0 })}
                   </span>
@@ -556,7 +555,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
 
 const Description = () => {
   return (
-    <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex flex-col gap-4 text-sm">
+    <div className="bg-[#21232B]/40 border-2 border-white/10 p-4 w-full rounded-md flex flex-col gap-4 text-sm">
       <div className="flex flex-row gap-2 items-center text-base">
         <Info className="w-5 h-5" />
         Details

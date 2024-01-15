@@ -6,7 +6,7 @@ import { ltv, percent } from "@/lib/display"
 import { Token } from "@/lib/tokens"
 import { useRouter } from "next/navigation"
 
-const TableRow = ({ event, token }: { event: any; token?: Token }) => {
+const TableRow = ({ event, token, index }: { event: any; token?: Token; index: number }) => {
   const router = useRouter()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, event.address)
@@ -18,7 +18,9 @@ const TableRow = ({ event, token }: { event: any; token?: Token }) => {
         router.push(`/lend-offer/${event.address}`)
       }}
       key={`${offer?.principle?.token?.symbol}_${event.address}`}
-      className="hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5"
+      className={` ${
+        index % 2 == 1 ? "" : "bg-stone-500/5"
+      } hover:bg-slate-500/10 hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5`}
     >
       <td className="p-4 text-left">
         {token ? (
