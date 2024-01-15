@@ -803,7 +803,7 @@ export default function Create() {
       <div className="flex flex-col md:w-1/2 w-full  md:mt-36">
         <div className="bg-[#21232B]/40 border-2 flex flex-col gap-2  w-full border-white/10  py-2 px-3 rounded-lg h-28 ">
           <div>Disclaimer</div>
-          <div className="text-gray-400">
+          <div className="text-gray-400 text-sm">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
             dolore magna aliqua.
           </div>
