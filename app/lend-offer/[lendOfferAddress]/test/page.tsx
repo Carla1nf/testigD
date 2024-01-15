@@ -101,6 +101,7 @@ export default function TestLendOffer() {
         }
 
         const buttons = []
+        // @ts-ignore
         for (const key of node?.transitions.keys()) {
           buttons.push(
             <Button variant="outline" onClick={() => send({ type: key })} key={key}>

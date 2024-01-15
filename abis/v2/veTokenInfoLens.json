@@ -1,0 +1,20 @@
+[
+  {
+    "inputs": [{ "internalType": "address", "name": "_add", "type": "address" }],
+    "name": "getDataFrom",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "int128", "name": "amount", "type": "int128" },
+          { "internalType": "bool", "name": "voted", "type": "bool" }
+        ],
+        "internalType": "struct ReaderVeNFT.InfoveNFT[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

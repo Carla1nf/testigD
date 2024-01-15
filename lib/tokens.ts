@@ -13,11 +13,27 @@ export const tokenSchema = z.object({
   isNative: z.boolean(),
   isLp: z.boolean(),
   icon: z.string(),
-  nft: z.object({
-    isNft: z.boolean(),
-    underlying: ethereumAddressSchema.optional(),
-    description: z.string().optional(),
-  }),
+  nft: z
+    .object({
+      isNft: z.boolean(),
+      underlying: z.string().optional(),
+      infoLens: ethereumAddressSchema.optional(),
+      infoLensType: z.enum(["VeToken"]).optional(),
+      description: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        // If infoLens has a value, then infoLensType should also have a value (i.e., it's required)
+        if (data.infoLens && !data.infoLensType) {
+          return false // This indicates the validation has failed
+        }
+        return true
+      },
+      {
+        message: "infoLensType is required when infoLens is provided",
+        path: ["infoLensType"], // This specifies which field the error message is associated with
+      }
+    ),
 })
 
 export type Token = z.infer<typeof tokenSchema>
@@ -181,10 +197,11 @@ export const INTERNAL_TOKENS: Tokens = {
       icon: "/files/tokens/fantom/ve-equal.png",
       nft: {
         isNft: true,
-        underlying: "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6",
-        info: "0x12345678",
-        infoType: "VeToken",
-        description: "",
+        infoLensType: "VeToken",
+        infoLens: "0xa0fD9265FAC42EcdfFF494e3dB6466b207D98C6D",
+        underlying: "EQUAL",
+        description:
+          "veEQUAL represents locked EQUAL tokens and provides holders with weekly real-yield via epoch voting.",
       },
     },
   ],

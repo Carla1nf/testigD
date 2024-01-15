@@ -6,33 +6,33 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
+import DisplayNetwork from "@/components/ux/display-network"
 import SelectToken from "@/components/ux/select-token"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
+import { toDecimals } from "@/lib/erc20"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
-import { AlertCircle, CheckCircle2, LucideMinus, LucidePlus, XCircle } from "lucide-react"
+import { AlertCircle, LucideMinus, LucidePlus, XCircle } from "lucide-react"
+import Link from "next/link"
+import pluralize from "pluralize"
 import { InputNumber } from "primereact/inputnumber"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { decodeEventLog, parseAbi } from "viem"
 import { useConfig } from "wagmi"
 import { readContract, writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
-import debitaAbi from "../../abis/debita.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
-import { toDecimals } from "@/lib/erc20"
-import pluralize from "pluralize"
-import Link from "next/link"
-import { decodeEventLog, parseAbi } from "viem"
-import Breadcrumbs from "@/components/ux/breadcrumbs"
-import DisplayNetwork from "@/components/ux/display-network"
+import useNftInfo from "@/hooks/useNftInfo"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -233,11 +233,15 @@ export default function Create() {
     })
   )
 
+  const collateralNfts = useNftInfo({ address, token: machineState?.context?.collateralToken0 })
+  const tokenNfts = useNftInfo({ address, token: machineState?.context?.token })
+  console.log("tokenNfts", tokenNfts)
+
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   // console.log("context", machineState.context)
-  console.log("machineState.value", machineState.value)
+  // console.log("machineState.value", machineState.value)
   // console.log("modeState.value", modeState.value)
 
   /**
@@ -257,6 +261,7 @@ export default function Create() {
     }
   }, [machineState.context.ltvRatio, ltvCustomInputValue])
 
+  // Default tokens
   useEffect(() => {
     if (ftm && machineState.context.collateralToken0 === undefined) {
       machineSend({ type: "collateralToken0", value: ftm })
@@ -301,6 +306,16 @@ export default function Create() {
     },
     [machineSend]
   )
+
+  const onSelectUserNft = useCallback(
+    (userNft: UserNftInfo | null) => {
+      if (userNft) {
+        machineSend({ type: "userNft", value: userNft })
+      }
+    },
+    [machineSend]
+  )
+
   const onSelectTokenAmount = useCallback(
     (value: number | undefined) => {
       machineSend({ type: "tokenAmount", value })
@@ -385,6 +400,7 @@ export default function Create() {
                   selectedToken={machineState.context.collateralToken0}
                   onSelectToken={onSelectCollateralToken0}
                   onAmountChange={onSelectCollateralAmount0}
+                  userNftInfo={collateralNfts}
                 />
               </div>
 
@@ -412,6 +428,7 @@ export default function Create() {
                   defaultToken={usdc as Token}
                   onSelectToken={onSelectToken}
                   onAmountChange={onSelectTokenAmount}
+                  userNftInfo={tokenNfts}
                 />
               </div>
             </div>
