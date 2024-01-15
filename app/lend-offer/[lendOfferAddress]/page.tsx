@@ -72,6 +72,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const config = useConfig()
   const { toast } = useToast()
   const [amountToBorrow, setAmountToBorrow] = useState(0)
+  const [amountCollateral, setAmountCollateral] = useState(0)
+
   const newCollateralAmountRef = useRef<HTMLInputElement>(null)
   const newBorrowAmountRef = useRef<HTMLInputElement>(null)
   const newPaymentCountRef = useRef<HTMLInputElement>(null)
@@ -117,6 +119,13 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     args: [address, OFFER_CREATED_ADDRESS],
     watch: true,
   })
+
+  const handleWantedBorrow = (newValue: number) => {
+    const amountCollateral = collateral && principle ? (collateral?.amount * newValue) / principle?.amount : 0
+
+    setAmountToBorrow(newValue)
+    setAmountCollateral(amountCollateral)
+  }
 
   const interactPerpetual = async () => {
     const { request } = await config.publicClient.simulateContract({
@@ -829,24 +838,49 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
-                    <div className="flex gap-10">
-                      <input
-                        className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
-                        placeholder={`Amount of ${offer?.principle.token?.symbol}`}
-                        type="number"
-                        onChange={(e) => {
-                          setAmountToBorrow(Number(e.currentTarget.value))
-                        }}
-                      />
-                      <Button
-                        variant={"action"}
-                        className="px-16"
-                        onClick={async () => {
-                          send({ type: "user.accept.offer" })
-                        }}
-                      >
-                        Accept Offer
-                      </Button>
+                    <div className="flex gap-10 items-center justify-center">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                          Need:
+                          {collateral && collateralToken ? (
+                            <DisplayToken
+                              size={20}
+                              token={collateralToken}
+                              amount={amountCollateral}
+                              className="text-base"
+                              chainSlug={currentChain.slug}
+                            />
+                          ) : (
+                            ""
+                          )}
+                        </div>
+                        <input
+                          className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
+                          placeholder={`Amount of ${offer?.principle.token?.symbol}`}
+                          type="number"
+                          max={principle ? principle.amount : 0}
+                          onChange={(e) => {
+                            principle
+                              ? Number(e.currentTarget.value) > principle.amount
+                                ? (e.currentTarget.value = String(principle.amount))
+                                : ""
+                              : ""
+                            handleWantedBorrow(Number(e.currentTarget.value))
+                          }}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="opacity-0">holaa</div>
+                        <Button
+                          variant={"action"}
+                          className="px-16"
+                          onClick={async () => {
+                            send({ type: "user.accept.offer" })
+                          }}
+                        >
+                          Accept Offer
+                        </Button>
+                      </div>
                     </div>
                   </ShowWhenTrue>
 
