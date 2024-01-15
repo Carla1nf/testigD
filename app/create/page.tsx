@@ -32,7 +32,7 @@ import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { machine } from "./create-offer-machine"
 import { modeMachine } from "./mode-machine"
-import useNftInfo from "@/hooks/useNftInfo"
+import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -307,10 +307,19 @@ export default function Create() {
     [machineSend]
   )
 
-  const onSelectUserNft = useCallback(
+  // one for collateral another for token?
+  const onSelectCollateralUserNft = useCallback(
     (userNft: UserNftInfo | null) => {
       if (userNft) {
-        machineSend({ type: "userNft", value: userNft })
+        machineSend({ type: "collateralUserNft", value: userNft })
+      }
+    },
+    [machineSend]
+  )
+  const onSelectTokenUserNft = useCallback(
+    (userNft: UserNftInfo | null) => {
+      if (userNft) {
+        machineSend({ type: "tokenUserNft", value: userNft })
       }
     },
     [machineSend]
@@ -398,9 +407,11 @@ export default function Create() {
                   amount={machineState.context.collateralAmount0}
                   defaultToken={ftm as Token}
                   selectedToken={machineState.context.collateralToken0}
+                  selectedUserNft={machineState.context.collateralUserNft}
                   onSelectToken={onSelectCollateralToken0}
                   onAmountChange={onSelectCollateralAmount0}
                   userNftInfo={collateralNfts}
+                  onSelectUserNft={onSelectCollateralUserNft}
                 />
               </div>
 
@@ -425,10 +436,12 @@ export default function Create() {
                   tokens={tokens}
                   amount={machineState.context.tokenAmount}
                   selectedToken={machineState.context.token}
+                  selectedUserNft={machineState.context.tokenUserNft}
                   defaultToken={usdc as Token}
                   onSelectToken={onSelectToken}
                   onAmountChange={onSelectTokenAmount}
                   userNftInfo={tokenNfts}
+                  onSelectUserNft={onSelectTokenUserNft}
                 />
               </div>
             </div>
