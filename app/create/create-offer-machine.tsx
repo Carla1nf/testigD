@@ -1,3 +1,4 @@
+import { UserNftInfo } from "@/hooks/useNftInfo"
 import { Token, tokenSchema } from "@/lib/tokens"
 import { fixedDecimals, roundIfClose } from "@/lib/utils"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
@@ -44,11 +45,13 @@ export const machine = createMachine(
         collateralAmount: undefined,
         collateralPrice: 0,
         collateralValue: 0, // value = amount * price
+        collateralUserNft: undefined,
 
         token: input?.token ?? undefined,
         tokenAmount: undefined,
         tokenPrice: 0,
         tokenValue: 0, // value = amount * price
+        tokenUserNft: undefined,
 
         // other values
         durationDays: undefined,
@@ -114,7 +117,7 @@ export const machine = createMachine(
                   collateralToken: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setCollateralToken"],
+                    actions: ["clearCollateralUserNft", "setCollateralToken"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -129,7 +132,7 @@ export const machine = createMachine(
                   }),
                   onDone: {
                     target: "selected",
-                    actions: ["setCollateralPrice", "setCollateralValue", "updateLTV", "raiseLTV"],
+                    actions: ["setCollateralPrice", "setCollateralValue", "updateLTV", "raiseLTV", "validateForm"],
                   },
                   onError: {
                     target: "idle",
@@ -141,11 +144,25 @@ export const machine = createMachine(
                   collateralToken: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setCollateralToken"],
+                    actions: ["clearCollateralUserNft", "setCollateralToken"],
                     description: "event must contain a valid token",
                   },
                 },
               },
+            },
+          },
+          collateralUserNft: {
+            initial: "idle",
+            on: {
+              collateralUserNft: {
+                target: ".selected",
+                actions: "setCollateralUserNft",
+                description: "event must contain valid user nft info ",
+              },
+            },
+            states: {
+              idle: {},
+              selected: {},
             },
           },
           token: {
@@ -158,7 +175,7 @@ export const machine = createMachine(
                   token: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setToken"],
+                    actions: ["clearTokenUserNft", "setToken"],
                     description: "event must contain a valid token",
                   },
                 },
@@ -183,11 +200,25 @@ export const machine = createMachine(
                   token: {
                     target: "selecting",
                     guard: "isValidToken",
-                    actions: ["setToken"],
+                    actions: ["clearTokenUserNft", "setToken"],
                     description: "event must contain a valid token",
                   },
                 },
               },
+            },
+          },
+          tokenUserNft: {
+            initial: "idle",
+            on: {
+              tokenUserNft: {
+                target: ".selected",
+                actions: "setTokenUserNft",
+                description: "event must contain valid user nft info ",
+              },
+            },
+            states: {
+              idle: {},
+              selected: {},
             },
           },
           collateralAmount: {
@@ -417,12 +448,14 @@ export const machine = createMachine(
         collateralAmount: number | undefined
         collateralPrice: number
         collateralValue: number
+        collateralUserNft: UserNftInfo | undefined
 
         // four fields per token
         token: Token | undefined
         tokenAmount: number | undefined
         tokenPrice: number
         tokenValue: number | undefined
+        tokenUserNft: UserNftInfo | undefined
 
         durationDays: number | undefined
         interestPercent: number | undefined
@@ -434,9 +467,11 @@ export const machine = createMachine(
       events:
         | { type: "token"; value: Token }
         | { type: "collateralToken"; value: Token }
+        | { type: "collateralUserNft"; value: UserNftInfo }
         // AMOUNTS
         | { type: "collateralAmount"; value: number | undefined }
         | { type: "tokenAmount"; value: number | undefined }
+        | { type: "tokenUserNft"; value: UserNftInfo }
         // OTHER EVENTS
         | { type: "back" }
         | { type: "next" }
@@ -530,6 +565,29 @@ export const machine = createMachine(
             return Number(context.tokenAmount) * Number(context.tokenPrice)
           }
           return 0
+        },
+      }),
+      // User NFTs
+      clearCollateralUserNft: assign({
+        collateralUserNft: undefined,
+      }),
+      setCollateralUserNft: assign({
+        collateralUserNft: ({ event }) => {
+          if (event && "value" in event) {
+            return event.value as UserNftInfo
+          }
+          return undefined
+        },
+      }),
+      clearTokenUserNft: assign({
+        tokenUserNft: undefined,
+      }),
+      setTokenUserNft: assign({
+        tokenUserNft: ({ event }) => {
+          if (event && "value" in event) {
+            return event.value as UserNftInfo
+          }
+          return undefined
         },
       }),
       // OTHER SETTERS

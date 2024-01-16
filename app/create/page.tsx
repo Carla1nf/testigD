@@ -250,8 +250,8 @@ export default function Create() {
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
-  // console.log("context", machineState.context)
-  // console.log("machineState.value", machineState.value)
+  console.log("context", state.context)
+  console.log("value", state.value)
   // console.log("modeState.value", modeState.value)
 
   /**
