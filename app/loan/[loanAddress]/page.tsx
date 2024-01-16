@@ -472,7 +472,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             </div>
 
             {/* Form Panel */}
-            <div className="bg-[#32282D] border border-[#743A49] p-8 rounded-md">
+            <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-md">
               {/* Status row */}
               <div className="grid grid-cols-2 justify-between gap-8 mb-8">
                 <div className="flex flex-col">

@@ -17,7 +17,7 @@ const ChartWrapper = ({ children }: { children: ReactElement }) => {
    */
 
   return (
-    <div className="rounded-3xl border-2 border-[#743A49]/75 bg-black/10 grid w-full h-full pr-6 pt-6 items-center justify-center ">
+    <div className="rounded-3xl border-4 border-white/10 bg-black/10 grid w-full h-full pr-6 pt-6 items-center justify-center ">
       {children}
     </div>
   )

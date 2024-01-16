@@ -70,7 +70,6 @@ const DashboardUserTable = () => {
             })}
           </thead>
           <tbody className="flex-1 sm:flex-none">
-  
             {indexes.map((index) => {
               return <DashboardUserTableItem key={index} address={address as Address} index={index} status={status} />
             })}

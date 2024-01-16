@@ -1,4 +1,4 @@
-import { LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
+import { DEBITA_LOAN_FACTORY_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { fromDecimals, tokenDecimals, tokenName, tokenSymbol } from "@/lib/erc20"
 import { Token, findTokenByAddress } from "@/lib/tokens"
@@ -9,6 +9,7 @@ import { Address } from "wagmi"
 import { readContract } from "wagmi/actions"
 import ownershipsAbi from "../abis/ownerships.json"
 import loanCreatedAbi from "../abis/v2/createdLoan.json"
+import loanFactoryABI from "../abis/v2/loanFactory.json"
 
 export type TokenValue = Token & {
   amount: number
@@ -33,7 +34,7 @@ type Loan = {
 
 export type LoanStatus = "Borrowed" | "Lent"
 
-export const useLoanValues = (address: Address | undefined, index: number, status: LoanStatus) => {
+export const useLoanValues = (address: Address, index: number, status: LoanStatus) => {
   const useLoanValuesQuery = useQuery({
     queryKey: ["read-loan-values", address, status, index],
     queryFn: async () => {
@@ -46,26 +47,25 @@ export const useLoanValues = (address: Address | undefined, index: number, statu
         functionName: "tokenOfOwnerByIndex",
         args: [address, index],
       })) as number
-      /*
-    LoanFactory Contract has a function called NftID_to_LoanAddress 
-   const loanId = (await readContract({
-        address: DEBITA_ADDRESS,
-        abi: debitaAbi,
+
+      const loanAddress = (await readContract({
+        address: DEBITA_LOAN_FACTORY_ADDRESS,
+        abi: loanFactoryABI,
         functionName: "NftID_to_LoanAddress",
         args: [ownerNftTokenId ?? ""],
-      })) as number */
+      })) as Address
+
       const loanId = 0
       const loanData = (await readContract({
-        address: LOAN_CREATED_ADDRESS,
+        address: loanAddress,
         abi: loanCreatedAbi,
         functionName: "getLoanData",
         args: [],
       })) as any
 
       // todo: parse the loanData through zod
-
       const claimableDebt = (await readContract({
-        address: LOAN_CREATED_ADDRESS,
+        address: loanAddress,
         abi: loanCreatedAbi,
         functionName: "claimableAmount",
         args: [],
@@ -144,7 +144,7 @@ export const useLoanValues = (address: Address | undefined, index: number, statu
       } = loanData
 
       const loan: Loan = {
-        address: address as Address,
+        address: loanAddress as Address,
         collateralOwnerId: collateralOwnerID, // watch-out for the name change here in ID!
         collaterals: collaterals as TokenValue,
         cooldown,

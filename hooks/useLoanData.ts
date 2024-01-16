@@ -34,7 +34,7 @@ export const useLoanData = (loanAddress: Address) => {
     staleTime: 10000,
     queryFn: async () => {
       const loanData = await readContract({
-        address: LOAN_CREATED_ADDRESS,
+        address: loanAddress,
         abi: loanCreatedAbi,
         functionName: "getLoanData",
         args: [],
@@ -60,7 +60,7 @@ export const useLoanData = (loanAddress: Address) => {
 
       // get the amount of debt that the user has already repaid (if any)
       const claimableDebtRaw = (await readContract({
-        address: LOAN_CREATED_ADDRESS,
+        address: loanAddress,
         abi: loanCreatedAbi,
         functionName: "claimableAmount", // this is a typo in the contract, needs fixing in solidity
         args: [],

@@ -21,6 +21,7 @@ const DashboardUserTableItem = ({
   const updateDeadline = useManageNextPayment()
   const router = useRouter()
   const currentChain = useCurrentChain()
+  console.log(data, "LOAN")
 
   const hasLoanCompleted = Number(data?.loan.paymentsPaid) === Number(data?.loan.paymentCount)
   const hasLoanExecuted = data?.loan.executed
@@ -86,7 +87,7 @@ const DashboardUserTableItem = ({
       <tr
         className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 cursor-pointer animate-enter-token hover:bg-[#383838] "
         key={data.loanId}
-        onClick={() => router.push(`/loan/${data.loanId}`)}
+        onClick={() => router.push(`/loan/${data.loan.address}`)}
       >
         <td className="p-3">
           <DisplayToken token={data?.loan?.collaterals} size={24} chainSlug={currentChain.slug} />
