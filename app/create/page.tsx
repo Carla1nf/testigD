@@ -236,11 +236,15 @@ export default function Create() {
       const isTokenAssetNFT = Boolean(context?.token?.nft?.isNft ?? false)
       const collateralTokenNftId =
         isCollateralAssetNFT && context?.collateralUserNft?.id ? context?.collateralUserNft?.id : 0
+      const tokenNftId = isTokenAssetNFT && context?.tokenUserNft?.id ? context?.tokenUserNft?.id : 0
 
       // calculate value
 
       // calculate amount args
       const amountArgs = [isTokenAssetNFT ? 1 : lenderAmount, isCollateralAssetNFT ? 1 : collateralAmount]
+
+      const nftArgs = [isLendingMode ? tokenNftId : collateralTokenNftId, 1]
+      console.log("nftArgs", nftArgs)
 
       const { request } = await config.publicClient.simulateContract({
         address: DEBITA_OFFER_FACTORY_ADDRESS,
@@ -251,7 +255,7 @@ export default function Create() {
           amountArgs,
           [isTokenAssetNFT, isCollateralAssetNFT /*  if assets are NFTs --> false for now*/],
           _interest,
-          [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
+          nftArgs, // [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
           100 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
