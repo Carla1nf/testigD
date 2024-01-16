@@ -33,6 +33,7 @@ import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
 import { createBrowserInspector } from "@statelyai/inspect"
+import veTokenAbi from "@/abis/v2/veToken.json"
 
 const { inspect } = createBrowserInspector()
 
@@ -189,19 +190,32 @@ export default function Create() {
     if (context.token.address === ZERO_ADDRESS) {
       return Promise.resolve({ nativeToken: true })
     }
-    const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
-    const currentAllowance = (await readContract({
-      address: context.token.address,
-      functionName: "allowance",
-      abi: erc20Abi,
-      args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
-    })) as bigint
 
-    if (BigInt(currentAllowance) >= amountRequired) {
-      return Promise.resolve({ currentAllowance, amountRequired })
+    // is this is an NFT then we need to to see if we can transfer the NFT, amount doesnt come into it!
+    if (context.token.nft?.isNft) {
+      const hasPermissions = (await readContract({
+        address: context.token.address,
+        functionName: "isApprovedOrOwner",
+        abi: veTokenAbi,
+        args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
+      })) as bigint
+
+      throw "needs permission"
+    } else {
+      const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+      const currentAllowance = (await readContract({
+        address: context.token.address,
+        functionName: "allowance",
+        abi: erc20Abi,
+        args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
+      })) as bigint
+
+      if (BigInt(currentAllowance) >= amountRequired) {
+        return Promise.resolve({ currentAllowance, amountRequired })
+      }
+
+      throw "not enough allowance"
     }
-
-    throw "not enough allowance"
 
     // return allowance0
   }
@@ -215,22 +229,42 @@ export default function Create() {
       return Promise.resolve({ nativeToken: true })
     }
 
-    const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+    if (context.token.nft?.isNft) {
+      console.log("NFT")
+      console.log("approveLendAllowance")
 
-    const { request } = await config.publicClient.simulateContract({
-      address: context.token.address,
-      functionName: "approve",
-      abi: erc20Abi,
-      args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
-      account: address,
-    })
+      const { request } = await config.publicClient.simulateContract({
+        address: context.token.address,
+        functionName: "approve",
+        abi: veTokenAbi,
+        args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
+        account: address,
+      })
 
-    const executed = await writeContract(request)
-    // console.log("approveLendAllowance", executed)
-    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-    console.log("transaction", transaction)
+      const executed = await writeContract(request)
+      // console.log("approveLendAllowance", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
-    return Promise.resolve(executed)
+      return Promise.resolve(executed)
+    } else {
+      const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+
+      const { request } = await config.publicClient.simulateContract({
+        address: context.token.address,
+        functionName: "approve",
+        abi: erc20Abi,
+        args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
+        account: address,
+      })
+
+      const executed = await writeContract(request)
+      // console.log("approveLendAllowance", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
+
+      return Promise.resolve(executed)
+    }
   }
 
   const [state, send] = useMachine(
@@ -252,14 +286,11 @@ export default function Create() {
 
   const collateralNfts = useNftInfo({ address, token: state?.context?.collateralToken })
   const tokenNfts = useNftInfo({ address, token: state?.context?.token })
-  console.log("tokenNfts", tokenNfts)
-
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   // console.log("context", state.context)
-  // console.log("value", state.value)
-  // console.log("modeState.value", modeState.value)
+  console.log("value", state.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.

@@ -174,7 +174,7 @@ export const DebitaIcon = ({ className }: { className?: string }) => {
           y2="21.0118"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#D75071" />
+          <stop stopColor="#D75071" />
           <stop offset="1" stopColor="#705BDC" />
         </linearGradient>
         <linearGradient
