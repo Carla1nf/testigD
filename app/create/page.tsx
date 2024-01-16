@@ -141,6 +141,12 @@ export default function Create() {
       const collateralAddress = context.collateralToken.address
       const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
+      // NFT info (if applicable)
+      const isCollateralAssetNFT = Boolean(context?.collateralToken?.nft?.isNft ?? false)
+      const isTokenAssetNFT = Boolean(context?.token?.nft?.isNft ?? false)
+      const collateralTokenNftId =
+        isCollateralAssetNFT && context?.collateralUserNft?.id ? context?.collateralUserNft?.id : 0
+
       // calculate value
 
       const { request } = await config.publicClient.simulateContract({
@@ -150,9 +156,9 @@ export default function Create() {
         args: [
           [lenderAddress, collateralAddress],
           [lenderAmount, collateralAmount],
-          [false, false /*  if assets are NFTs --> false for now*/],
+          [isTokenAssetNFT, isCollateralAssetNFT /*  if assets are NFTs --> false for now*/],
           _interest,
-          [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
+          [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
           100 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
