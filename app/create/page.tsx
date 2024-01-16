@@ -482,6 +482,7 @@ export default function Create() {
 
   const onSelectTokenAmount = useCallback(
     (value: number | undefined) => {
+      console.log(1)
       send({ type: "tokenAmount", value })
     },
     [send]
@@ -817,7 +818,7 @@ export default function Create() {
                 <Label variant="create">Collateral Value</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
                   {dollars({
-                    value: state.context.collateralValue + Number(state?.context?.collateralValue1),
+                    value: state.context.collateralValue + Number(state?.context?.collateralPrice),
                   })}
                 </div>
               </div>
