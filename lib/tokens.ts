@@ -190,7 +190,7 @@ export const INTERNAL_TOKENS: Tokens = {
       name: "Vested EQUAL",
       symbol: "veEQUAL",
       decimals: 18,
-      address: "0x8313f3551c4d3984ffbadfb42f780d0c8763ce94",
+      address: "0x8313f3551C4D3984FfbaDFb42f780D0c8763Ce94",
       chainId: fantom.id,
       isNative: false,
       isLp: false,

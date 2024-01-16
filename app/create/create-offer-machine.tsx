@@ -82,10 +82,10 @@ export const machine = createMachine(
                   input: ({ context, event }) => ({ context, event }),
                   src: fromPromise(async ({ input: { context, event } }) => {
                     const desiredLtv = Number(event.value)
-                    if (context?.collateralValue || context?.collateralValue1) {
+                    if (context?.collateralValue0 || context?.collateralValue1) {
                       // Calculate the amount of token needed to satisfy the desired LTV ratio
                       // This will be used to determine the amount of token to borrow
-                      const totalCollateralValue = Number(context.collateralValue) + Number(context.collateralValue1)
+                      const totalCollateralValue = Number(context.collateralValue0) + Number(context.collateralValue1)
                       const desiredTokenValue = Number(totalCollateralValue) * desiredLtv
                       const desiredTokenAmount = Number(desiredTokenValue) / Number(context.tokenPrice)
                       return desiredTokenAmount
@@ -603,7 +603,9 @@ export const machine = createMachine(
       }),
 
       raiseLTV: raise(({ context }) => {
+        console.log("COLATASORATIO")
         const ratio = Number(fixedDecimals(context?.ltvRatio ?? 0, 3))
+
         switch (ratio) {
           case 25: {
             return { type: "ltv.25" as const }

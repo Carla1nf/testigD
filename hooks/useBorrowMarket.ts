@@ -24,11 +24,13 @@ export const useBorrowMarket = () => {
         const token = findInternalTokenByAddress(currentChain.slug, offer.tokenAddress as Address)
         offer.price = tokenPrice?.price ?? 0
         offer.token = token
-
+        console.log(token, i)
+        console.log(offer.tokenAddress, i)
         /**
          * This is the calc from V1
          * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
          */
+
         offer.liquidityOffer = offer.amount * offer.price
       }
 
