@@ -239,13 +239,16 @@ export default function Create() {
 
       // calculate value
 
+      // calculate amount args
+      const amountArgs = [isTokenAssetNFT ? 1 : lenderAmount, isCollateralAssetNFT ? 1 : collateralAmount]
+
       const { request } = await config.publicClient.simulateContract({
         address: DEBITA_OFFER_FACTORY_ADDRESS,
         functionName: "createOfferV2",
         abi: offerFactoryABI,
         args: [
           [lenderAddress, collateralAddress],
-          [lenderAmount, collateralAmount],
+          amountArgs,
           [isTokenAssetNFT, isCollateralAssetNFT /*  if assets are NFTs --> false for now*/],
           _interest,
           [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
