@@ -55,19 +55,19 @@ export const INTERNAL_TOKENS: Tokens = {
         isNft: false,
       },
     },
-    {
-      name: "FTM",
-      symbol: "FTM",
-      decimals: 18,
-      address: ZERO_ADDRESS,
-      chainId: fantom.id,
-      isNative: true,
-      isLp: false,
-      icon: "/files/tokens/fantom/ftm-native.svg",
-      nft: {
-        isNft: false,
-      },
-    },
+    // {
+    //   name: "FTM",
+    //   symbol: "FTM",
+    //   decimals: 18,
+    //   address: ZERO_ADDRESS,
+    //   chainId: fantom.id,
+    //   isNative: true,
+    //   isLp: false,
+    //   icon: "/files/tokens/fantom/ftm-native.svg",
+    //   nft: {
+    //     isNft: false,
+    //   },
+    // },
     {
       name: "axlUSDC",
       symbol: "axlUSDC",

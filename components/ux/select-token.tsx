@@ -15,6 +15,7 @@ import DisplayToken from "./display-token"
 import { UserNftInfo } from "@/hooks/useNftInfo"
 import { yesNo } from "@/lib/display"
 import { useInternalToken } from "@/hooks/useInternalToken"
+import { Badge } from "../ui/badge"
 
 const SelectToken = ({
   amount,
@@ -119,7 +120,11 @@ const SelectToken = ({
                   <DisplayToken token={token} size={24} className="text-base font-bold" chainSlug={currentChain.slug} />
 
                   <ShowWhenTrue when={Boolean(token?.nft?.isNft)}>
-                    <div className="ml-auto flex flex-row items-center gap-[2px] text-xs text-[#B45696]">NFT</div>
+                    <div className="ml-auto flex-inline flex-row items-center">
+                      <Badge padding="tight" text="tiny" className="max-h-[18px]">
+                        NFT
+                      </Badge>
+                    </div>
                   </ShowWhenTrue>
                 </CommandItem>
               ))}

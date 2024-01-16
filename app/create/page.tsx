@@ -1,5 +1,6 @@
 "use client"
 
+import veTokenAbi from "@/abis/v2/veToken.json"
 import { DebitaIcon, SpinnerIcon } from "@/components/icons"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -19,20 +20,58 @@ import { toDecimals } from "@/lib/erc20"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
+import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import { AlertCircle, LucideMinus, LucidePlus, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { InputNumber } from "primereact/inputnumber"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { decodeEventLog, parseAbi } from "viem"
-import { useConfig } from "wagmi"
+import { Address, decodeEventLog, parseAbi } from "viem"
+import { PublicClient, useConfig } from "wagmi"
 import { readContract, writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
 
+// function convertBigIntToString(obj: any): any {
+//   if (obj === null || obj === undefined) {
+//     return obj
+//   }
+
+//   // Handling arrays
+//   if (Array.isArray(obj)) {
+//     return obj.map(convertBigIntToString)
+//   }
+
+//   // Handling objects
+//   if (typeof obj === "object") {
+//     const result: { [key: string]: any } = {}
+//     for (const [key, value] of Object.entries(obj)) {
+//       result[key] = convertBigIntToString(value)
+//     }
+//     return result
+//   }
+
+//   // Converting bigint to string
+//   if (typeof obj === "bigint") {
+//     return obj.toString()
+//   }
+
+//   // Returning all other types as they are
+//   return obj
+// }
+
+// const { inspect } = createBrowserInspector({
+//   serialize: (event) => {
+//     const processed = convertBigIntToString(event)
+
+//     return processed
+//   },
+// })
+
+const { inspect } = createBrowserInspector()
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
     value: estimatedApr ?? 0,
@@ -40,15 +79,66 @@ const displayEstimatedApr = (estimatedApr: number) => {
     decimalsWhenLessThanOne: 2,
   })
 }
+
+// begin a little library of reusable web3 functions
+const isVeTokenApprovedOrOwner = async ({
+  veToken,
+  spender,
+  nftId,
+}: {
+  veToken: Address
+  spender: Address
+  nftId: bigint
+}) => {
+  const hasPermissions = await readContract({
+    address: veToken,
+    functionName: "isApprovedOrOwner",
+    abi: veTokenAbi,
+    args: [spender, nftId],
+  })
+  return Boolean(hasPermissions)
+}
+
+const approveVeToken = async ({
+  veToken,
+  spender,
+  account,
+  nftId,
+  publicClient,
+}: {
+  veToken: Address
+  spender: Address
+  account: Address
+  nftId: bigint
+  publicClient: PublicClient
+}) => {
+  const { request } = await publicClient.simulateContract({
+    address: veToken,
+    functionName: "approve",
+    abi: veTokenAbi,
+    args: [spender, nftId],
+    account,
+  })
+
+  console.log("")
+  console.log("approveVeToken")
+  console.log("veToken", veToken)
+  console.log("[spender, nftId]", [spender, nftId])
+  const executed = await writeContract(request)
+  console.log("executed", executed)
+  const transaction = await publicClient.waitForTransactionReceipt(executed)
+  console.log("transaction", transaction)
+  console.log("")
+
+  return Promise.resolve(executed)
+}
+
 export default function Create() {
   const config = useConfig()
   const { address } = useControlledAddress()
   const currentChain = useCurrentChain()
-  const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
+  const wftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "wFTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
-
-  // MODE MACHINE
-  // const [modeState, modeSend] = useMachine(modeMachine)
   const [offerAddress, setAddress] = useState("")
 
   // CREATE BORROW MACHINE
@@ -141,7 +231,20 @@ export default function Create() {
       const collateralAddress = context.collateralToken.address
       const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
+      // NFT info (if applicable)
+      const isCollateralAssetNFT = Boolean(context?.collateralToken?.nft?.isNft ?? false)
+      const isTokenAssetNFT = Boolean(context?.token?.nft?.isNft ?? false)
+      const collateralTokenNftId =
+        isCollateralAssetNFT && context?.collateralUserNft?.id ? context?.collateralUserNft?.id : 0
+      const tokenNftId = isTokenAssetNFT && context?.tokenUserNft?.id ? context?.tokenUserNft?.id : 0
+
       // calculate value
+
+      // calculate amount args
+      const amountArgs = [isTokenAssetNFT ? 1 : lenderAmount, isCollateralAssetNFT ? 1 : collateralAmount]
+
+      const nftArgs = [isLendingMode ? tokenNftId : collateralTokenNftId, 1]
+      console.log("nftArgs", nftArgs)
 
       const { request } = await config.publicClient.simulateContract({
         address: DEBITA_OFFER_FACTORY_ADDRESS,
@@ -149,10 +252,10 @@ export default function Create() {
         abi: offerFactoryABI,
         args: [
           [lenderAddress, collateralAddress],
-          [lenderAmount, collateralAmount],
-          [false, false /*  if assets are NFTs --> false for now*/],
+          amountArgs,
+          [isTokenAssetNFT, isCollateralAssetNFT /*  if assets are NFTs --> false for now*/],
           _interest,
-          [0, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
+          nftArgs, // [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
           100 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
@@ -183,19 +286,34 @@ export default function Create() {
     if (context.token.address === ZERO_ADDRESS) {
       return Promise.resolve({ nativeToken: true })
     }
-    const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
-    const currentAllowance = (await readContract({
-      address: context.token.address,
-      functionName: "allowance",
-      abi: erc20Abi,
-      args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
-    })) as bigint
 
-    if (BigInt(currentAllowance) >= amountRequired) {
-      return Promise.resolve({ currentAllowance, amountRequired })
+    if (context.token.nft?.isNft) {
+      const hasPermissions = await isVeTokenApprovedOrOwner({
+        veToken: context.token.address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        nftId: context.tokenUserNft.id,
+      })
+
+      if (hasPermissions) {
+        return Promise.resolve({ hasPermissions })
+      }
+
+      throw "needs permission"
+    } else {
+      const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+      const currentAllowance = (await readContract({
+        address: context.token.address,
+        functionName: "allowance",
+        abi: erc20Abi,
+        args: [address, DEBITA_OFFER_FACTORY_ADDRESS],
+      })) as bigint
+
+      if (BigInt(currentAllowance) >= amountRequired) {
+        return Promise.resolve({ currentAllowance, amountRequired })
+      }
+
+      throw "not enough allowance"
     }
-
-    throw "not enough allowance"
 
     // return allowance0
   }
@@ -209,22 +327,49 @@ export default function Create() {
       return Promise.resolve({ nativeToken: true })
     }
 
-    const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+    if (context.token.nft?.isNft) {
+      console.log("NFT")
+      console.log("approveLendAllowance")
 
-    const { request } = await config.publicClient.simulateContract({
-      address: context.token.address,
-      functionName: "approve",
-      abi: erc20Abi,
-      args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
-      account: address,
-    })
+      return approveVeToken({
+        veToken: context.token.address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        account: address as Address,
+        nftId: context.tokenUserNft.id,
+        publicClient: config.publicClient,
+      })
+      // const { request } = await config.publicClient.simulateContract({
+      //   address: context.token.address,
+      //   functionName: "approve",
+      //   abi: veTokenAbi,
+      //   args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
+      //   account: address,
+      // })
 
-    const executed = await writeContract(request)
-    // console.log("approveLendAllowance", executed)
-    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-    console.log("transaction", transaction)
+      // const executed = await writeContract(request)
+      // // console.log("approveLendAllowance", executed)
+      // const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      // console.log("transaction", transaction)
 
-    return Promise.resolve(executed)
+      // return Promise.resolve(executed)
+    } else {
+      const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+
+      const { request } = await config.publicClient.simulateContract({
+        address: context.token.address,
+        functionName: "approve",
+        abi: erc20Abi,
+        args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
+        account: address,
+      })
+
+      const executed = await writeContract(request)
+      // console.log("approveLendAllowance", executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
+
+      return Promise.resolve(executed)
+    }
   }
 
   const [state, send] = useMachine(
@@ -236,7 +381,10 @@ export default function Create() {
         checkingLendAllowance: fromPromise(checkingLendAllowance),
         approveLendAllowance: fromPromise(approveLendAllowance),
       },
-    })
+    }),
+    {
+      inspect,
+    }
   )
 
   const mode = state.context.mode
@@ -245,14 +393,11 @@ export default function Create() {
 
   const collateralNfts = useNftInfo({ address, token: state?.context?.collateralToken })
   const tokenNfts = useNftInfo({ address, token: state?.context?.token })
-  console.log("tokenNfts", tokenNfts)
-
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
   const ltvCustomInputRef = useRef<HTMLInputElement>(null)
 
   // console.log("context", state.context)
-  // console.log("value", state.value)
-  // console.log("modeState.value", modeState.value)
+  console.log("value", state.value)
 
   /**
    * The user can enter an LTV ratio manually, and have the field calculated when they alter the amount field.
@@ -273,13 +418,13 @@ export default function Create() {
 
   // Default tokens
   useEffect(() => {
-    if (ftm && state.context.collateralToken === undefined) {
-      send({ type: "collateralToken", value: ftm })
+    if (wftm && state.context.collateralToken === undefined) {
+      send({ type: "collateralToken", value: wftm })
     }
     if (usdc && state.context.token === undefined) {
       send({ type: "token", value: usdc })
     }
-  }, [ftm, usdc, state.context.collateralToken, send, state.context.token])
+  }, [wftm, usdc, state.context.collateralToken, send, state.context.token])
 
   // TOKENS
   const tokens = useMemo(() => {
@@ -417,7 +562,7 @@ export default function Create() {
                 <SelectToken
                   tokens={tokens}
                   amount={state.context.collateralAmount}
-                  defaultToken={ftm as Token}
+                  defaultToken={wftm as Token}
                   selectedToken={state.context.collateralToken}
                   selectedUserNft={state.context.collateralUserNft}
                   onSelectToken={onSelectCollateralToken0}
