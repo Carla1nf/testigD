@@ -32,6 +32,8 @@ const fetchPrice = async ({ event }: { event: { slug: string; token: Token } }) 
   return result?.price ?? 0
 }
 
+export type LendingMode = "lend" | "borrow"
+
 export const machine = createMachine(
   {
     id: "createOffer",
@@ -57,6 +59,8 @@ export const machine = createMachine(
         // the exact LTV match of either 25/50/75/Custom which is used to select buttons,
         // we will move this to a state once I know how to raise events from within an action
         ltv: undefined,
+
+        mode: "lend" as LendingMode,
       }
     },
     states: {
@@ -310,6 +314,9 @@ export const machine = createMachine(
             guard: "isFormComplete",
             description: "Denies access to the confirmation screen if form not complete",
           },
+          mode: {
+            actions: ["setMode"],
+          },
         },
         type: "parallel",
       },
@@ -317,11 +324,11 @@ export const machine = createMachine(
         on: {
           confirm: [
             {
-              guard: ({ event }) => event.mode === "lend",
+              guard: ({ context }) => context.mode === "lend",
               target: "checkingLendAllowance",
             },
             {
-              guard: ({ event }) => event.mode === "borrow",
+              guard: ({ context }) => context.mode === "borrow",
               target: "checkingBorrowAllowance",
             },
           ],
@@ -422,6 +429,7 @@ export const machine = createMachine(
         numberOfPayments: number | undefined
         ltvRatio: number | undefined
         estimatedApr: number
+        mode: LendingMode
       }
       events:
         | { type: "token"; value: Token }
@@ -433,8 +441,9 @@ export const machine = createMachine(
         | { type: "back" }
         | { type: "next" }
         | { type: "retry" }
-        | { type: "confirm"; mode: "lend" | "borrow" }
-        | { type: "again"; mode: "lend" | "borrow" }
+        | { type: "confirm" }
+        | { type: "mode"; mode: LendingMode }
+        | { type: "again" }
         | { type: "durationDays"; value: number }
         | { type: "interestPercent"; value: number }
         | { type: "numberOfPayments"; value: number }
@@ -447,6 +456,14 @@ export const machine = createMachine(
   },
   {
     actions: {
+      setMode: assign({
+        mode: ({ event, context }) => {
+          if (event && "mode" in event && ["lend", "borrow"].includes(event.mode)) {
+            return event.mode
+          }
+          return context.mode
+        },
+      }),
       // TOKENS
       setCollateralToken: assign({
         collateralToken: ({ event }) => {

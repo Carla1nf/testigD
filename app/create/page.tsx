@@ -12,6 +12,7 @@ import DisplayNetwork from "@/components/ux/display-network"
 import SelectToken from "@/components/ux/select-token"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
+import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
 import { toDecimals } from "@/lib/erc20"
@@ -27,12 +28,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { decodeEventLog, parseAbi } from "viem"
 import { useConfig } from "wagmi"
 import { readContract, writeContract } from "wagmi/actions"
-import { fromPromise, setup } from "xstate"
+import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
-import { machine } from "./create-offer-machine"
-import { modeMachine } from "./mode-machine"
-import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
+import { LendingMode, machine } from "./create-offer-machine"
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -49,7 +48,7 @@ export default function Create() {
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
 
   // MODE MACHINE
-  const [modeState, modeSend] = useMachine(modeMachine)
+  // const [modeState, modeSend] = useMachine(modeMachine)
   const [offerAddress, setAddress] = useState("")
 
   // CREATE BORROW MACHINE
@@ -76,7 +75,7 @@ export default function Create() {
 
     // collateralAmount of collateralToken
     if (context.collateralToken.address === ZERO_ADDRESS) {
-      return Promise.resolve({ nativeToken: true, mode: "borrow" })
+      return Promise.resolve({ nativeToken: true })
     }
 
     const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
@@ -89,7 +88,7 @@ export default function Create() {
     })) as bigint
 
     if (BigInt(currentAllowance) >= amountRequired) {
-      return Promise.resolve({ currentAllowance, amountRequired, mode: "borrow" })
+      return Promise.resolve({ currentAllowance, amountRequired })
     }
 
     throw "not enough allowance"
@@ -101,7 +100,7 @@ export default function Create() {
 
     // collateralAmount of collateralToken
     if (context.collateralToken.address === ZERO_ADDRESS) {
-      return Promise.resolve({ nativeToken: true, mode: "borrow" })
+      return Promise.resolve({ nativeToken: true })
     }
 
     const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
@@ -119,7 +118,7 @@ export default function Create() {
     const transaction = await config.publicClient.waitForTransactionReceipt(executed)
     console.log("transaction", transaction)
 
-    return { ...executed, mode: "borrow" }
+    return executed
   }
 
   const creatingOffer = async ({ input }) => {
@@ -129,9 +128,6 @@ export default function Create() {
 
     console.log("context", context)
     console.log("event", event)
-
-    const mode = event.output.mode === "borrow" ? "borrow" : "lend"
-    console.log("mode", mode)
 
     //  value used in both modes
     const _interest = context.interestPercent * 100
@@ -160,7 +156,7 @@ export default function Create() {
           100 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
-          [mode === "lend", true], // [0] --> isLending, [1] --> isPerpetual
+          [isLendingMode, true], // [0] --> isLending, [1] --> isPerpetual
           "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
         ],
         account: address,
@@ -175,7 +171,7 @@ export default function Create() {
     } catch (error: any) {
       console.log("createLenderOption->error", error)
 
-      return Promise.reject({ error: error.message, mode: "lend" })
+      return Promise.reject({ error: error.message })
     }
   }
 
@@ -185,7 +181,7 @@ export default function Create() {
 
     // collateralAmount of collateralToken
     if (context.token.address === ZERO_ADDRESS) {
-      return Promise.resolve({ nativeToken: true, mode: "lend" })
+      return Promise.resolve({ nativeToken: true })
     }
     const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
     const currentAllowance = (await readContract({
@@ -196,7 +192,7 @@ export default function Create() {
     })) as bigint
 
     if (BigInt(currentAllowance) >= amountRequired) {
-      return Promise.resolve({ currentAllowance, amountRequired, mode: "lend" })
+      return Promise.resolve({ currentAllowance, amountRequired })
     }
 
     throw "not enough allowance"
@@ -210,7 +206,7 @@ export default function Create() {
 
     // collateralAmount of collateralToken
     if (context.token.address === ZERO_ADDRESS) {
-      return Promise.resolve({ nativeToken: true, mode: "lend" })
+      return Promise.resolve({ nativeToken: true })
     }
 
     const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
@@ -228,7 +224,7 @@ export default function Create() {
     const transaction = await config.publicClient.waitForTransactionReceipt(executed)
     console.log("transaction", transaction)
 
-    return Promise.resolve({ ...executed, mode: "lend" })
+    return Promise.resolve(executed)
   }
 
   const [state, send] = useMachine(
@@ -242,6 +238,10 @@ export default function Create() {
       },
     })
   )
+
+  const mode = state.context.mode
+  const isLendingMode = mode === ("lend" as LendingMode)
+  const isBorrowingMode = mode === ("borrow" as LendingMode)
 
   const collateralNfts = useNftInfo({ address, token: state?.context?.collateralToken })
   const tokenNfts = useNftInfo({ address, token: state?.context?.token })
@@ -372,12 +372,14 @@ export default function Create() {
         </div>
 
         {/* We can only switch modes when the filling out the form or confirming the offer */}
-        <ShowWhenTrue when={state.matches("form") || state.matches("confirmation")}>
+        <ShowWhenTrue when={state.matches("form")}>
           <Tabs
-            defaultValue={modeState.value as "lend" | "borrow"}
+            defaultValue={mode}
             className=""
-            onValueChange={() => {
-              modeSend({ type: "mode" })
+            onValueChange={(value) => {
+              if (["lend", "borrow"].includes(value)) {
+                send({ type: "mode", mode: value as "lend" | "borrow" })
+              }
             }}
           >
             <TabsList className="bg-[#252324] rounded-b-none gap-2">
@@ -394,14 +396,14 @@ export default function Create() {
         {/* Form */}
         <ShowWhenTrue when={state.matches("form")}>
           <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
-            <div className={cn("flex gap-6", modeState.matches("lend") ? "flex-col-reverse" : "flex-col")}>
+            <div className={cn("flex gap-6", isLendingMode ? "flex-col-reverse" : "flex-col")}>
               {/* Collateral token 0 */}
               <div className="">
                 <div className="flex justify-between items-center">
-                  <ShowWhenTrue when={modeState.matches("borrow")}>
+                  <ShowWhenTrue when={isBorrowingMode}>
                     <Label variant="create">Your Collateral Token</Label>
                   </ShowWhenTrue>
-                  <ShowWhenTrue when={modeState.matches("lend")}>
+                  <ShowWhenTrue when={isLendingMode}>
                     <Label variant="create">Wanted Collateral Token</Label>
                   </ShowWhenTrue>
                   <TokenValuation
@@ -428,10 +430,10 @@ export default function Create() {
               {/* Wanted borrow token */}
               <div className="">
                 <div className="flex justify-between items-center">
-                  <ShowWhenTrue when={modeState.matches("borrow")}>
+                  <ShowWhenTrue when={isBorrowingMode}>
                     <Label variant="create">Wanted Borrow Token</Label>
                   </ShowWhenTrue>
-                  <ShowWhenTrue when={modeState.matches("lend")}>
+                  <ShowWhenTrue when={isLendingMode}>
                     <Label variant="create">Your Lending Token</Label>
                   </ShowWhenTrue>
                   <TokenValuation
@@ -616,8 +618,8 @@ export default function Create() {
               <div className="flex flex-row justify-between items-center">
                 <div className="flex flex-row gap-2 items-center">
                   <div className="text-xl font-bold">
-                    <ShowWhenTrue when={modeState.matches("borrow")}>Confirm Borrow Offer</ShowWhenTrue>
-                    <ShowWhenTrue when={modeState.matches("lend")}>Confirm Lend Offer</ShowWhenTrue>
+                    <ShowWhenTrue when={isBorrowingMode}>Confirm Borrow Offer</ShowWhenTrue>
+                    <ShowWhenTrue when={isLendingMode}>Confirm Lend Offer</ShowWhenTrue>
                   </div>
                 </div>
                 <DebitaIcon className="h-9 w-9 flex-basis-1" />
@@ -663,7 +665,7 @@ export default function Create() {
 
               <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">Offer Type</Label>
-                <div className="font-bold text-base text-[#D0D0D0] capitalize">{modeState.value.toString()}</div>
+                <div className="font-bold text-base text-[#D0D0D0] capitalize">{mode}</div>
               </div>
 
               <div className="border border-white/10 rounded-sm p-2">
@@ -702,7 +704,7 @@ export default function Create() {
                   variant="action"
                   className="px-12"
                   onClick={() => {
-                    send({ type: "confirm", mode: modeState.value as "lend" | "borrow" })
+                    send({ type: "confirm" })
                   }}
                 >
                   Confirm
@@ -795,7 +797,7 @@ export default function Create() {
                   <Button variant="secondary" className="px-12" onClick={back}>
                     Back
                   </Button>
-                  <Link href={`/${modeState.matches("borrow") ? "borrow-offer" : "lend-offer"}/${offerAddress}`}>
+                  <Link href={`/${isBorrowingMode ? "borrow-offer" : "lend-offer"}/${offerAddress}`}>
                     <Button variant="action" className="px-12">
                       View Offer
                     </Button>
