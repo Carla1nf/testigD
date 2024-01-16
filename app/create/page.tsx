@@ -1,5 +1,6 @@
 "use client"
 
+import veTokenAbi from "@/abis/v2/veToken.json"
 import { DebitaIcon, SpinnerIcon } from "@/components/icons"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -19,24 +20,58 @@ import { toDecimals } from "@/lib/erc20"
 import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
+import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import { AlertCircle, LucideMinus, LucidePlus, XCircle } from "lucide-react"
 import Link from "next/link"
 import pluralize from "pluralize"
 import { InputNumber } from "primereact/inputnumber"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { decodeEventLog, parseAbi } from "viem"
-import { useConfig } from "wagmi"
+import { Address, decodeEventLog, parseAbi } from "viem"
+import { PublicClient, useConfig } from "wagmi"
 import { readContract, writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
-import { createBrowserInspector } from "@statelyai/inspect"
-import veTokenAbi from "@/abis/v2/veToken.json"
+
+// function convertBigIntToString(obj: any): any {
+//   if (obj === null || obj === undefined) {
+//     return obj
+//   }
+
+//   // Handling arrays
+//   if (Array.isArray(obj)) {
+//     return obj.map(convertBigIntToString)
+//   }
+
+//   // Handling objects
+//   if (typeof obj === "object") {
+//     const result: { [key: string]: any } = {}
+//     for (const [key, value] of Object.entries(obj)) {
+//       result[key] = convertBigIntToString(value)
+//     }
+//     return result
+//   }
+
+//   // Converting bigint to string
+//   if (typeof obj === "bigint") {
+//     return obj.toString()
+//   }
+
+//   // Returning all other types as they are
+//   return obj
+// }
+
+// const { inspect } = createBrowserInspector({
+//   serialize: (event) => {
+//     const processed = convertBigIntToString(event)
+
+//     return processed
+//   },
+// })
 
 const { inspect } = createBrowserInspector()
-
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
     value: estimatedApr ?? 0,
@@ -44,6 +79,60 @@ const displayEstimatedApr = (estimatedApr: number) => {
     decimalsWhenLessThanOne: 2,
   })
 }
+
+// begin a little library of reusable web3 functions
+const isVeTokenApprovedOrOwner = async ({
+  veToken,
+  spender,
+  nftId,
+}: {
+  veToken: Address
+  spender: Address
+  nftId: bigint
+}) => {
+  const hasPermissions = await readContract({
+    address: veToken,
+    functionName: "isApprovedOrOwner",
+    abi: veTokenAbi,
+    args: [spender, nftId],
+  })
+  return Boolean(hasPermissions)
+}
+
+const approveVeToken = async ({
+  veToken,
+  spender,
+  account,
+  nftId,
+  publicClient,
+}: {
+  veToken: Address
+  spender: Address
+  account: Address
+  nftId: bigint
+  publicClient: PublicClient
+}) => {
+  const { request } = await publicClient.simulateContract({
+    address: veToken,
+    functionName: "approve",
+    abi: veTokenAbi,
+    args: [spender, nftId],
+    account,
+  })
+
+  console.log("")
+  console.log("approveVeToken")
+  console.log("veToken", veToken)
+  console.log("[spender, nftId]", [spender, nftId])
+  const executed = await writeContract(request)
+  console.log("executed", executed)
+  const transaction = await publicClient.waitForTransactionReceipt(executed)
+  console.log("transaction", transaction)
+  console.log("")
+
+  return Promise.resolve(executed)
+}
+
 export default function Create() {
   const config = useConfig()
   const { address } = useControlledAddress()
@@ -191,14 +280,16 @@ export default function Create() {
       return Promise.resolve({ nativeToken: true })
     }
 
-    // is this is an NFT then we need to to see if we can transfer the NFT, amount doesnt come into it!
     if (context.token.nft?.isNft) {
-      const hasPermissions = (await readContract({
-        address: context.token.address,
-        functionName: "isApprovedOrOwner",
-        abi: veTokenAbi,
-        args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
-      })) as bigint
+      const hasPermissions = await isVeTokenApprovedOrOwner({
+        veToken: context.token.address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        nftId: context.tokenUserNft.id,
+      })
+
+      if (hasPermissions) {
+        return Promise.resolve({ hasPermissions })
+      }
 
       throw "needs permission"
     } else {
@@ -233,20 +324,27 @@ export default function Create() {
       console.log("NFT")
       console.log("approveLendAllowance")
 
-      const { request } = await config.publicClient.simulateContract({
-        address: context.token.address,
-        functionName: "approve",
-        abi: veTokenAbi,
-        args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
-        account: address,
+      return approveVeToken({
+        veToken: context.token.address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        account: address as Address,
+        nftId: context.tokenUserNft.id,
+        publicClient: config.publicClient,
       })
+      // const { request } = await config.publicClient.simulateContract({
+      //   address: context.token.address,
+      //   functionName: "approve",
+      //   abi: veTokenAbi,
+      //   args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
+      //   account: address,
+      // })
 
-      const executed = await writeContract(request)
-      // console.log("approveLendAllowance", executed)
-      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-      console.log("transaction", transaction)
+      // const executed = await writeContract(request)
+      // // console.log("approveLendAllowance", executed)
+      // const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      // console.log("transaction", transaction)
 
-      return Promise.resolve(executed)
+      // return Promise.resolve(executed)
     } else {
       const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
 
@@ -277,7 +375,9 @@ export default function Create() {
         approveLendAllowance: fromPromise(approveLendAllowance),
       },
     }),
-    { inspect }
+    {
+      inspect,
+    }
   )
 
   const mode = state.context.mode
