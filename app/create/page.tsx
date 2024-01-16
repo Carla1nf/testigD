@@ -32,6 +32,9 @@ import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
+import { createBrowserInspector } from "@statelyai/inspect"
+
+const { inspect } = createBrowserInspector()
 
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
@@ -46,9 +49,6 @@ export default function Create() {
   const currentChain = useCurrentChain()
   const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
-
-  // MODE MACHINE
-  // const [modeState, modeSend] = useMachine(modeMachine)
   const [offerAddress, setAddress] = useState("")
 
   // CREATE BORROW MACHINE
@@ -242,7 +242,8 @@ export default function Create() {
         checkingLendAllowance: fromPromise(checkingLendAllowance),
         approveLendAllowance: fromPromise(approveLendAllowance),
       },
-    })
+    }),
+    { inspect }
   )
 
   const mode = state.context.mode
