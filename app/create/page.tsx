@@ -137,7 +137,7 @@ export default function Create() {
   const config = useConfig()
   const { address } = useControlledAddress()
   const currentChain = useCurrentChain()
-  const ftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "FTM"), [currentChain.slug])
+  const wftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "wFTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
   const [offerAddress, setAddress] = useState("")
 
@@ -411,13 +411,13 @@ export default function Create() {
 
   // Default tokens
   useEffect(() => {
-    if (ftm && state.context.collateralToken === undefined) {
-      send({ type: "collateralToken", value: ftm })
+    if (wftm && state.context.collateralToken === undefined) {
+      send({ type: "collateralToken", value: wftm })
     }
     if (usdc && state.context.token === undefined) {
       send({ type: "token", value: usdc })
     }
-  }, [ftm, usdc, state.context.collateralToken, send, state.context.token])
+  }, [wftm, usdc, state.context.collateralToken, send, state.context.token])
 
   // TOKENS
   const tokens = useMemo(() => {
@@ -555,7 +555,7 @@ export default function Create() {
                 <SelectToken
                   tokens={tokens}
                   amount={state.context.collateralAmount}
-                  defaultToken={ftm as Token}
+                  defaultToken={wftm as Token}
                   selectedToken={state.context.collateralToken}
                   selectedUserNft={state.context.collateralUserNft}
                   onSelectToken={onSelectCollateralToken0}
