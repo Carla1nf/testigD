@@ -651,8 +651,8 @@ export const machine = createMachine(
       }),
     },
     guards: {
-      isFormComplete: ({ context }, params) => {
-        return Boolean(
+      isFormComplete: ({ context }) => {
+        const isComplete = Boolean(
           context.collateralToken &&
             context.collateralAmount &&
             context.token &&
@@ -661,6 +661,15 @@ export const machine = createMachine(
             context.interestPercent &&
             context.numberOfPayments
         )
+
+        // if we have fNFTs then make sure the underlying is also selected
+        if (context.collateralToken?.nft.isNft && !context.collateralUserNft) {
+          return false
+        }
+        if (context.token?.nft.isNft && !context.tokenUserNft) {
+          return false
+        }
+        return isComplete
       },
       isValidToken: ({ context, event }, params) => {
         if ("value" in event) {
