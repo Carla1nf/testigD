@@ -115,14 +115,16 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
       const foundNftInterestToken = findInternalTokenByAddress(currentChain.slug, parsedData.interest_address)
-      const nftInterestToken = {
-        address: parsedData.interest_address,
-        amountRaw: lenderData.nftData[1],
-        token: foundNftInterestToken,
-        amount: fromDecimals(lenderData.nftData[1], foundNftInterestToken?.decimals ?? 18),
-        price: 0,
-        valueUsd: 0,
-      }
+      const nftInterestToken = foundNftInterestToken
+        ? {
+            address: parsedData.interest_address,
+            amountRaw: lenderData.nftData[1],
+            token: foundNftInterestToken,
+            amount: fromDecimals(lenderData.nftData[1], foundNftInterestToken?.decimals ?? 18),
+            price: 0,
+            valueUsd: 0,
+          }
+        : null
 
       return {
         collateral,
