@@ -210,3 +210,11 @@ export const getAllTokens = (chainSlug: string) => {
 export const isNft = (token: Token | undefined) => Boolean(token?.nft)
 export const nftInfoLens = (token: Token | undefined) => token?.nft?.infoLens
 export const nftInfoLensType = (token: Token | undefined) => token?.nft?.infoLensType
+export const nftUnderlying = (token: Token | undefined) => token?.nft?.underlying
+export const nftUnderlyingToken = (token: Token | undefined, chainSlug?: string) => {
+  if (!chainSlug) return undefined
+  const underlying = nftUnderlying(token)
+  if (!underlying) return undefined
+  const found = findInternalTokenBySymbol(chainSlug, underlying)
+  return found
+}

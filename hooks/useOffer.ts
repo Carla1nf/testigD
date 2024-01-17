@@ -52,6 +52,8 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         args: [],
       })) as LenderDataReceived
 
+      console.log("lenderData", lenderData)
+
       const owner = (await readContract({
         address: lendOfferAddress,
         abi: createdOfferABI,
@@ -139,7 +141,6 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         wantedCollateralAmount: lenderData.assetAmounts[1],
         totalCollateralValue,
         perpetual: lenderData.isPerpetual,
-        // isNFT: lenderData.isAssetNFT,
         tokenId: Number(lenderData.nftData[0]),
         nftInterestToken,
         valueOfVeNFT: lenderData.valueOfVeNFT,
