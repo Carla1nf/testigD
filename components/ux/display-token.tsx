@@ -69,34 +69,38 @@ const DisplayAmount = ({
   if (isNft(token)) {
     const underlyingToken = nftUnderlyingToken(token, chainSlug)
 
-    return (
-      <span key="Amount" className="text-white">
-        <HoverCard>
-          <HoverCardTrigger>#{nftInfo?.id}</HoverCardTrigger>
-          <HoverCardContent className="bg-[#212121] border-[1px]  border-[#743A49] text-sm grid grid-cols-[80px_minmax(120px,_1fr)]">
-            <div>Locked:</div>
+    if (nftInfo) {
+      return (
+        <span key="Amount" className="text-white">
+          <HoverCard>
+            <HoverCardTrigger>#{nftInfo?.id}</HoverCardTrigger>
+            <HoverCardContent className="bg-[#212121] border-[1px]  border-[#743A49] text-sm grid grid-cols-[80px_minmax(120px,_1fr)]">
+              <div>Locked:</div>
+              <div>
+                {nftInfo?.amount} {underlyingToken?.symbol}
+              </div>
+              {/* <div>NFT:</div>
             <div>
-              {nftInfo?.amount} {underlyingToken?.symbol}
-            </div>
-            {/* <div>NFT:</div>
-            <div>
-              {nftInfo?.id} {token?.symbol}
-            </div> */}
-            <div>Voted:</div>
-            <div>{yesNo(nftInfo?.voted)}</div>
-          </HoverCardContent>
-        </HoverCard>
-      </span>
-    )
+            {nftInfo?.id} {token?.symbol}
+          </div> */}
+              <div>Voted:</div>
+              <div>{yesNo(nftInfo?.voted)}</div>
+            </HoverCardContent>
+          </HoverCard>
+        </span>
+      )
+    }
   }
 
-  if (amount !== undefined) {
+  if (amount) {
     return (
       <span key="Amount" className="text-white">
         {formatNumber({ value: amount, decimals })}
       </span>
     )
   }
+
+  return null
 }
 
 {

@@ -570,6 +570,7 @@ export default function Create() {
                   onAmountChange={onSelectCollateralAmount0}
                   userNftInfo={collateralNfts}
                   onSelectUserNft={onSelectCollateralUserNft}
+                  isSelectableNft={isBorrowingMode}
                 />
               </div>
 
@@ -600,6 +601,7 @@ export default function Create() {
                   onAmountChange={onSelectTokenAmount}
                   userNftInfo={tokenNfts}
                   onSelectUserNft={onSelectTokenUserNft}
+                  isSelectableNft={isLendingMode}
                 />
               </div>
             </div>
