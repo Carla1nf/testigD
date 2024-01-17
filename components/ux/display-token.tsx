@@ -3,9 +3,7 @@ import { Token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import TokenImage from "./token-image"
 
-export type DisplayOrder = "IconAmountName" | "AmountNameIcon" | "AmountIconName" | "AmountName"
-
-type ComponentKeys = "Icon" | "Amount" | "Name"
+type DisplayKeys = "Icon" | "Amount" | "Name"
 
 const DisplayToken = ({
   token,
@@ -15,7 +13,7 @@ const DisplayToken = ({
   className,
   tokenId,
   isNFT,
-  displayOrder = "IconAmountName",
+  displayOrder = ["Icon", "Amount", "Name"],
   chainSlug = "fantom",
 }: {
   token: Token
@@ -25,10 +23,10 @@ const DisplayToken = ({
   className?: string
   tokenId?: number
   isNFT?: boolean
-  displayOrder?: DisplayOrder
+  displayOrder?: DisplayKeys[]
   chainSlug?: string
 }) => {
-  const components: Record<ComponentKeys, JSX.Element | false | undefined> = {
+  const components: Record<DisplayKeys, JSX.Element | false | undefined> = {
     Icon: displayOrder.includes("Icon") && (
       <TokenImage
         key="Icon"
@@ -48,11 +46,9 @@ const DisplayToken = ({
     Name: displayOrder.includes("Name") && <span key="Name">{token?.symbol}</span>,
   }
 
-  const orderedComponents: ComponentKeys[] = displayOrder.split(/(?=[A-Z])/) as ComponentKeys[]
-
   return (
     <div className={cn("flex flex-row flex-wrap gap-[6px] items-center relative group", className)}>
-      {orderedComponents.map((component) => components[component])}
+      {displayOrder.map((component) => components[component])}
     </div>
   )
 }

@@ -71,10 +71,11 @@ export default function LeaderBoardPage() {
               <div className="w-full">Borrow</div>
             </div>
             {data?.pointsPerToken.map((item, index) => {
+              const token = getToken(item[0])
               return (
-                <div className="h-10 flex items-center">
+                <div className="h-10 flex items-center" key={token.address}>
                   <div className="w-full ">
-                    <DisplayToken size={28} token={getToken(item[0])} chainSlug={currentChain.slug} />
+                    <DisplayToken size={28} token={token} chainSlug={currentChain.slug} />
                   </div>
                   <div className="w-full font-semibold">x{(Number(item[1]) / 100).toFixed(2)}</div>
                   <div className="w-full font-semibold">x{(Number(item[2]) / 100).toFixed(2)}</div>

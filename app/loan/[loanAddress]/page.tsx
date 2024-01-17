@@ -583,7 +583,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                       token={lendingToken}
                       amount={loan?.eachPayment}
                       className=""
-                      displayOrder="AmountNameIcon"
+                      displayOrder={["Amount", "Name", "Icon"]}
                       chainSlug={currentChain.slug}
                     />
                   </div>
@@ -596,7 +596,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                       token={lendingToken}
                       amount={loan?.debtLeft}
                       className=""
-                      displayOrder="AmountNameIcon"
+                      displayOrder={["Amount", "Name", "Icon"]}
                       chainSlug={currentChain.slug}
                     />
                   </div>
