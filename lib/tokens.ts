@@ -207,6 +207,6 @@ export const getAllTokens = (chainSlug: string) => {
   return tokens
 }
 
-export const isNft = (token: Token) => Boolean(token.nft)
-export const nftInfoLens = (token: Token) => token?.nft?.infoLens
-export const nftInfoLensType = (token: Token) => token?.nft?.infoLensType
+export const isNft = (token: Token | undefined) => Boolean(token?.nft)
+export const nftInfoLens = (token: Token | undefined) => token?.nft?.infoLens
+export const nftInfoLensType = (token: Token | undefined) => token?.nft?.infoLensType

@@ -33,6 +33,7 @@ import erc20Abi from "../../../abis/erc20.json"
 import { machine } from "./lend-offer-machine"
 import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import NotOwnerInfo from "./components/not-owner-info"
+import { isNft } from "@/lib/tokens"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -627,7 +628,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
-                            max={offer?.isNFT[1] ? 1 : 10000000000000}
+                            max={isNft(offer?.principle?.token) ? 1 : 10000000000000}
                             type="number"
                             ref={newCollateralAmountRef}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
@@ -667,7 +668,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           <input
                             min={0}
                             type="number"
-                            max={offer?.isNFT[0] ? 1 : 10000000000000}
+                            max={isNft(offer?.collateral?.token) ? 1 : 10000000000000}
                             ref={newBorrowAmountRef}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
                             placeholder={`new ${borrowingToken.symbol} amount`}
@@ -785,9 +786,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
                 <div className="text-base">
-                  {offer?.isNFT[0] ? (
+                  {isNft(offer?.collateral?.token) ? (
                     <>
-                      {(offer?.nftInterestToken.amount / offer?.paymentCount).toFixed(2)}{" "}
+                      {(offer?.nftInterestToken?.amount / offer?.paymentCount).toFixed(2)}{" "}
                       {offer.nftInterestToken?.token?.symbol}
                     </>
                   ) : (
