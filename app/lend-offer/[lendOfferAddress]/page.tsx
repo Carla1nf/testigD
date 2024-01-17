@@ -787,8 +787,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <div className="text-base">
                   {offer?.isNFT[0] ? (
                     <>
-                      {(offer?.interestData_NFT.amount / offer?.paymentCount).toFixed(2)}{" "}
-                      {offer.interestData_NFT?.token?.symbol}
+                      {(offer?.nftInterestToken.amount / offer?.paymentCount).toFixed(2)}{" "}
+                      {offer.nftInterestToken?.token?.symbol}
                     </>
                   ) : (
                     <>
