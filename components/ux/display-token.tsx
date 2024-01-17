@@ -73,14 +73,14 @@ const DisplayAmount = ({
       <span key="Amount" className="text-white">
         <HoverCard>
           <HoverCardTrigger>#{nftInfo?.id}</HoverCardTrigger>
-          <HoverCardContent className="bg-[#292426] border-[1px]  border-[#743A49] text-sm grid grid-cols-[80px_minmax(120px,_1fr)]">
-            <div>NFT:</div>
-            <div>
-              {nftInfo?.id} {token?.symbol}
-            </div>
+          <HoverCardContent className="bg-[#212121] border-[1px]  border-[#743A49] text-sm grid grid-cols-[80px_minmax(120px,_1fr)]">
             <div>Locked:</div>
             <div>
               {nftInfo?.amount} {underlyingToken?.symbol}
+            </div>
+            <div>NFT:</div>
+            <div>
+              {nftInfo?.id} {token?.symbol}
             </div>
             <div>Voted:</div>
             <div>{yesNo(nftInfo?.voted)}</div>
