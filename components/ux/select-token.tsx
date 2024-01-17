@@ -46,7 +46,7 @@ const SelectToken = ({
   const underlying = selectedTokenIsNft ? nftUnderlyingToken(selectedToken, currentChain.slug) : undefined
 
   return (
-    <div className="grid grid-cols-[160px_1fr_24px] items-center justify-between bg-[#2F2F2F] px-4 py-1 gap-2 rounded-lg w-full">
+    <div className="grid grid-cols-[152px_1fr_24px] items-center justify-between bg-[#2F2F2F] px-4 py-1 gap-2 rounded-lg w-full">
       {/* Token details column */}
       <Popover open={isTokenPopupOpen} onOpenChange={setIsTokenPopupOpen}>
         <PopoverTrigger asChild>
@@ -57,12 +57,7 @@ const SelectToken = ({
             className={cn("basis-2/3 justify-start pl-1", !isSelectableNft ? "" : null)}
           >
             {selectedToken ? (
-              <DisplayToken
-                token={selectedToken}
-                size={24}
-                className="text-base font-bold"
-                chainSlug={currentChain.slug}
-              />
+              <DisplayToken token={selectedToken} size={20} className="text-sm" chainSlug={currentChain.slug} />
             ) : (
               <span className="text-sm font-normal text-[#757575]">Select token...</span>
             )}
