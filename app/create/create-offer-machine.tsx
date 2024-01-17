@@ -1,5 +1,5 @@
 import { UserNftInfo } from "@/hooks/useNftInfo"
-import { Token, tokenSchema } from "@/lib/tokens"
+import { Token, isNft, tokenSchema } from "@/lib/tokens"
 import { fixedDecimals, roundIfClose } from "@/lib/utils"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { getAddress } from "viem"
@@ -667,10 +667,10 @@ export const machine = createMachine(
         )
 
         // if we have fNFTs then make sure the underlying is also selected
-        if (Boolean(context.collateralToken?.nft) && !context.collateralUserNft) {
+        if (isNft(context.collateralToken) && !context.collateralUserNft) {
           return false
         }
-        if (Boolean(context.token?.nft) && !context.tokenUserNft) {
+        if (isNft(context.token) && !context.tokenUserNft) {
           return false
         }
         return isComplete
