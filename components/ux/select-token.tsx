@@ -41,7 +41,7 @@ const SelectToken = ({
   const [isTokenPopupOpen, setIsTokenPopupOpen] = useState(false)
   const [isNftPopupOpen, setIsNftPopupOpen] = useState(false)
   const currentChain = useCurrentChain()
-  const underlying = useInternalToken(currentChain.slug, selectedToken?.nft.underlying ?? "")
+  const underlying = useInternalToken(currentChain.slug, selectedToken?.nft?.underlying ?? "")
 
   const ref = useRef(null)
 
@@ -119,7 +119,7 @@ const SelectToken = ({
 
                   <DisplayToken token={token} size={24} className="text-base font-bold" chainSlug={currentChain.slug} />
 
-                  <ShowWhenTrue when={Boolean(token?.nft?.isNft)}>
+                  <ShowWhenTrue when={Boolean(token?.nft)}>
                     <div className="ml-auto flex-inline flex-row items-center">
                       <Badge padding="tight" text="tiny" className="max-h-[18px]">
                         NFT
@@ -132,7 +132,7 @@ const SelectToken = ({
           </Command>
         </PopoverContent>
       </Popover>
-      <ShowWhenTrue when={Boolean(selectedToken?.nft?.isNft)}>
+      <ShowWhenTrue when={Boolean(selectedToken?.nft)}>
         <Popover open={isNftPopupOpen} onOpenChange={setIsNftPopupOpen}>
           <PopoverTrigger asChild>
             <Button

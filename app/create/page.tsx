@@ -17,7 +17,7 @@ import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
 import { toDecimals } from "@/lib/erc20"
-import { Token, findInternalTokenBySymbol, getAllTokens } from "@/lib/tokens"
+import { Token, findInternalTokenBySymbol, getAllTokens, isNft } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { createBrowserInspector } from "@statelyai/inspect"
@@ -232,8 +232,8 @@ export default function Create() {
       const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
 
       // NFT info (if applicable)
-      const isCollateralAssetNFT = Boolean(context?.collateralToken?.nft?.isNft ?? false)
-      const isTokenAssetNFT = Boolean(context?.token?.nft?.isNft ?? false)
+      const isCollateralAssetNFT = isNft(context?.collateralToken)
+      const isTokenAssetNFT = isNft(context?.token)
       const collateralTokenNftId =
         isCollateralAssetNFT && context?.collateralUserNft?.id ? context?.collateralUserNft?.id : 0
       const tokenNftId = isTokenAssetNFT && context?.tokenUserNft?.id ? context?.tokenUserNft?.id : 0
@@ -287,7 +287,7 @@ export default function Create() {
       return Promise.resolve({ nativeToken: true })
     }
 
-    if (context.token.nft?.isNft) {
+    if (isNft(context.token)) {
       const hasPermissions = await isVeTokenApprovedOrOwner({
         veToken: context.token.address,
         spender: DEBITA_OFFER_FACTORY_ADDRESS,
@@ -327,7 +327,7 @@ export default function Create() {
       return Promise.resolve({ nativeToken: true })
     }
 
-    if (context.token.nft?.isNft) {
+    if (isNft(context.token)) {
       console.log("NFT")
       console.log("approveLendAllowance")
 

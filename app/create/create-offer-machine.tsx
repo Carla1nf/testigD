@@ -667,10 +667,10 @@ export const machine = createMachine(
         )
 
         // if we have fNFTs then make sure the underlying is also selected
-        if (context.collateralToken?.nft.isNft && !context.collateralUserNft) {
+        if (Boolean(context.collateralToken?.nft) && !context.collateralUserNft) {
           return false
         }
-        if (context.token?.nft.isNft && !context.tokenUserNft) {
+        if (Boolean(context.token?.nft) && !context.tokenUserNft) {
           return false
         }
         return isComplete

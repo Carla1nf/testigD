@@ -15,12 +15,12 @@ export const tokenSchema = z.object({
   icon: z.string(),
   nft: z
     .object({
-      isNft: z.boolean(),
       underlying: z.string().optional(),
       infoLens: ethereumAddressSchema.optional(),
       infoLensType: z.enum(["VeToken"]).optional(),
       description: z.string().optional(),
     })
+    .optional()
     .refine(
       (data) => {
         // If infoLens has a value, then infoLensType should also have a value (i.e., it's required)
@@ -51,9 +51,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: true,
       isLp: false,
       icon: "/files/tokens/fantom/ftm-native.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     // {
     //   name: "FTM",
@@ -64,9 +62,7 @@ export const INTERNAL_TOKENS: Tokens = {
     //   isNative: true,
     //   isLp: false,
     //   icon: "/files/tokens/fantom/ftm-native.svg",
-    //   nft: {
-    //     isNft: false,
-    //   },
+    //   nft: undefined,
     // },
     {
       name: "axlUSDC",
@@ -77,9 +73,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/axlUSDC.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "EQUAL",
@@ -90,9 +84,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/equal.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "BEETS",
@@ -103,9 +95,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/beets.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "BOO",
@@ -116,9 +106,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/boo.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "MUMMY",
@@ -129,9 +117,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/mmy.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "WIGO",
@@ -142,9 +128,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/wigo.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "STG",
@@ -155,9 +139,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/stg.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
     {
       name: "fSonic LP",
@@ -168,9 +150,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: true,
       icon: "/files/tokens/fantom/lp-fsonic.svg",
-      nft: {
-        isNft: false,
-      },
+      nft: undefined,
     },
 
     {
@@ -182,9 +162,7 @@ export const INTERNAL_TOKENS: Tokens = {
       isNative: false,
       isLp: false,
       icon: "/files/tokens/fantom/rats.png",
-      nft: {
-        isNft: true,
-      },
+      nft: undefined,
     },
     {
       name: "Vested EQUAL",
@@ -196,7 +174,6 @@ export const INTERNAL_TOKENS: Tokens = {
       isLp: false,
       icon: "/files/tokens/fantom/ve-equal.png",
       nft: {
-        isNft: true,
         infoLensType: "VeToken",
         infoLens: "0xa0fD9265FAC42EcdfFF494e3dB6466b207D98C6D",
         underlying: "EQUAL",
@@ -229,3 +206,7 @@ export const getAllTokens = (chainSlug: string) => {
 
   return tokens
 }
+
+export const isNft = (token: Token) => Boolean(token.nft)
+export const nftInfoLens = (token: Token) => token?.nft?.infoLens
+export const nftInfoLensType = (token: Token) => token?.nft?.infoLensType
