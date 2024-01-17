@@ -142,6 +142,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         // isNFT: lenderData.isAssetNFT,
         tokenId: Number(lenderData.nftData[0]),
         nftInterestToken,
+        valueOfVeNFT: lenderData.valueOfVeNFT,
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,
