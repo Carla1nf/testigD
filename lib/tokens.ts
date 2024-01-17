@@ -23,6 +23,10 @@ export const tokenSchema = z.object({
     .optional()
     .refine(
       (data) => {
+        // If the nft object is not provided, pass the validation
+        if (data === undefined) {
+          return true
+        }
         // If infoLens has a value, then infoLensType should also have a value (i.e., it's required)
         if (data.infoLens && !data.infoLensType) {
           return false // This indicates the validation has failed

@@ -9,6 +9,8 @@ const parseToken = (values: any) => {
   try {
     return tokenSchema.parse(values)
   } catch (error) {
+    console.error(error)
+
     return undefined
   }
 }
@@ -675,9 +677,10 @@ export const machine = createMachine(
         }
         return isComplete
       },
-      isValidToken: ({ context, event }, params) => {
+      isValidToken: ({ event }) => {
         if ("value" in event) {
-          return Boolean(parseToken(event.value))
+          const result = parseToken(event.value)
+          return Boolean(result)
         }
         return false
       },
