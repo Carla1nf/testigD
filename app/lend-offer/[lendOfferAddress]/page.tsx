@@ -1,7 +1,7 @@
 "use client"
 
 import createdOfferABI from "@/abis/v2/createdOffer.json"
-import { PersonIcon, PriceIcon, SpinnerIcon } from "@/components/icons"
+import { PriceIcon, SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
@@ -14,9 +14,10 @@ import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOffer } from "@/hooks/useOffer"
-import { dollars, ltv, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
+import { dollars, ltv, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
+import { isNft } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
@@ -30,10 +31,10 @@ import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
-import { machine } from "./lend-offer-machine"
-import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import NotOwnerInfo from "./components/not-owner-info"
-import { isNft } from "@/lib/tokens"
+import OwnerCancelButtons from "./components/owner-cancel-buttons"
+import { machine } from "./lend-offer-machine"
+import useNftInfo from "@/hooks/useNftInfo"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -97,12 +98,18 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const principle = offer?.principle
   const collateral = offer?.collateral
   const collateralToken = collateral ? collateral?.token : undefined
-  const borrowingToken = principle ? principle?.token : undefined
+  const principleToken = principle ? principle?.token : undefined
   const isOwnerConnected = address === offer?.owner
 
-  const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, borrowingToken?.address as Address)
+  const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, principleToken?.address as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
+
+  // Nft info
+  const nftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
+  const nftInfo = nftInfos?.[0]
+
+  console.log("nftInfo", nftInfo)
 
   console.log("offer", offer)
 
@@ -120,12 +127,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     functionName: "allowance",
     abi: erc20Abi,
     args: [address, OFFER_CREATED_ADDRESS],
-    watch: true,
+    // watch: true,
   })
 
   const handleWantedBorrow = (newValue: number) => {
     const amountCollateral = collateral && principle ? (collateral?.amount * newValue) / principle?.amount : 0
-
     setAmountToBorrow(newValue)
     setAmountCollateral(amountCollateral)
   }
@@ -147,7 +153,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
   const updateOffer = async () => {
     try {
-      const newBorrow = borrowingToken ? Number(newBorrowAmount) * 10 ** borrowingToken?.decimals : 0
+      const newBorrow = principleToken ? Number(newBorrowAmount) * 10 ** principleToken?.decimals : 0
       const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
 
       const { request } = await config.publicClient.simulateContract({
@@ -272,7 +278,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         return Promise.resolve()
       }
 
-      const borrowAmountRaw = Number(newBorrowAmount) * 10 ** (borrowingToken?.decimals ?? 18)
+      const borrowAmountRaw = Number(newBorrowAmount) * 10 ** (principleToken?.decimals ?? 18)
 
       if (Number(currentPrincipleTokenAllowance) >= Number(borrowAmountRaw ?? 0)) {
         return Promise.resolve()
@@ -294,7 +300,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       console.log("increasePrincipleAllowance")
       console.log("principle?.address", collateral?.address)
 
-      const borrowAmountRaw = Number(newBorrowAmount) * 10 ** (borrowingToken?.decimals ?? 18)
+      const borrowAmountRaw = Number(newBorrowAmount) * 10 ** (principleToken?.decimals ?? 18)
 
       console.log("newBorrowAmount", newBorrowAmount)
       console.log("borrowAmountRaw", borrowAmountRaw)
@@ -367,7 +373,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       toast({
         variant: "success",
         title: "Offer Accepted",
-        description: `You have accepted the offer, the borrowed ${borrowingToken?.symbol} is now in your wallet.`,
+        description: `You have accepted the offer, the borrowed ${principleToken?.symbol} is now in your wallet.`,
         // tx: executed,
       })
       return executed
@@ -478,17 +484,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   // CONFIG
   const breadcrumbs = useMemo(() => {
     const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
-    if (borrowingToken) {
+    if (principleToken) {
       result.push(
         <Link href={`/borrow/`} className="hover:text-white/75" key="lending-market">
           Borrow Market
         </Link>
       )
       result.push(
-        <Link href={`/borrow/${borrowingToken?.address}`} key="token">
+        <Link href={`/borrow/${principleToken?.address}`} key="token">
           <DisplayToken
             size={18}
-            token={borrowingToken}
+            token={principleToken}
             className="hover:text-white/75"
             chainSlug={currentChain.slug}
           />
@@ -497,7 +503,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       return result
     }
     return []
-  }, [currentChain, borrowingToken])
+  }, [currentChain, principleToken])
 
   const totalLoan = Number(principle?.amount ?? 0)
   const totalInterestOnLoan = Number(offer?.interest ?? 0) * Number(principle?.amount ?? 0)
@@ -588,7 +594,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           <OwnerCancelButtons state={state} send={send} />
 
           {/* Non owners can see who the owner is */}
-          <NotOwnerInfo state={state} borrowingToken={borrowingToken} ownerAddress={offer?.owner as Address} />
+          <NotOwnerInfo state={state} borrowingToken={principleToken} ownerAddress={offer?.owner as Address} />
 
           {/* Form Panel */}
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-xl shadow-xl shadow-[#392A31]/60">
@@ -661,7 +667,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 {state.matches("isOwner") ? <div>You are Lending</div> : <div>To Borrow</div>}
 
                 <>
-                  {principle && borrowingToken ? (
+                  {principle && principleToken ? (
                     <>
                       {shouldShowEditOfferForm ? (
                         <div className="flex items-center gap-2 animate-enter-div">
@@ -671,23 +677,24 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                             max={isNft(offer?.collateral?.token) ? 1 : 10000000000000}
                             ref={newBorrowAmountRef}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
-                            placeholder={`new ${borrowingToken.symbol} amount`}
+                            placeholder={`new ${principleToken.symbol} amount`}
                             defaultValue={principle.amount}
                             onChange={(e) => {
                               setNewBorrowAmount(Number(e.target.value))
                             }}
                             disabled={!canAlterEditUpdateForm}
                           />
-                          {borrowingToken.symbol}
+                          {principleToken.symbol}
                         </div>
                       ) : (
                         <div className="-ml-[4px]">
                           <DisplayToken
                             size={32}
-                            token={borrowingToken}
+                            token={principleToken}
                             amount={principle.amount}
                             className="text-xl"
                             chainSlug={currentChain.slug}
+                            nftInfo={nftInfo}
                           />
                         </div>
                       )}
@@ -778,7 +785,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </ShowWhenTrue>
                 <ShowWhenFalse when={shouldShowEditOfferForm}>
                   <div className="text-base">
-                    {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {borrowingToken?.symbol} (
+                    {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {principleToken?.symbol} (
                     {percent({ value: Number(offer?.interest ?? 0) })})
                   </div>
                 </ShowWhenFalse>
@@ -793,7 +800,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     </>
                   ) : (
                     <>
-                      {amountDuePerPayment.toFixed(2)} {borrowingToken?.symbol}
+                      {amountDuePerPayment.toFixed(2)} {principleToken?.symbol}
                     </>
                   )}
                 </div>

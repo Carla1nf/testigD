@@ -1,7 +1,9 @@
-import { formatNumber } from "@/lib/display"
-import { Token } from "@/lib/tokens"
+import { formatNumber, yesNo } from "@/lib/display"
+import { Token, isNft } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import TokenImage from "./token-image"
+import { UserNftInfo } from "@/hooks/useNftInfo"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 type DisplayKeys = "Icon" | "Amount" | "Name"
 
@@ -11,22 +13,20 @@ const DisplayToken = ({
   amount,
   decimals = 2,
   className,
-  tokenId,
-  isNFT,
   displayOrder = ["Icon", "Amount", "Name"],
   chainSlug = "fantom",
+  nftInfo,
 }: {
   token: Token
   size: number
   amount?: number
   decimals?: number
   className?: string
-  tokenId?: number
-  isNFT?: boolean
   displayOrder?: DisplayKeys[]
   chainSlug?: string
+  nftInfo?: UserNftInfo
 }) => {
-  const components: Record<DisplayKeys, JSX.Element | false | undefined> = {
+  const components: Record<DisplayKeys, JSX.Element | false | undefined | null> = {
     Icon: displayOrder.includes("Icon") && (
       <TokenImage
         key="Icon"
@@ -37,13 +37,10 @@ const DisplayToken = ({
         className="mr-[2px]"
       />
     ),
-    Amount: displayOrder.includes("Amount") && amount !== undefined && (
-      <span key="Amount" className="text-white">
-        {formatNumber({ value: amount, decimals })}
-      </span>
-    ),
-
-    Name: displayOrder.includes("Name") && <span key="Name">{token?.symbol}</span>,
+    Amount: displayOrder.includes("Amount") ? (
+      <DisplayAmount amount={amount} decimals={decimals} nftInfo={nftInfo} token={token} />
+    ) : null,
+    Name: displayOrder.includes("Name") ? <span key="Name">{token?.symbol}</span> : null,
   }
 
   return (
@@ -54,6 +51,45 @@ const DisplayToken = ({
 }
 
 export default DisplayToken
+
+const DisplayAmount = ({
+  amount,
+  decimals,
+  nftInfo,
+  token,
+}: {
+  amount?: number
+  decimals?: number
+  nftInfo?: UserNftInfo
+  token: Token
+}) => {
+  // handle if token is an NFT
+  if (isNft(token)) {
+    return (
+      <span key="Amount" className="text-white">
+        <HoverCard>
+          <HoverCardTrigger>#{nftInfo?.id}</HoverCardTrigger>
+          <HoverCardContent className="bg-[#292426] border-[1px]  border-[#743A49] text-xs grid grid-cols-[80px_minmax(120px,_1fr)]">
+            <div>Amount:</div>
+            <div>
+              {nftInfo?.amount} {token.symbol}
+            </div>
+            <div>Voted:</div>
+            <div>{yesNo(nftInfo?.voted)}</div>
+          </HoverCardContent>
+        </HoverCard>
+      </span>
+    )
+  }
+
+  if (amount !== undefined) {
+    return (
+      <span key="Amount" className="text-white">
+        {formatNumber({ value: amount, decimals })}
+      </span>
+    )
+  }
+}
 
 {
   /*
