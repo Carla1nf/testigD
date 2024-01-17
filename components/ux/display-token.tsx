@@ -1,5 +1,5 @@
 import { formatNumber, yesNo } from "@/lib/display"
-import { Token, isNft } from "@/lib/tokens"
+import { Token, isNft, nftUnderlyingToken } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import TokenImage from "./token-image"
 import { UserNftInfo } from "@/hooks/useNftInfo"
@@ -38,7 +38,7 @@ const DisplayToken = ({
       />
     ),
     Amount: displayOrder.includes("Amount") ? (
-      <DisplayAmount amount={amount} decimals={decimals} nftInfo={nftInfo} token={token} />
+      <DisplayAmount amount={amount} decimals={decimals} nftInfo={nftInfo} token={token} chainSlug={chainSlug} />
     ) : null,
     Name: displayOrder.includes("Name") ? <span key="Name">{token?.symbol}</span> : null,
   }
@@ -57,22 +57,30 @@ const DisplayAmount = ({
   decimals,
   nftInfo,
   token,
+  chainSlug,
 }: {
   amount?: number
   decimals?: number
   nftInfo?: UserNftInfo
   token: Token
+  chainSlug?: string
 }) => {
   // handle if token is an NFT
   if (isNft(token)) {
+    const underlyingToken = nftUnderlyingToken(token, chainSlug)
+
     return (
       <span key="Amount" className="text-white">
         <HoverCard>
           <HoverCardTrigger>#{nftInfo?.id}</HoverCardTrigger>
-          <HoverCardContent className="bg-[#292426] border-[1px]  border-[#743A49] text-xs grid grid-cols-[80px_minmax(120px,_1fr)]">
-            <div>Amount:</div>
+          <HoverCardContent className="bg-[#292426] border-[1px]  border-[#743A49] text-sm grid grid-cols-[80px_minmax(120px,_1fr)]">
+            <div>NFT:</div>
             <div>
-              {nftInfo?.amount} {token.symbol}
+              {nftInfo?.id} {token?.symbol}
+            </div>
+            <div>Locked:</div>
+            <div>
+              {nftInfo?.amount} {underlyingToken?.symbol}
             </div>
             <div>Voted:</div>
             <div>{yesNo(nftInfo?.voted)}</div>
