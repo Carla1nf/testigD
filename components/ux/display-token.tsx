@@ -78,10 +78,10 @@ const DisplayAmount = ({
             <div>
               {nftInfo?.amount} {underlyingToken?.symbol}
             </div>
-            <div>NFT:</div>
+            {/* <div>NFT:</div>
             <div>
               {nftInfo?.id} {token?.symbol}
-            </div>
+            </div> */}
             <div>Voted:</div>
             <div>{yesNo(nftInfo?.voted)}</div>
           </HoverCardContent>
