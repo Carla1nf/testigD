@@ -103,6 +103,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
+  console.log("offer", offer)
+
   // check if the viewer/user/borrower has the allowance to spend the collateral token
   const { data: currentCollateralTokenAllowance } = useContractRead({
     address: (collateral?.address ?? "") as Address,

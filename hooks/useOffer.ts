@@ -114,12 +114,12 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       const ltv = ratio ? (1 / ratio) * 100 : 0
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
-      const interestToken_NFT = findInternalTokenByAddress(currentChain.slug, parsedData.interest_address)
-      const interestToken = {
+      const foundNftInterestToken = findInternalTokenByAddress(currentChain.slug, parsedData.interest_address)
+      const nftInterestToken = {
         address: parsedData.interest_address,
         amountRaw: lenderData.nftData[1],
-        token: interestToken_NFT,
-        amount: fromDecimals(lenderData.nftData[1], interestToken_NFT?.decimals ?? 18),
+        token: foundNftInterestToken,
+        amount: fromDecimals(lenderData.nftData[1], foundNftInterestToken?.decimals ?? 18),
         price: 0,
         valueUsd: 0,
       }
@@ -139,8 +139,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         perpetual: lenderData.isPerpetual,
         isNFT: lenderData.isAssetNFT,
         tokenId: Number(lenderData.nftData[0]),
-        interestData_NFT: interestToken,
-        interestToken_NFT: interestToken_NFT,
+        nftInterestToken,
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,
