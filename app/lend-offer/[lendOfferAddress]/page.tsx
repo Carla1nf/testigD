@@ -101,8 +101,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const principleToken = principle ? principle?.token : undefined
   const isOwnerConnected = address === offer?.owner
 
-  const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, principleToken?.address as Address)
-  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateralToken?.address as Address)
+  const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, offer?.principleAddressChart as Address)
+  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, offer?.collateralAddressChart as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
   // Nft info
@@ -513,10 +513,10 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   // CHARTING
   // DATA STRUCTURE
   const chartValues = {
-    historicalLender: calcPriceHistory(borrowingPrices, principle?.amount ?? 0),
+    historicalLender: calcPriceHistory(borrowingPrices, offer?.principleAmountChart ?? 0),
     historicalCollateral: calcCollateralsPriceHistory(
       collateral0Prices,
-      offer?.collateral?.amount ?? 0,
+      offer?.collateralAmountChart ?? 0,
       collateral0Prices,
       0
     ),

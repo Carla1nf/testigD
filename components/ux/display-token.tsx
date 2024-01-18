@@ -98,36 +98,3 @@ const DisplayAmount = ({
     )
   }
 }
-
-{
-  /*
-  Idea to show more data of the NFT
-  isNFT ? (
-        <div className="absolute group-hover:flex hidden group-hover:animate-enter-div bg-[#1c1e26]/100 border-2 z-10 border-white/10 h-44 w-80 top-0 left-5 rounded-xl items-center justify-center">
-          {tokenId == 0 ? (
-            <>
-              <TokenImage
-                key="Icon"
-                width={96}
-                height={96}
-                chainSlug="fantom"
-                symbol={token?.symbol}
-                className="mr-[2px] rounded-full px-5"
-              />
-
-              <div className=" flex flex-col  gap-3">
-                <div className="text-white font-semibold text-sm">{token.name} </div>
-                <div className="text-gray-400 text-sm w-11/12 ">
-                  All Cats are Bastards - 1312 Collectibles 2022 straight from the bassment. Artwork will be revealed
-                  when minting goes live.
-                </div>
-              </div>
-            </>
-          ) : (
-            "Load token id data"
-          )}
-        </div>
-      ) : (
-        ""
-      ) */
-}

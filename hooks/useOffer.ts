@@ -1,13 +1,23 @@
 import createdOfferABI from "@/abis/v2/createdOffer.json"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
 import { fromDecimals } from "@/lib/erc20"
-import { findInternalTokenByAddress } from "@/lib/tokens"
+import {
+  Token,
+  findInternalTokenByAddress,
+  findInternalTokenBySymbol,
+  getDepositedToken,
+  getValuedAsset,
+  nftInfoLensType,
+  nftUnderlying,
+} from "@/lib/tokens"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
-import { Address } from "viem"
+import { Address, formatUnits, getAddress } from "viem"
 import { readContract } from "wagmi/actions"
 import z from "zod"
 import useCurrentChain from "./useCurrentChain"
+import useNftInfo from "./useNftInfo"
+import veTokenInfoLensAbi from "../abis/v2/veTokenInfoLens.json"
 
 /**
  * @dev create Offer
@@ -37,6 +47,12 @@ const LenderDataReceivedSchema = z.object({
   valueOfVeNFT: z.bigint(),
   _timelap: z.number(),
 })
+
+type VeTokenInfoIncoming = {
+  id: bigint
+  amount: bigint
+  voted: boolean
+}
 
 type LenderDataReceived = z.infer<typeof LenderDataReceivedSchema>
 
@@ -86,14 +102,9 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       }
 
       // cant use async map - hate them but need to use a for loop for that
-      let totalCollateralValue = 0
-
-      if (!parsedData.isAssetNFT[1]) {
-        const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-        collateral.price = _price.price ?? 0
-        collateral.valueUsd = collateral.amount * collateral.price
-        totalCollateralValue += collateral.valueUsd
-      }
+      const valueAssetCollateral = getValuedAsset(collateralToken, currentChain.slug)
+      const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetCollateral.address as Address))
+      collateral.price = _price.price ?? 0
 
       // lets do the same for the lender token
       const principleToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
@@ -105,14 +116,43 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         price: 0,
         valueUsd: 0,
       }
+      const depositedToken = getDepositedToken(principleToken, collateralToken, lenderData.isLending)
 
-      if (!parsedData.nftData[0]) {
-        const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, principle.address as Address))
-        principle.price = price.price ?? 0
-        principle.valueUsd = principle.amount * principle.price
-      }
+      const valueFromUnderlying = nftInfoLensType(depositedToken)
+        ? ((await readContract({
+            address: (depositedToken?.nft?.infoLens ?? "") as Address,
+            abi: veTokenInfoLensAbi,
+            functionName: "getDataFrom",
+            args: [lendOfferAddress],
+          })) as VeTokenInfoIncoming[])
+        : null
 
-      const ratio = principle.valueUsd > 0 ? totalCollateralValue / principle.valueUsd : 0
+      const valueAssetPrinciple = getValuedAsset(principleToken, currentChain.slug)
+      const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address))
+      principle.price = price.price ?? 0
+
+      const principleAmount = (
+        nftInfoLensType(principleToken)
+          ? formatUnits(
+              lenderData.isLending && valueFromUnderlying ? valueFromUnderlying[0].amount : lenderData.valueOfVeNFT,
+              valueAssetPrinciple?.decimals
+            )
+          : principle.amount
+      ) as number
+
+      const collateralAmount = (
+        nftInfoLensType(collateralToken)
+          ? formatUnits(
+              !lenderData.isLending && valueFromUnderlying ? valueFromUnderlying[0].amount : lenderData.valueOfVeNFT,
+              valueAssetCollateral?.decimals
+            )
+          : collateral.amount
+      ) as number
+
+      principle.valueUsd = principleAmount * principle.price
+      collateral.valueUsd = collateralAmount * collateral.price
+
+      const ratio = principle.valueUsd > 0 ? collateral.valueUsd / principle.valueUsd : 0
       const ltv = ratio ? (1 / ratio) * 100 : 0
       const numberOfLoanDays = Number(parsedData._timelap) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
@@ -139,11 +179,14 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         paymentCount: lenderData.paymentCount,
         timelap: lenderData._timelap,
         wantedCollateralAmount: lenderData.assetAmounts[1],
-        totalCollateralValue,
+        totalCollateralValue: collateral.valueUsd,
         perpetual: lenderData.isPerpetual,
         tokenId: Number(lenderData.nftData[0]),
         nftInterestToken,
-        valueOfVeNFT: lenderData.valueOfVeNFT,
+        principleAddressChart: valueAssetPrinciple.address,
+        principleAmountChart: principleAmount,
+        collateralAddressChart: valueAssetCollateral.address,
+        collateralAmountChart: collateralAmount,
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,

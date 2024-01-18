@@ -211,6 +211,15 @@ export const isNft = (token: Token | undefined) => Boolean(token?.nft)
 export const nftInfoLens = (token: Token | undefined) => token?.nft?.infoLens
 export const nftInfoLensType = (token: Token | undefined) => token?.nft?.infoLensType
 export const nftUnderlying = (token: Token | undefined) => token?.nft?.underlying
+export const getDepositedToken = (primitive: Token | undefined, collateral: Token | undefined, isLending: boolean) => {
+  return isLending ? primitive : collateral
+}
+export const getValuedAsset = (token: Token | undefined, chainSlug: string) => {
+  const valueAsset = (
+    nftInfoLensType(token) ? findInternalTokenBySymbol(chainSlug, nftUnderlying(token) ?? "") : token
+  ) as Token
+  return valueAsset
+}
 export const nftUnderlyingToken = (token: Token | undefined, chainSlug?: string) => {
   if (!chainSlug) return undefined
   const underlying = nftUnderlying(token)
