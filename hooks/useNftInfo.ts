@@ -12,7 +12,7 @@ type VeTokenInfoIncoming = {
 
 type VeTokenInfo = {
   id: number
-  amountRaw: bigint
+  // amountRaw: bigint
   amount: number
   voted: boolean
 }
@@ -40,7 +40,7 @@ const useNftInfo = ({ address, token }: { address?: Address; token?: Token }): U
         const amount = formatUnits(item.amount, token.decimals)
         return {
           id: Number(item.id),
-          amountRaw: item.amount,
+          // amountRaw: item.amount,
           amount: Number(amount),
           voted: Boolean(item.voted),
         }
