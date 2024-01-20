@@ -668,6 +668,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                               chainSlug={currentChain.slug}
                               nftInfo={nftInfo}
                               showExtendedUnderlying={true}
+                              wantedLockedEqual={offer?.wantedLockedVeNFT}
                             />
                           </ShowWhenTrue>
                         </div>

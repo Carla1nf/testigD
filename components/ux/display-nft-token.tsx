@@ -59,7 +59,7 @@ const DisplayNftToken = ({
     Name: displayOrder.includes("Name") ? <span key="Name">{token?.symbol}</span> : null,
   }
 
-  const underlyingValue = Number(nftInfo?.amount) * Number(underlyingPrice)
+  const underlyingValue = Number(wantedLockedEqual ?? nftInfo?.amount) * Number(underlyingPrice)
   console.log("underlyingValue", underlyingValue)
 
   return (
@@ -69,7 +69,8 @@ const DisplayNftToken = ({
       </div>
       <ShowWhenTrue when={isNft(token) && showExtendedUnderlying}>
         <div className="ml-12 flex flex-row items-center gap-1 text-xs text-[#8D8B8C]">
-          <LucideCornerDownRight className="w-3 h-3 inline  stroke-[#8D8B8C]" /> {nftInfo?.amount} {underlying?.symbol}
+          <LucideCornerDownRight className="w-3 h-3 inline  stroke-[#8D8B8C]" /> {wantedLockedEqual ?? nftInfo?.amount}{" "}
+          {underlying?.symbol}
         </div>
         <div className="ml-12 flex flex-row items-center gap-1 text-xs text-[#8D8B8C] italic">
           <LucideCornerDownRight className="w-3 h-3 inline stroke-[#8D8B8C]" /> {dollars({ value: underlyingValue })}{" "}
