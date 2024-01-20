@@ -22,7 +22,7 @@ import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
-import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
+import { CheckCircle, ExternalLink, Info, LucideArrowDownRight, LucideCornerDownRight, XCircle } from "lucide-react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import pluralize from "pluralize"
@@ -35,6 +35,7 @@ import NotOwnerInfo from "./components/not-owner-info"
 import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import { machine } from "./lend-offer-machine"
 import useNftInfo from "@/hooks/useNftInfo"
+import DisplayNftToken from "@/components/ux/display-nft-token"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -627,10 +628,10 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className={cn("flex flex-col gap-3", state.matches("isOwner") ? "order-last" : null)}>
                 {state.matches("isOwner") ? <div>User Provides Collateral</div> : <div>You Provide Collateral</div>}
-                <div className="-ml-[px]">
+                <div className="-ml-[px] grow">
                   {collateral && collateralToken ? (
                     <>
-                      {shouldShowEditOfferForm ? (
+                      {!isNft(collateralToken) && shouldShowEditOfferForm ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
@@ -648,14 +649,28 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           {collateralToken.symbol}
                         </div>
                       ) : (
-                        <DisplayToken
-                          size={32}
-                          token={collateralToken}
-                          amount={collateral.amount}
-                          className="text-xl"
-                          chainSlug={currentChain.slug}
-                          wantedLockedEqual={offer?.wantedLockedVeNFT}
-                        />
+                        <div className="-ml-[4px] grow">
+                          <ShowWhenTrue when={!isNft(collateralToken)}>
+                            <DisplayToken
+                              size={32}
+                              token={collateralToken}
+                              amount={collateral.amount}
+                              className="text-xl"
+                              chainSlug={currentChain.slug}
+                            />
+                          </ShowWhenTrue>
+                          <ShowWhenTrue when={isNft(collateralToken)}>
+                            <DisplayNftToken
+                              size={32}
+                              token={collateralToken}
+                              amount={collateral.amount}
+                              className="text-xl"
+                              chainSlug={currentChain.slug}
+                              nftInfo={nftInfo}
+                              showExtendedUnderlying={true}
+                            />
+                          </ShowWhenTrue>
+                        </div>
                       )}
                     </>
                   ) : null}
@@ -670,7 +685,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <>
                   {principle && principleToken ? (
                     <>
-                      {shouldShowEditOfferForm ? (
+                      {!isNft(principleToken) && shouldShowEditOfferForm ? (
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
@@ -688,24 +703,37 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           {principleToken.symbol}
                         </div>
                       ) : (
-                        <div className="-ml-[4px]">
-                          <DisplayToken
-                            size={32}
-                            token={principleToken}
-                            amount={principle.amount}
-                            className="text-xl"
-                            chainSlug={currentChain.slug}
-                            nftInfo={nftInfo}
-                          />
+                        <div className="-ml-[4px] grow">
+                          <ShowWhenTrue when={!isNft(principleToken)}>
+                            <DisplayToken
+                              size={32}
+                              token={principleToken}
+                              amount={principle.amount}
+                              className="text-xl"
+                              chainSlug={currentChain.slug}
+                            />
+                          </ShowWhenTrue>
+                          <ShowWhenTrue when={isNft(principleToken)}>
+                            <DisplayNftToken
+                              size={32}
+                              token={principleToken}
+                              amount={principle.amount}
+                              className="text-xl"
+                              chainSlug={currentChain.slug}
+                              nftInfo={nftInfo}
+                              showExtendedUnderlying={true}
+                            />
+                          </ShowWhenTrue>
                         </div>
                       )}
                     </>
                   ) : null}
                 </>
-
-                <div className="text-white/50 text-xs italic">
-                  Borrow value: {dollars({ value: principle?.valueUsd ?? 0 })}
-                </div>
+                <ShowWhenTrue when={!isNft(principleToken)}>
+                  <div className="text-white/50 text-xs italic">
+                    Borrow value: {dollars({ value: principle?.valueUsd ?? 0 })}s
+                  </div>
+                </ShowWhenTrue>
               </div>
             </div>
             <hr className="h-px my-8 bg-[#4D4348] border-0" />
