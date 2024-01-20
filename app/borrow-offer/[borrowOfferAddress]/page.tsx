@@ -281,7 +281,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
       {/* Page header */}
       <div className="@container mb-8 space-y-4">
         <Breadcrumbs items={breadcrumbs} />
-        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Offer</h1>
+        <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">Borrow Offer</h1>
       </div>
 
       {/* Page content */}

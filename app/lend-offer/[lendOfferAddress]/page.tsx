@@ -559,7 +559,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         <Breadcrumbs items={breadcrumbs} />
         <h1 className="text-3xl font-bold flex flex-row gap-1 items-center whitespace-nowrap">
           {/* Offer #{lendOfferAddress} */}
-          Offer
+          Lend Offer
         </h1>
       </div>
 
