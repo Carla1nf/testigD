@@ -17,7 +17,7 @@ import { useOffer } from "@/hooks/useOffer"
 import { dollars, ltv, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { isNft } from "@/lib/tokens"
+import { isNft, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
@@ -676,9 +676,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                     </>
                   ) : null}
                 </div>
-                <div className="text-white/50 text-xs italic">
-                  Collateral value: {dollars({ value: offer?.totalCollateralValue ?? 0 })}
-                </div>
+                <ShowWhenTrue when={nftUnderlying(collateralToken) == undefined}>
+                  <div className="text-white/50 text-xs italic">
+                    Collateral value: {dollars({ value: offer?.totalCollateralValue ?? 0 })}
+                  </div>
+                </ShowWhenTrue>
               </div>
               <div className="flex flex-col gap-3">
                 {state.matches("isOwner") ? <div>You are Lending</div> : <div>To Borrow</div>}
