@@ -256,7 +256,7 @@ export default function Create() {
           [isTokenAssetNFT, isCollateralAssetNFT /*  if assets are NFTs --> false for now*/],
           _interest,
           nftArgs, // [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
-          100 /*  value of wanted veNFTs --> 0 for now*/,
+          0 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
           [isLendingMode, true], // [0] --> isLending, [1] --> isPerpetual
@@ -475,6 +475,7 @@ export default function Create() {
     (userNft: UserNftInfo | null) => {
       if (userNft) {
         send({ type: "tokenUserNft", value: userNft })
+        send({ type: "tokenAmount", value: userNft.amount })
       }
     },
     [send]
@@ -614,7 +615,9 @@ export default function Create() {
                   variant={state.matches("form.ltvRatio.ltv25") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
-                    send({ type: "forceLtvRatio", value: 0.25 })
+                    {
+                      isLendingMode && isNft(state.context.token) ? "" : send({ type: "forceLtvRatio", value: 0.25 })
+                    }
                   }}
                 >
                   25%
@@ -623,7 +626,9 @@ export default function Create() {
                   variant={state.matches("form.ltvRatio.ltv50") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
-                    send({ type: "forceLtvRatio", value: 0.5 })
+                    {
+                      isLendingMode && isNft(state.context.token) ? "" : send({ type: "forceLtvRatio", value: 0.5 })
+                    }
                   }}
                 >
                   50%
@@ -632,7 +637,9 @@ export default function Create() {
                   variant={state.matches("form.ltvRatio.ltv75") ? "option" : "option-muted"}
                   onClick={() => {
                     setLtvCustomInputValue("")
-                    send({ type: "forceLtvRatio", value: 0.75 })
+                    {
+                      isLendingMode && isNft(state.context.token) ? "" : send({ type: "forceLtvRatio", value: 0.75 })
+                    }
                   }}
                 >
                   75%
@@ -1059,7 +1066,7 @@ const TokenValuation = ({
 
   return (
     <p className={cn("text-[10px] text-[#9F9F9F] mr-1", className)}>
-      {amount} {token.symbol} @ {dollars({ value: price })} = {dollars({ value })}
+      {amount.toFixed(2)} {token.symbol} @ {dollars({ value: price })} = {dollars({ value })}
     </p>
   )
 }

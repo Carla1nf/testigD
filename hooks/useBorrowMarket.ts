@@ -1,11 +1,20 @@
-import { findInternalTokenByAddress } from "@/lib/tokens"
+import {
+  findInternalTokenByAddress,
+  findTokenByAddress,
+  getValuedAmountPrinciple,
+  getValuedAsset,
+  nftInfoLensType,
+} from "@/lib/tokens"
 import { LenderOfferTokenData, processLenderOfferCreated } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
 import useCurrentChain from "./useCurrentChain"
-
+import useNftInfo, { VeTokenInfoIncoming } from "./useNftInfo"
+import { readContract } from "wagmi/actions"
+import veTokenInfoLensAbi from "@/abis/v2/veTokenInfoLens.json"
+import { toDecimals } from "@/lib/erc20"
 export const useBorrowMarket = () => {
   const { data } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
@@ -19,7 +28,27 @@ export const useBorrowMarket = () => {
 
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i]
-        const tokenLlamaUuid = makeLlamaUuid(currentChain.slug, offer.tokenAddress as Address)
+        offer.token = findTokenByAddress(currentChain.slug, offer.tokenAddress)
+
+        const valueFromUnderlying = nftInfoLensType(offer.token)
+          ? ((await readContract({
+              address: (offer.token?.nft?.infoLens ?? "") as Address,
+              abi: veTokenInfoLensAbi,
+              functionName: "getDataFrom",
+              args: [offer.events[0].address],
+            })) as VeTokenInfoIncoming[])
+          : null
+
+        const valueAssetPrinciple = getValuedAsset(offer.token, currentChain.slug)
+        const principleAmount = getValuedAmountPrinciple(
+          offer.token,
+          true,
+          offer.amount,
+          valueFromUnderlying,
+          toDecimals(0, 18)
+        )
+
+        const tokenLlamaUuid = makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address)
         const tokenPrice = await fetchTokenPrice(tokenLlamaUuid)
         const token = findInternalTokenByAddress(currentChain.slug, offer.tokenAddress as Address)
         offer.price = tokenPrice?.price ?? 0
@@ -31,7 +60,7 @@ export const useBorrowMarket = () => {
          * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
          */
 
-        offer.liquidityOffer = offer.amount * offer.price
+        offer.liquidityOffer = principleAmount * offer.price
       }
 
       return { dividedOffers, offers }

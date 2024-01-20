@@ -1,6 +1,9 @@
 import { ZERO_ADDRESS } from "@/services/constants"
+import { Address, formatUnits } from "viem"
 import { fantom } from "wagmi/chains"
 import z from "zod"
+import { toDecimals } from "./erc20"
+import { VeTokenInfoIncoming } from "@/hooks/useNftInfo"
 
 const ethereumAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
 
@@ -230,4 +233,40 @@ export const nftUnderlyingToken = (token: Token | undefined, chainSlug?: string)
   if (!underlying) return undefined
   const found = findInternalTokenBySymbol(chainSlug, underlying)
   return found
+}
+
+export const getValuedAmountPrinciple = (
+  token: Token | undefined,
+  isLending: boolean,
+  regularAmount: number,
+  underlying: VeTokenInfoIncoming[] | null,
+  valueOfVeNFT: bigint | null
+) => {
+  const amount = (
+    nftInfoLensType(token)
+      ? formatUnits(
+          isLending && underlying ? underlying[0]?.amount : valueOfVeNFT ?? toDecimals(0, 18),
+          token?.decimals ?? 0
+        )
+      : regularAmount
+  ) as number
+  return amount
+}
+
+export const getValuedAmountCollateral = (
+  token: Token | undefined,
+  isLending: boolean,
+  regularAmount: number,
+  underlying: VeTokenInfoIncoming[] | null,
+  valueOfVeNFT: bigint | null
+) => {
+  const amount = (
+    nftInfoLensType(token)
+      ? formatUnits(
+          !isLending && underlying ? underlying[0]?.amount : valueOfVeNFT ?? toDecimals(0, 18),
+          token?.decimals ?? 0
+        )
+      : regularAmount
+  ) as number
+  return amount
 }

@@ -654,6 +654,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           amount={collateral.amount}
                           className="text-xl"
                           chainSlug={currentChain.slug}
+                          wantedLockedEqual={offer.wantedLockedVeNFT}
                         />
                       )}
                     </>
@@ -845,42 +846,50 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       Increasing Allowance Failed - Retry?
                     </Button>
                   </ShowWhenTrue>
+                  <ShowWhenTrue when={isNft(collateralToken)}>
+                    <div className="px-5 items-center flex">Select should be here</div>
+                  </ShowWhenTrue>
 
                   {/* User has enough allowance, show them the accept offer button */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner")}>
                     <div className="flex gap-10 items-center justify-center">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex gap-1 items-center italic opacity-80">
-                          <div className=" text-sm"> Collateral:</div>
-                          {collateral && collateralToken ? (
-                            <DisplayToken
-                              size={20}
-                              token={collateralToken}
-                              amount={amountCollateral}
-                              className="text-base"
-                              chainSlug={currentChain.slug}
-                            />
-                          ) : (
-                            ""
-                          )}
-                        </div>
-                        <input
-                          className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
-                          placeholder={`Amount of ${offer?.principle.token?.symbol}`}
-                          type="number"
-                          max={principle ? principle.amount : 0}
-                          onChange={(e) => {
-                            principle
-                              ? Number(e.currentTarget.value) > principle.amount
-                                ? (e.currentTarget.value = String(principle.amount))
+                      <ShowWhenTrue when={!isNft(collateralToken)}>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-1 items-center italic opacity-80">
+                            <div className=" text-sm"> Collateral:</div>
+                            {collateral && collateralToken ? (
+                              <DisplayToken
+                                size={20}
+                                token={collateralToken}
+                                amount={amountCollateral}
+                                className="text-base"
+                                chainSlug={currentChain.slug}
+                              />
+                            ) : (
+                              ""
+                            )}
+                          </div>
+                          <input
+                            className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
+                            placeholder={`Amount of ${offer?.principle.token?.symbol}`}
+                            type="number"
+                            max={principle ? principle.amount : 0}
+                            onChange={(e) => {
+                              principle
+                                ? Number(e.currentTarget.value) > principle.amount
+                                  ? (e.currentTarget.value = String(principle.amount))
+                                  : ""
                                 : ""
-                              : ""
-                            handleWantedBorrow(Number(e.currentTarget.value))
-                          }}
-                        />
-                      </div>
+                              handleWantedBorrow(Number(e.currentTarget.value))
+                            }}
+                          />
+                        </div>
+                      </ShowWhenTrue>
                       <div className="flex flex-col gap-1">
-                        <div className="opacity-0">holaa</div>
+                        <ShowWhenTrue when={!isNft(collateralToken)}>
+                          {" "}
+                          <div className="opacity-0">s</div>
+                        </ShowWhenTrue>
                         <Button
                           variant={"action"}
                           className="px-16"

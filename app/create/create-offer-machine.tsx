@@ -1,5 +1,5 @@
 import { UserNftInfo } from "@/hooks/useNftInfo"
-import { Token, isNft, tokenSchema } from "@/lib/tokens"
+import { Token, getValuedAsset, isNft, tokenSchema } from "@/lib/tokens"
 import { fixedDecimals, roundIfClose } from "@/lib/utils"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { getAddress } from "viem"
@@ -48,7 +48,7 @@ export const machine = createMachine(
         collateralPrice: 0,
         collateralValue: 0, // value = amount * price
         collateralUserNft: undefined,
-
+        wantedValueVeNFT: 0,
         token: input?.token ?? undefined,
         tokenAmount: undefined,
         tokenPrice: 0,
@@ -129,7 +129,10 @@ export const machine = createMachine(
                   input: ({ context }) => ({ context }),
                   src: fromPromise(async ({ input: { context } }) => {
                     return fetchPrice({
-                      event: { slug: chainIdToSlug(context.collateralToken.chainId), token: context.collateralToken },
+                      event: {
+                        slug: chainIdToSlug(context.collateralToken.chainId),
+                        token: getValuedAsset(context.collateralToken, chainIdToSlug(context.collateralToken.chainId)),
+                      },
                     })
                   }),
                   onDone: {
@@ -187,7 +190,10 @@ export const machine = createMachine(
                   input: ({ context }) => ({ context }),
                   src: fromPromise(async ({ input: { context } }) =>
                     fetchPrice({
-                      event: { slug: chainIdToSlug(context.token.chainId), token: context.token },
+                      event: {
+                        slug: chainIdToSlug(context.token.chainId),
+                        token: getValuedAsset(context.token, chainIdToSlug(context.token.chainId)),
+                      },
                     })
                   ),
                   onDone: {

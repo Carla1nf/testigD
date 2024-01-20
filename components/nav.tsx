@@ -11,11 +11,11 @@ const Nav = () => {
   return (
     <nav className="flex items-center justify-between px-8">
       <div className="flex flex-row items-center p-4">
-        <Link href="/" className="w-36">
-          <Image src="/files/navbar/debita.svg" height={50} width={90} alt="Dēbita" />
+        <Link href="/" className="w-28">
+          <Image src="/files/navbar/debita.svg" height={50} width={100} alt="Dēbita" />
         </Link>
         <Link
-          className={`px-6 text-center text-[14.5px] h-12 items-center grid  hover:bg-slate-400/5 text-[#B6979C] ${
+          className={`px-4 text-center text-[14.5px] h-12 items-center grid  hover:bg-slate-400/5 text-[#B6979C] ${
             path == "/dashboard" ? "border-b-2 border-debitaPink/50 rounded-none" : "rounded-xl"
           }`}
           href="/dashboard"
@@ -23,7 +23,7 @@ const Nav = () => {
           Dashboard
         </Link>
         <Link
-          className={`px-6 text-center text-[14.5px] h-12 items-center grid  text-[#B6979C]  hover:bg-slate-400/5  ${
+          className={`px-4 text-center text-[14.5px] h-12 items-center grid  text-[#B6979C]  hover:bg-slate-400/5  ${
             path == "/lend" ||
             (path.startsWith("/lend") && !path.startsWith("/lend-offer")) ||
             path.startsWith("/borrow-offer")
@@ -35,7 +35,7 @@ const Nav = () => {
           Lend
         </Link>
         <Link
-          className={`px-6 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5  ${
+          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5  ${
             path == "/borrow" ||
             (path.startsWith("/borrow") && !path.startsWith("/borrow-offer")) ||
             path.startsWith("/lend-offer")
@@ -58,8 +58,8 @@ const Nav = () => {
 
       <div className="flex gap-4 flex-row justify-between items-center p-4">
         <Link
-          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
-            path == "/create" ? "border-b-2 border-debitaPink/50 rounded-none" : "rounded-xl"
+          className={`px-3 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
+            path == "/create" ? "border-b-2 border-debitaPink/50 rounded-none " : "rounded-xl"
           }`}
           href="/create"
         >

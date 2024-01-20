@@ -1,4 +1,4 @@
-import { findInternalTokenByAddress } from "@/lib/tokens"
+import { findInternalTokenByAddress, nftInfoLensType } from "@/lib/tokens"
 import { LenderOfferTokenData, processLenderOfferCreated } from "@/services/api"
 import { useDebitaDataQuery } from "@/services/queries"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
@@ -13,12 +13,13 @@ export const useLendingMarket = () => {
   const query: any = useQuery({
     queryKey: ["lending-market-divided-offers", currentChain.slug, data?.borrow?.length],
     queryFn: async () => {
-      // todo: why do we reference the borrow data in the lending market?
+      // todo: why do we reference the borrow data in the leding market?
       const dividedOffers = processLenderOfferCreated(data?.borrow ?? [])
       const offers: LenderOfferTokenData[] = Array.from(dividedOffers.values())
 
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i]
+
         const tokenLlamaUuid = makeLlamaUuid(currentChain.slug, offer.tokenAddress as Address)
         const tokenPrice = await fetchTokenPrice(tokenLlamaUuid)
         const token = findInternalTokenByAddress(currentChain.slug, offer.tokenAddress as Address)

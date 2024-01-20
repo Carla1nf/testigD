@@ -16,6 +16,7 @@ const DisplayToken = ({
   displayOrder = ["Icon", "Amount", "Name"],
   chainSlug = "fantom",
   nftInfo,
+  wantedLockedEqual,
 }: {
   token: Token
   size: number
@@ -25,6 +26,7 @@ const DisplayToken = ({
   displayOrder?: DisplayKeys[]
   chainSlug?: string
   nftInfo?: UserNftInfo
+  wantedLockedEqual?: number
 }) => {
   const components: Record<DisplayKeys, JSX.Element | false | undefined | null> = {
     Icon: displayOrder.includes("Icon") && (
@@ -38,7 +40,14 @@ const DisplayToken = ({
       />
     ),
     Amount: displayOrder.includes("Amount") ? (
-      <DisplayAmount amount={amount} decimals={decimals} nftInfo={nftInfo} token={token} chainSlug={chainSlug} />
+      <DisplayAmount
+        amount={amount}
+        decimals={decimals}
+        nftInfo={nftInfo}
+        token={token}
+        chainSlug={chainSlug}
+        wantedLockedEqual={wantedLockedEqual}
+      />
     ) : null,
     Name: displayOrder.includes("Name") ? <span key="Name">{token?.symbol}</span> : null,
   }
@@ -58,12 +67,14 @@ const DisplayAmount = ({
   nftInfo,
   token,
   chainSlug,
+  wantedLockedEqual,
 }: {
   amount?: number
   decimals?: number
   nftInfo?: UserNftInfo
   token: Token
   chainSlug?: string
+  wantedLockedEqual?: number
 }) => {
   // handle if token is an NFT
   if (isNft(token)) {
@@ -85,6 +96,21 @@ const DisplayAmount = ({
           </div> */}
               <div>Voted:</div>
               <div>{yesNo(nftInfo?.voted)}</div>
+            </HoverCardContent>
+          </HoverCard>
+        </span>
+      )
+    } else if (wantedLockedEqual) {
+      return (
+        <span key="Amount" className="text-white">
+          <HoverCard>
+            <HoverCardTrigger>Wanted</HoverCardTrigger>
+            <HoverCardContent className="bg-[#212121] border-[1px]  border-[#743A49] text-sm grid grid-cols-[80px_minmax(120px,_1fr)]">
+              <div>Minimum Locked:</div>
+              <div>
+                {" "}
+                {wantedLockedEqual} {underlyingToken?.symbol}
+              </div>
             </HoverCardContent>
           </HoverCard>
         </span>

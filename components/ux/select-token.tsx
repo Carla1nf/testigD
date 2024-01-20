@@ -145,7 +145,7 @@ const SelectToken = ({
                   <ShowWhenTrue when={Boolean(selectedUserNft)}>
                     <div>-</div>
                     <div className="text-sm whitespace-nowrap">
-                      {selectedUserNft?.amount} Locked {underlying?.symbol ?? ""}
+                      {selectedUserNft?.amount.toFixed(2)} Locked {underlying?.symbol ?? ""}
                     </div>
                   </ShowWhenTrue>
                 </Button>

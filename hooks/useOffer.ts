@@ -1,11 +1,13 @@
 import createdOfferABI from "@/abis/v2/createdOffer.json"
 import { MILLISECONDS_PER_MINUTE } from "@/lib/display"
-import { fromDecimals } from "@/lib/erc20"
+import { fromDecimals, toDecimals } from "@/lib/erc20"
 import {
   Token,
   findInternalTokenByAddress,
   findInternalTokenBySymbol,
   getDepositedToken,
+  getValuedAmountCollateral,
+  getValuedAmountPrinciple,
   getValuedAsset,
   nftInfoLensType,
   nftUnderlying,
@@ -16,7 +18,7 @@ import { Address, formatUnits, getAddress } from "viem"
 import { readContract } from "wagmi/actions"
 import z from "zod"
 import useCurrentChain from "./useCurrentChain"
-import useNftInfo from "./useNftInfo"
+import useNftInfo, { VeTokenInfoIncoming } from "./useNftInfo"
 import veTokenInfoLensAbi from "../abis/v2/veTokenInfoLens.json"
 
 /**
@@ -47,12 +49,6 @@ const LenderDataReceivedSchema = z.object({
   valueOfVeNFT: z.bigint(),
   _timelap: z.number(),
 })
-
-type VeTokenInfoIncoming = {
-  id: bigint
-  amount: bigint
-  voted: boolean
-}
 
 type LenderDataReceived = z.infer<typeof LenderDataReceivedSchema>
 
@@ -131,23 +127,21 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address))
       principle.price = price.price ?? 0
 
-      const principleAmount = (
-        nftInfoLensType(principleToken)
-          ? formatUnits(
-              lenderData.isLending && valueFromUnderlying ? valueFromUnderlying[0].amount : lenderData.valueOfVeNFT,
-              valueAssetPrinciple?.decimals
-            )
-          : principle.amount
-      ) as number
+      const principleAmount = getValuedAmountPrinciple(
+        principleToken,
+        lenderData.isLending,
+        principle.amount,
+        valueFromUnderlying,
+        lenderData.valueOfVeNFT
+      )
 
-      const collateralAmount = (
-        nftInfoLensType(collateralToken)
-          ? formatUnits(
-              !lenderData.isLending && valueFromUnderlying ? valueFromUnderlying[0].amount : lenderData.valueOfVeNFT,
-              valueAssetCollateral?.decimals
-            )
-          : collateral.amount
-      ) as number
+      const collateralAmount = getValuedAmountCollateral(
+        collateralToken,
+        lenderData.isLending,
+        collateral.amount,
+        valueFromUnderlying,
+        lenderData.valueOfVeNFT
+      )
 
       principle.valueUsd = principleAmount * principle.price
       collateral.valueUsd = collateralAmount * collateral.price
@@ -187,6 +181,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         principleAmountChart: principleAmount,
         collateralAddressChart: valueAssetCollateral.address,
         collateralAmountChart: collateralAmount,
+        wantedLockedVeNFT: fromDecimals(lenderData.valueOfVeNFT, 18),
       }
     },
     refetchInterval: MILLISECONDS_PER_MINUTE * 30,
