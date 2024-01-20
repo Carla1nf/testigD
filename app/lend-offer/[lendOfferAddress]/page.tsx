@@ -634,7 +634,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         <div className="flex items-center gap-2 animate-enter-div">
                           <input
                             min={0}
-                            max={isNft(offer?.principle?.token) ? 1 : 10000000000000}
+                            max={10000000000000}
                             type="number"
                             ref={newCollateralAmountRef}
                             className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
@@ -654,7 +654,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                           amount={collateral.amount}
                           className="text-xl"
                           chainSlug={currentChain.slug}
-                          wantedLockedEqual={offer.wantedLockedVeNFT}
+                          wantedLockedEqual={offer?.wantedLockedVeNFT}
                         />
                       )}
                     </>
@@ -846,14 +846,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       Increasing Allowance Failed - Retry?
                     </Button>
                   </ShowWhenTrue>
-                  <ShowWhenTrue when={isNft(collateralToken)}>
-                    <div className="px-5 items-center flex">Select should be here</div>
-                  </ShowWhenTrue>
+                  <ShowWhenTrue when={isNft(collateralToken)}>Select for veNFTs holding</ShowWhenTrue>
 
                   {/* User has enough allowance, show them the accept offer button */}
-                  <ShowWhenTrue when={state.matches("isNotOwner")}>
+                  <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
                     <div className="flex gap-10 items-center justify-center">
-                      <ShowWhenTrue when={!isNft(collateralToken)}>
+                      <ShowWhenTrue when={!isNft(collateralToken) && !isNft(principleToken)}>
                         <div className="flex flex-col gap-1">
                           <div className="flex gap-1 items-center italic opacity-80">
                             <div className=" text-sm"> Collateral:</div>
@@ -886,10 +884,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                         </div>
                       </ShowWhenTrue>
                       <div className="flex flex-col gap-1">
-                        <ShowWhenTrue when={!isNft(collateralToken)}>
-                          {" "}
-                          <div className="opacity-0">s</div>
-                        </ShowWhenTrue>
+                        <div className="opacity-0">holaa</div>
                         <Button
                           variant={"action"}
                           className="px-16"
