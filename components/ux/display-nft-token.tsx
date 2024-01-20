@@ -68,7 +68,7 @@ const DisplayNftToken = ({
         {displayOrder.map((component) => components[component])}
       </div>
       <ShowWhenTrue when={isNft(token) && showExtendedUnderlying}>
-        <div className="ml-12 flex flex-row items-center gap-1 text-xs">
+        <div className="ml-12 flex flex-row items-center gap-1 text-xs text-[#8D8B8C]">
           <LucideCornerDownRight className="w-3 h-3 inline  stroke-[#8D8B8C]" /> {nftInfo?.amount} {underlying?.symbol}
         </div>
         <div className="ml-12 flex flex-row items-center gap-1 text-xs text-[#8D8B8C] italic">
