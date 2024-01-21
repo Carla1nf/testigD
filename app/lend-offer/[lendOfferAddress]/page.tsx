@@ -1,8 +1,6 @@
 "use client"
 
 import createdOfferABI from "@/abis/v2/createdOffer.json"
-import { PriceIcon, SpinnerIcon } from "@/components/icons"
-import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
@@ -16,12 +14,15 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 import { useOffer } from "@/hooks/useOffer"
-import { dollars, ltv, percent, thresholdLow, yesNo } from "@/lib/display"
+import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
+import { dollars, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
+import { isVeTokenApprovedOrOwner } from "@/lib/nft"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { Token, getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
+import { getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
+import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
 import { ExternalLink, Info } from "lucide-react"
@@ -33,14 +34,13 @@ import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
-import NotOwnerInfo from "./components/not-owner-info"
-import OwnerCancelButtons from "./components/owner-cancel-buttons"
-import { machine } from "./lend-offer-machine"
-import { createBrowserInspector } from "@statelyai/inspect"
-import LendOfferStats from "./components/stats"
 import NotOwnerErc20Buttons from "./components/not-owner-erc20-buttons"
+import NotOwnerInfo from "./components/not-owner-info"
 import NotOwnerNftButtons from "./components/not-owner-nft-buttons"
+import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import OwnerEditingButtons from "./components/owner-editing-buttons"
+import LendOfferStats from "./components/stats"
+import { machine } from "./lend-offer-machine"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -127,6 +127,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const onSelectCollateralUserNft = useCallback((userNft: UserNftInfo | null) => {
     if (userNft) {
       setSelectedUserNft(userNft)
+      send({ type: "select.nft" })
     }
   }, [])
 
@@ -429,6 +430,32 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     }
   }
 
+  const checkNftAllowance = async () => {
+    console.log("")
+    console.log("calling checkNftAllowance")
+
+    console.log("collateralToken", collateralToken)
+    console.log("isNft(collateralToken))", isNft(collateralToken))
+    console.log("selectedUserNft", selectedUserNft)
+
+    if (isNft(collateralToken)) {
+      const hasPermissions = await isVeTokenApprovedOrOwner({
+        veToken: collateralToken?.address as Address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        nftId: BigInt(selectedUserNft?.id ?? 0),
+      })
+
+      console.log("hasPermissions", hasPermissions)
+      console.log("")
+
+      if (hasPermissions) {
+        return Promise.resolve({ hasPermissions })
+      }
+
+      throw "needs permission"
+    }
+  }
+
   // STATE MACHINE
   // OWNER - CANCEL OFFER
   // USER - ACCEPT OFFER
@@ -442,13 +469,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         increasePrincipleAllowance: fromPromise(increasePrincipleAllowance),
         updateOffer: fromPromise(updateOffer),
         checkCollateralAllowance: fromPromise(checkCollateralAllowance),
+        checkNftAllowance: fromPromise(checkNftAllowance),
       },
     }),
     { inspect }
   )
 
   // @ts-ignore
-  console.log("state", state.value.isNotOwner)
+  console.log("state", state.value?.isNotOwner?.nft)
 
   const shouldShowEditOfferForm = state.matches("isOwner.editing")
 
@@ -464,7 +492,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     }
 
     if (!isOwnerConnected) {
-      send({ type: "not.owner" })
+      if (!state.matches("isNotOwner")) {
+        send({ type: "not.owner" })
+      }
       if (collateral) {
         if (isNft(collateralToken) && !state.matches("isNotOwner.nft")) {
           send({ type: "is.nft" })
@@ -856,6 +886,18 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               </div>
             </div>
 
+            <ShowWhenTrue when={state.matches("isNotOwner.nft")}>
+              <div className="mt-8">
+                <div className="text-sm">Select your NFT:</div>
+                <SelectVeToken
+                  token={collateralToken}
+                  selectedUserNft={selectedUserNft}
+                  onSelectUserNft={onSelectCollateralUserNft}
+                  userNftInfo={addressNftInfos}
+                />
+              </div>
+            </ShowWhenTrue>
+
             {/* Buttons */}
             <div className="mt-8">
               <ShowWhenTrue when={state.matches("isNotOwner.erc20")}>
@@ -872,16 +914,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               <ShowWhenTrue when={state.matches("isNotOwner.nft")}>
                 <NotOwnerNftButtons state={state} send={send} />
               </ShowWhenTrue>
-
-              {/* <ShowWhenTrue when={isNft(collateralToken)}>
-                  <SelectVeToken
-                    token={collateralToken}
-                    selectedUserNft={selectedUserNft}
-                    onSelectUserNft={onSelectCollateralUserNft}
-                    userNftInfo={addressNftInfos}
-                  />
-                  NotOwnerNftButtons
-                </ShowWhenTrue> */}
 
               <ShowWhenTrue when={state.matches("isOwner.editing")}>
                 <OwnerEditingButtons state={state} send={send} />

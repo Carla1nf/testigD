@@ -30,9 +30,9 @@ export const machine = createMachine(
               },
               checkCollateralAllowance: {
                 invoke: {
+                  input: {},
                   src: "checkCollateralAllowance",
                   id: "checkCollateralAllowance",
-                  input: {},
                   onDone: [
                     {
                       target: "canAcceptOffer",
@@ -81,16 +81,6 @@ export const machine = createMachine(
                   input: {},
                   src: "increaseCollateralAllowance",
                   id: "increaseCollateralAllowance",
-                  onDone: [
-                    {
-                      target: "canAcceptOffer",
-                    },
-                  ],
-                  onError: [
-                    {
-                      target: "increaseAllowanceError",
-                    },
-                  ],
                 },
               },
               offerAccepted: {
@@ -122,8 +112,15 @@ export const machine = createMachine(
             states: {
               idle: {},
               nftSelected: {
-                initial: "checkNftAllowance",
+                initial: "idle",
                 states: {
+                  idle: {
+                    on: {
+                      "user.accept.offer": {
+                        target: "checkNftAllowance",
+                      },
+                    },
+                  },
                   checkNftAllowance: {
                     invoke: {
                       input: {},
@@ -136,7 +133,7 @@ export const machine = createMachine(
                       ],
                       onError: [
                         {
-                          target: "notEnoughAllowance",
+                          target: "nftNeedsApproval",
                         },
                       ],
                     },
@@ -148,10 +145,10 @@ export const machine = createMachine(
                       },
                     },
                   },
-                  notEnoughAllowance: {
+                  nftNeedsApproval: {
                     on: {
-                      "user.allowance.increase": {
-                        target: "increaseCollateralAllowance",
+                      "user.approve.nft": {
+                        target: "approveNft",
                       },
                     },
                   },
@@ -172,19 +169,19 @@ export const machine = createMachine(
                       ],
                     },
                   },
-                  increaseCollateralAllowance: {
+                  approveNft: {
                     invoke: {
+                      src: "approveNft",
+                      id: "approveNft",
                       input: {},
-                      src: "increaseCollateralAllowance",
-                      id: "increaseCollateralAllowance",
-                      onError: [
-                        {
-                          target: "increaseAllowanceError",
-                        },
-                      ],
                       onDone: [
                         {
                           target: "canAcceptOffer",
+                        },
+                      ],
+                      onError: [
+                        {
+                          target: "approveNftError",
                         },
                       ],
                     },
@@ -199,12 +196,17 @@ export const machine = createMachine(
                   offerAccepted: {
                     type: "final",
                   },
-                  increaseAllowanceError: {
+                  approveNftError: {
                     on: {
-                      "user.increase.collateral.allowance.retry": {
-                        target: "increaseCollateralAllowance",
+                      "user.approve.nft.retry": {
+                        target: "approveNft",
                       },
                     },
+                  },
+                },
+                on: {
+                  "user.nft.cancel": {
+                    target: ".idle",
                   },
                 },
               },
@@ -366,17 +368,20 @@ export const machine = createMachine(
         | { type: "not.owner" }
         | { type: "select.nft" }
         | { type: "owner.retry" }
+        | { type: "user.cancel" }
         | { type: "owner.cancel" }
         | { type: "owner.editing" }
+        | { type: "user.approve.nft" }
         | { type: "user.accept.offer" }
         | { type: "owner.update.offer" }
+        | { type: "owner.cancel.editing" }
         | { type: "user.accept.offer.retry" }
         | { type: "user.allowance.increase" }
         | { type: "owner.update.offer.retry" }
         | { type: "owner.increase.principle.allowance.retry" }
         | { type: "user.increase.collateral.allowance.retry" }
-        | { type: "owner.cancel.editing" }
-        | { type: "user.cancel" },
+        | { type: "user.approve.nft.retry" }
+        | { type: "user.nft.cancel" },
     },
   },
   {
@@ -397,13 +402,16 @@ export const machine = createMachine(
       checkPrincipleAllowance: createMachine({
         /* ... */
       }),
+      checkCollateralAllowance: createMachine({
+        /* ... */
+      }),
       increasePrincipleAllowance: createMachine({
         /* ... */
       }),
       increaseCollateralAllowance: createMachine({
         /* ... */
       }),
-      checkCollateralAllowance: createMachine({
+      approveNft: createMachine({
         /* ... */
       }),
     },
