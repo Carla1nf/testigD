@@ -31,7 +31,7 @@ export default function LeaderBoardPage() {
       </div>
       <div className="flex w-full gap-12">
         <div className="flex flex-col w-full gap-2 text-gray-200">
-          <div className="flex h-10 items-center justify-between font-bold text-gray-500/80 border-b-2 border-neutral-500/20">
+          <div className="flex h-10 items-center justify-between font-bold text-neutral-500 border-b-2 border-neutral-500/20 bg-black rounded">
             <div className="w-full px-2">Wallet</div>
             <div className="w-full px-2">Points</div>
           </div>
