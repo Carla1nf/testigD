@@ -56,10 +56,12 @@ const NotOwnerErc20Buttons = ({
 
       <ActionButtons.Group
         when={state.matches("isNotOwner.erc20.increaseCollateralAllowance")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}
         right={<ActionButtons.Spinner title="Increasing Allowance" when={true} />}
       />
 
       <ActionButtons.Group
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}
         when={state.matches("isNotOwner.erc20.increaseAllowanceError")}
         right={
           <ActionButtons.Error
@@ -122,16 +124,15 @@ const NotOwnerErc20Buttons = ({
         </div>
       </ShowWhenTrue>
 
-      {/* Show the Accepting Offer spinner while we are accepting the offer */}
-      <ShowWhenTrue when={state.matches("isNotOwner.erc20.acceptingOffer")}>
-        <Button variant={"action"} className="px-16">
-          Accepting Offer...
-          <SpinnerIcon className="ml-2 animate-spin-slow" />
-        </Button>
-      </ShowWhenTrue>
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.acceptingOffer")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}
+        right={<ActionButtons.Spinner title="Accepting Offer..." when={true} />}
+      />
 
       <ActionButtons.Group
         when={state.matches("isNotOwner.erc20.acceptingOfferError")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}
         right={
           <ActionButtons.Error
             title="Accept Offer Failed - Retry?"
