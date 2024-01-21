@@ -20,7 +20,7 @@ import { useOffer } from "@/hooks/useOffer"
 import { dollars, ltv, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { Token, isNft, nftUnderlying } from "@/lib/tokens"
+import { Token, getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
@@ -90,13 +90,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const newPaymentCountRef = useRef<HTMLInputElement>(null)
   const newTimelapRef = useRef<HTMLInputElement>(null)
   const newInterestRef = useRef<HTMLInputElement>(null)
-
+  const newWantedVeRef = useRef<HTMLInputElement>(null)
   // for now we will set values into state, this might go into a machine soon, let's see
   const [newCollateralAmount, setNewCollateralAmount] = useState(0)
   const [newBorrowAmount, setNewBorrowAmount] = useState(0)
   const [newPaymentCount, setNewPaymentCount] = useState(0)
   const [newTimelap, setNewTimelap] = useState(0)
   const [newInterest, setNewInterest] = useState(0)
+  const [newWantedVe, setNewWantedVe] = useState(0)
   const [selectedUserNft, setSelectedUserNft] = useState<UserNftInfo | undefined>(undefined)
 
   const currentChain = useCurrentChain()
@@ -119,6 +120,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const principleNftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
   const addressNftInfos = useNftInfo({ address, token: collateralToken })
   const nftInfo = principleNftInfos?.[0]
+  const valuedAssetCollateral = getValuedAsset(collateralToken, currentChain.slug)
 
   // console.log("nftInfo", nftInfo)
   // console.log("offer", offer)
@@ -179,7 +181,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         args: [
           [newBorrow, newCollateral],
           [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
-          0,
+          toDecimals(newWantedVe, valuedAssetCollateral.decimals),
           0,
         ],
         account: address, // gas: BigInt(900000),
@@ -631,22 +633,43 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 <div className="-ml-[px] grow">
                   {collateral && collateralToken ? (
                     <>
-                      {!isNft(collateralToken) && shouldShowEditOfferForm ? (
+                      {shouldShowEditOfferForm ? (
                         <div className="flex items-center gap-2 animate-enter-div">
-                          <input
-                            min={0}
-                            max={10000000000000}
-                            type="number"
-                            ref={newCollateralAmountRef}
-                            className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
-                            placeholder={`new ${collateralToken.symbol} amount`}
-                            defaultValue={collateral.amount}
-                            onChange={(e) => {
-                              setNewCollateralAmount(Number(e.target.value))
-                            }}
-                            disabled={!canAlterEditUpdateForm}
-                          />
-                          {collateralToken.symbol}
+                          {nftInfoLens(collateralToken) ? (
+                            <>
+                              <input
+                                min={0}
+                                max={10000000000000}
+                                type="number"
+                                ref={newWantedVeRef}
+                                className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                                placeholder={`new ${valuedAssetCollateral.symbol} amount`}
+                                defaultValue={offer.wantedLockedVeNFT}
+                                onChange={(e) => {
+                                  setNewWantedVe(Number(e.target.value))
+                                }}
+                                disabled={!canAlterEditUpdateForm}
+                              />
+                              Locked {valuedAssetCollateral.symbol}
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                min={0}
+                                max={10000000000000}
+                                type="number"
+                                ref={newCollateralAmountRef}
+                                className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                                placeholder={`new ${collateralToken.symbol} amount`}
+                                defaultValue={collateral.amount}
+                                onChange={(e) => {
+                                  setNewCollateralAmount(Number(e.target.value))
+                                }}
+                                disabled={!canAlterEditUpdateForm}
+                              />
+                              {collateralToken.symbol}
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="-ml-[4px] grow">

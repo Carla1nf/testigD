@@ -16,7 +16,7 @@ export const useBorrowingMarketStats = () => {
       // No idea why but this is how market size is calculated
       //   ${(data / 100 + available + (data * 1.2) / 100).toFixed(2)}
       const calcMarketSize = totalLiquidityLent + count + totalLiquidityLent * 1.2
-      setAvailable(Number.isNaN(count) ? 0 : count)
+      setAvailable(Number.isNaN(count) || count == undefined ? 0 : count)
       setMarketSize(Number.isNaN(calcMarketSize) ? 0 : calcMarketSize)
     }
   }, [lend, offers, totalLiquidityLent])

@@ -42,7 +42,10 @@ export default function Dashboard() {
             </div>
 
             <div className="flex gap-2 items-center border border-[#A957A4]/50 px-2 py-1.5 rounded-lg">
-              <ShowWhenTrue when={add != ""}>{`${add?.substring(0, 5)}...${add?.substring(38)}`}</ShowWhenTrue>
+              <ShowWhenTrue when={add != ""}>
+                <img src="files/icon/Wallet.svg" width={20} />
+                {`${add?.substring(0, 4)}...${add?.substring(38)}`}
+              </ShowWhenTrue>
             </div>
           </div>
           <DashboardResume lending={userOffersLending} collateral={userOffersCollateral} />
