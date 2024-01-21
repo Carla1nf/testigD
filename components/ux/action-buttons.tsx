@@ -1,6 +1,8 @@
-import { Button } from "@/components/ui/button"
-import { XCircle } from "lucide-react"
 import { SpinnerIcon } from "@/components/icons"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { XCircle } from "lucide-react"
+import React, { Children, ReactNode } from "react"
 
 type ActionButtonParams = { title: string; when: boolean; disabled?: boolean; onClick: () => void }
 
@@ -70,12 +72,44 @@ export const ActionCancelButton = ({ onClick, title, when }: ActionCancelButtonP
   return null
 }
 
+const ActionButtonGroup = ({
+  left,
+  right,
+  className,
+  when,
+}: {
+  left?: ReactNode
+  right?: ReactNode
+  className?: string
+  when: boolean
+}) => {
+  if (!when) {
+    return null
+  }
+  if (left && right) {
+    return (
+      <div className={cn("flex flex-row justify-between", className)}>
+        {left}
+        {right}
+      </div>
+    )
+  }
+  if (left) {
+    return <div className={cn("flex flex-row justify-end", className)}>{left}</div>
+  }
+  if (right) {
+    return <div className={cn("flex flex-row justify-end", className)}>{right}</div>
+  }
+  return null
+}
+
 const ActionButtons = {
   Action: ActionButton,
   Muted: ActionMutedButton,
   Spinner: ActionSpinnerButton,
   Error: ActionErrorButton,
   Cancel: ActionCancelButton,
+  Group: ActionButtonGroup,
 }
 
 export default ActionButtons

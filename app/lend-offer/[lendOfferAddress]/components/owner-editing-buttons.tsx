@@ -1,7 +1,3 @@
-import { SpinnerIcon } from "@/components/icons"
-import { Button } from "@/components/ui/button"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
-import { XCircle } from "lucide-react"
 import ActionButtons from "@/components/ux/action-buttons"
 
 const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
@@ -11,27 +7,37 @@ const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
 
   return (
     <>
-      <ActionButtons.Action
-        title="Update Offer"
+      <ActionButtons.Group
         when={state.matches("isOwner.editing.idle")}
-        onClick={() => {
-          send({ type: "owner.update.offer" })
-        }}
+        right={
+          <ActionButtons.Action
+            title="Update Offer"
+            when={true}
+            onClick={() => {
+              send({ type: "owner.update.offer" })
+            }}
+          />
+        }
+        className="w-full"
       />
-      <ActionButtons.Action
-        title="Update Offer"
+
+      <ActionButtons.Group
         when={state.matches("isOwner.editing.checkPrincipleAllowance")}
-        onClick={() => {}}
+        right={<ActionButtons.Action title="Update Offer" onClick={() => {}} when={true} />}
+        className="w-full"
       />
-      <ShowWhenTrue when={state.matches("isOwner.editing.increasePrincipleAllowance")}>
-        <div className="flex justify-between w-full">
-          <ActionButtons.Cancel when={true} onClick={send({ type: "cancel" })} />
-          <ActionButtons.Spinner title="Increase Allowance" when={true} />
-        </div>
-      </ShowWhenTrue>
-      <ShowWhenTrue when={state.matches("isOwner.editing.errorIncreasingPrincipleAllowance")}>
-        <div className="flex justify-between w-full">
-          <ActionButtons.Cancel when={true} onClick={send({ type: "cancel" })} />
+
+      <ActionButtons.Group
+        when={state.matches("isOwner.editing.increasePrincipleAllowance")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "owner.cancel.editing" })} />}
+        right={<ActionButtons.Spinner title="Increase Allowance" when={true} />}
+        className="w-full"
+      />
+
+      <ActionButtons.Group
+        when={state.matches("isOwner.editing.errorIncreasingPrincipleAllowance")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "owner.cancel.editing" })} />}
+        right={
           <ActionButtons.Error
             title="Increase Allowance Failed - Retry?"
             when={true}
@@ -39,26 +45,31 @@ const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
               send({ type: "owner.increase.principle.allowance.retry" })
             }}
           />
-        </div>
-      </ShowWhenTrue>
-      <ShowWhenTrue when={state.matches("isOwner.editing.updatingOffer")}>
-        <div className="flex justify-between w-full">
-          <ActionButtons.Cancel when={true} onClick={send({ type: "cancel" })} />
-          <ActionButtons.Spinner title="Updating Offer" when={true} />
-        </div>
-      </ShowWhenTrue>
-      <ShowWhenTrue when={state.matches("isOwner.editing.errorUpdatingOffer")}>
-        <div className="flex justify-between w-full">
-          <ActionButtons.Cancel when={true} onClick={send({ type: "cancel" })} />
+        }
+        className="w-full"
+      />
+
+      <ActionButtons.Group
+        when={state.matches("isOwner.editing.updatingOffer")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "owner.cancel.editing" })} />}
+        right={<ActionButtons.Spinner title="Updating Offer" when={true} />}
+        className="w-full"
+      />
+
+      <ActionButtons.Group
+        when={state.matches("isOwner.editing.errorUpdatingOffer")}
+        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "owner.cancel.editing" })} />}
+        right={
           <ActionButtons.Error
-            title=" Updating Offer Failed - Retry?"
+            title="Updating Offer Failed - Retry?"
             when={true}
             onClick={() => {
               send({ type: "owner.update.offer.retry" })
             }}
           />
-        </div>
-      </ShowWhenTrue>
+        }
+        className="w-full"
+      />
     </>
   )
 }

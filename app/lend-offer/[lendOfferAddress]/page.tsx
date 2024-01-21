@@ -422,16 +422,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     { inspect }
   )
 
-  console.log("state.value", state.value)
+  console.log("state", state)
 
-  const shouldShowEditOfferForm =
-    state.matches("isOwner.editing") ||
-    state.matches("isOwner.checkPrincipleAllowance") ||
-    state.matches("isOwner.increasePrincipleAllowance") ||
-    state.matches("isOwner.errorIncreasingPrincipleAllowance") ||
-    state.matches("isOwner.updateOffer") ||
-    state.matches("isOwner.updatingOffer") ||
-    state.matches("isOwner.errorUpdatingOffer")
+  const shouldShowEditOfferForm = state.matches("isOwner.editing")
 
   const canAlterEditUpdateForm =
     state.matches("isOwner.editing") || state.matches("isOwner.errorIncreasingPrincipleAllowance")
@@ -485,7 +478,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         }
       }
     }
-  }, [isOwnerConnected, currentCollateralTokenAllowance, state, send, collateral])
+  }, [isOwnerConnected, currentCollateralTokenAllowance, state, send, collateral, collateralToken])
 
   // initialise the state values whenever we enter the isOwner.editing state
   useEffect(() => {
@@ -608,7 +601,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               <ShowWhenTrue when={state.matches("isOwner")}>
                 <div
                   onClick={async () => {
-                    state.matches("isOwner.editing") ? send({ type: "owner.cancel" }) : send({ type: "owner.editing" })
+                    state.matches("isOwner.editing")
+                      ? send({ type: "owner.cancel.editing" })
+                      : send({ type: "owner.editing" })
                   }}
                   className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300"
                 >
@@ -845,7 +840,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             </div>
 
             {/* Buttons */}
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8">
               <ShowWhenTrue when={state.matches("isNotOwner.erc20")}>
                 <NotOwnerErc20Buttons
                   state={state}

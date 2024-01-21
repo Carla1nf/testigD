@@ -312,7 +312,7 @@ export const machine = createMachine(
               },
             },
             on: {
-              "owner.cancel": {
+              "owner.cancel.editing": {
                 target: "idle",
               },
             },
@@ -336,14 +336,15 @@ export const machine = createMachine(
         | { type: "owner.cancel" }
         | { type: "owner.editing" }
         | { type: "user.accept.offer" }
+        | { type: "owner.update.offer" }
         | { type: "user.has.allowance" }
         | { type: "user.not.has.allowance" }
         | { type: "user.accept.offer.retry" }
         | { type: "user.allowance.increase" }
-        | { type: "user.increase.collateral.allowance.retry" }
-        | { type: "owner.increase.principle.allowance.retry" }
         | { type: "owner.update.offer.retry" }
-        | { type: "owner.update.offer" },
+        | { type: "owner.increase.principle.allowance.retry" }
+        | { type: "user.increase.collateral.allowance.retry" }
+        | { type: "owner.cancel.editing" },
     },
   },
   {

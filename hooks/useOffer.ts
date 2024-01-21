@@ -64,7 +64,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         args: [],
       })) as LenderDataReceived
 
-      console.log("lenderData", lenderData)
+      // console.log("lenderData", lenderData)
 
       const owner = (await readContract({
         address: lendOfferAddress,
