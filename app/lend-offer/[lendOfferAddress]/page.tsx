@@ -11,7 +11,6 @@ import DisplayNftToken from "@/components/ux/display-nft-token"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
 import SelectVeToken from "@/components/ux/select-ve-token"
-import Stat from "@/components/ux/stat"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
@@ -25,7 +24,7 @@ import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
-import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
+import { ExternalLink, Info } from "lucide-react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import pluralize from "pluralize"
@@ -407,6 +406,29 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     }
   }
 
+  const checkCollateralAllowance = async () => {
+    try {
+      if (collateralToken?.address === ZERO_ADDRESS) {
+        return Promise.reject()
+      }
+
+      if (currentCollateralTokenAllowance === undefined) {
+        return Promise.resolve()
+      }
+
+      const collateralAmountRaw = BigInt(collateral?.amountRaw ?? 0)
+
+      if (Number(currentCollateralTokenAllowance) >= Number(collateralAmountRaw ?? 0)) {
+        return Promise.resolve()
+      }
+
+      return Promise.reject()
+    } catch (error: any) {
+      console.log("checkCollateralAllowance", error)
+      throw error
+    }
+  }
+
   // STATE MACHINE
   // OWNER - CANCEL OFFER
   // USER - ACCEPT OFFER
@@ -419,12 +441,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         checkPrincipleAllowance: fromPromise(checkPrincipleAllowance),
         increasePrincipleAllowance: fromPromise(increasePrincipleAllowance),
         updateOffer: fromPromise(updateOffer),
+        checkCollateralAllowance: fromPromise(checkCollateralAllowance),
       },
     }),
     { inspect }
   )
 
-  console.log("state", state)
+  // @ts-ignore
+  console.log("state", state.value.isNotOwner)
 
   const shouldShowEditOfferForm = state.matches("isOwner.editing")
 
@@ -441,42 +465,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
     if (!isOwnerConnected) {
       send({ type: "not.owner" })
-
-      // dual collateral mode
       if (collateral) {
-        // Is the user providing an nft or ERC20 token?
-        if (isNft(collateralToken)) {
+        if (isNft(collateralToken) && !state.matches("isNotOwner.nft")) {
           send({ type: "is.nft" })
-        } else {
+        }
+        if (!isNft(collateralToken) && !state.matches("isNotOwner.erc20")) {
           send({ type: "is.erc20" })
-        }
-
-        // do they have the required allowance to pay for the offer?
-        if (currentCollateralTokenAllowance === undefined) {
-          return
-        }
-        if (Number(currentCollateralTokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
-          send({ type: "user.has.allowance" })
-          return
-        }
-        if (!state.matches("isNotOwner.notEnoughAllowance")) {
-          send({ type: "user.not.has.allowance" })
-          return
-        }
-      }
-
-      // single collateral mode
-      if (collateral) {
-        // do they have the required allowance to pay for the offer?
-        if (currentCollateralTokenAllowance === undefined) {
-          return
-        }
-        if (Number(currentCollateralTokenAllowance) >= Number(collateral?.amountRaw ?? 0)) {
-          send({ type: "user.has.allowance" })
-          return
-        }
-        if (!state.matches("isNotOwner.notEnoughAllowance")) {
-          send({ type: "user.not.has.allowance" })
         }
       }
     }

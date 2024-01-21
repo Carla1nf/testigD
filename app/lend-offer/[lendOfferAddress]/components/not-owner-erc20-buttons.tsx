@@ -1,10 +1,10 @@
 import { SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import ActionButtons from "@/components/ux/action-buttons"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { Token } from "@/lib/tokens"
-import { CheckCircle, XCircle } from "lucide-react"
 
 const NotOwnerErc20Buttons = ({
   state,
@@ -28,40 +28,49 @@ const NotOwnerErc20Buttons = ({
 
   return (
     <>
-      {/* Show the Increase Allowance button when the user doesn't not have enough allowance */}
-      <ShowWhenTrue when={state.matches("isNotOwner.erc20.notEnoughAllowance")}>
-        <Button
-          variant={"action"}
-          className="px-16"
-          onClick={async () => {
-            send({ type: "user.allowance.increase" })
-          }}
-        >
-          Accept Offer
-        </Button>
-      </ShowWhenTrue>
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.idle")}
+        right={
+          <ActionButtons.Action
+            title="Accept Offer"
+            when={true}
+            onClick={async () => {
+              send({ type: "user.accept.offer" })
+            }}
+          />
+        }
+      />
 
-      {/* Show the Increasing Allowance spinner button while performing an increase allowance transaction */}
-      <ShowWhenTrue when={state.matches("isNotOwner.erc20.increaseAllowance")}>
-        <Button variant={"action"} className="px-16">
-          Increasing Allowance
-          <SpinnerIcon className="ml-2 animate-spin-slow" />
-        </Button>
-      </ShowWhenTrue>
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.notEnoughAllowance")}
+        right={
+          <ActionButtons.Action
+            title="Accept Offer"
+            when={true}
+            onClick={async () => {
+              send({ type: "user.allowance.increase" })
+            }}
+          />
+        }
+      />
 
-      {/* Increasing Allowance Failed - Allow the user to try increasing allowance again */}
-      <ShowWhenTrue when={state.matches("isNotOwner.erc20.increaseAllowanceError")}>
-        <Button
-          variant="error"
-          className="h-full w-full gap-2"
-          onClick={() => {
-            send({ type: "user.increase.collateral.allowance.retry" })
-          }}
-        >
-          <XCircle className="h-5 w-5" />
-          Increasing Allowance Failed - Retry?
-        </Button>
-      </ShowWhenTrue>
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.increaseCollateralAllowance")}
+        right={<ActionButtons.Spinner title="Increasing Allowance" when={true} />}
+      />
+
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.increaseAllowanceError")}
+        right={
+          <ActionButtons.Error
+            title="Increasing Allowance Failed - Retry?"
+            when={true}
+            onClick={() => {
+              send({ type: "user.increase.collateral.allowance.retry" })
+            }}
+          />
+        }
+      />
 
       {/* User has enough allowance, show them the accept offer button */}
       {/* This shouldn't really be in the buttons, we should extract to a different component and display in the form section */}
@@ -121,27 +130,23 @@ const NotOwnerErc20Buttons = ({
         </Button>
       </ShowWhenTrue>
 
-      {/* Accepted offer failed - Allow the user tor try accepting the offer again */}
-      <ShowWhenTrue when={state.matches("isNotOwner.erc20.acceptingOfferError")}>
-        <Button
-          variant="error"
-          className="h-full w-full gap-2"
-          onClick={() => {
-            send({ type: "user.accept.offer.retry" })
-          }}
-        >
-          <XCircle className="h-5 w-5" />
-          Accept Offer Failed - Retry?
-        </Button>
-      </ShowWhenTrue>
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.acceptingOfferError")}
+        right={
+          <ActionButtons.Error
+            title="Accept Offer Failed - Retry?"
+            when={true}
+            onClick={() => {
+              send({ type: "user.accept.offer.retry" })
+            }}
+          />
+        }
+      />
 
-      {/* The offer is accepted */}
-      <ShowWhenTrue when={state.matches("isNotOwner.erc20.offerAccepted")}>
-        <Button variant={"success"} className="px-16 gap-2">
-          <CheckCircle className="w-5 h-5" />
-          Offer Accepted
-        </Button>
-      </ShowWhenTrue>
+      <ActionButtons.Group
+        when={state.matches("isNotOwner.erc20.offerAccepted")}
+        right={<ActionButtons.Success title="Offer Accepted" when={true} />}
+      />
     </>
   )
 }

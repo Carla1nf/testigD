@@ -19,12 +19,43 @@ export const machine = createMachine(
             },
           },
           erc20: {
-            initial: "canAcceptOffer",
+            initial: "idle",
             states: {
+              idle: {
+                on: {
+                  "user.accept.offer": {
+                    target: "checkCollateralAllowance",
+                  },
+                },
+              },
+              checkCollateralAllowance: {
+                invoke: {
+                  src: "checkCollateralAllowance",
+                  id: "checkCollateralAllowance",
+                  input: {},
+                  onDone: [
+                    {
+                      target: "canAcceptOffer",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "notEnoughAllowance",
+                    },
+                  ],
+                },
+              },
               canAcceptOffer: {
                 on: {
                   "user.accept.offer": {
                     target: "acceptingOffer",
+                  },
+                },
+              },
+              notEnoughAllowance: {
+                on: {
+                  "user.allowance.increase": {
+                    target: "increaseCollateralAllowance",
                   },
                 },
               },
@@ -45,23 +76,6 @@ export const machine = createMachine(
                   ],
                 },
               },
-              offerAccepted: {
-                type: "final",
-              },
-              acceptingOfferError: {
-                on: {
-                  "user.accept.offer.retry": {
-                    target: "acceptingOffer",
-                  },
-                },
-              },
-              notEnoughAllowance: {
-                on: {
-                  "user.allowance.increase": {
-                    target: "increaseCollateralAllowance",
-                  },
-                },
-              },
               increaseCollateralAllowance: {
                 invoke: {
                   input: {},
@@ -79,6 +93,16 @@ export const machine = createMachine(
                   ],
                 },
               },
+              offerAccepted: {
+                type: "final",
+              },
+              acceptingOfferError: {
+                on: {
+                  "user.accept.offer.retry": {
+                    target: "acceptingOffer",
+                  },
+                },
+              },
               increaseAllowanceError: {
                 on: {
                   "user.increase.collateral.allowance.retry": {
@@ -88,11 +112,8 @@ export const machine = createMachine(
               },
             },
             on: {
-              "user.has.allowance": {
-                target: ".canAcceptOffer",
-              },
-              "user.not.has.allowance": {
-                target: ".notEnoughAllowance",
+              "user.cancel": {
+                target: ".idle",
               },
             },
           },
@@ -349,14 +370,13 @@ export const machine = createMachine(
         | { type: "owner.editing" }
         | { type: "user.accept.offer" }
         | { type: "owner.update.offer" }
-        | { type: "user.has.allowance" }
-        | { type: "user.not.has.allowance" }
         | { type: "user.accept.offer.retry" }
         | { type: "user.allowance.increase" }
         | { type: "owner.update.offer.retry" }
         | { type: "owner.increase.principle.allowance.retry" }
         | { type: "user.increase.collateral.allowance.retry" }
-        | { type: "owner.cancel.editing" },
+        | { type: "owner.cancel.editing" }
+        | { type: "user.cancel" },
     },
   },
   {
@@ -381,6 +401,9 @@ export const machine = createMachine(
         /* ... */
       }),
       increaseCollateralAllowance: createMachine({
+        /* ... */
+      }),
+      checkCollateralAllowance: createMachine({
         /* ... */
       }),
     },
