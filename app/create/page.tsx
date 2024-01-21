@@ -600,6 +600,36 @@ export default function Create() {
               </div>
             </div>
 
+            {/* Select interest */}
+
+            <ShowWhenTrue when={isNft(state.context.token)}>
+              <div className="">
+                <div className="flex justify-between items-center">
+                  <Label variant="create">Select Interest payment</Label>
+
+                  <TokenValuation
+                    token={state.context.collateralToken}
+                    price={state.context.collateralPrice}
+                    amount={Number(state.context.collateralAmount)}
+                    value={state.context.collateralValue}
+                    className="mb-2 italic"
+                  />
+                </div>
+                <SelectToken
+                  tokens={tokens}
+                  amount={state.context.collateralAmount}
+                  defaultToken={wftm as Token}
+                  selectedToken={state.context.collateralToken}
+                  selectedUserNft={state.context.collateralUserNft}
+                  onSelectToken={onSelectCollateralToken0}
+                  onAmountChange={onSelectCollateralAmount0}
+                  userNftInfo={collateralNfts}
+                  onSelectUserNft={onSelectCollateralUserNft}
+                  isSelectableNft={false}
+                />
+              </div>
+            </ShowWhenTrue>
+
             {/* LTV Ratio */}
             <div>
               <Label variant="create">LTV Ratio</Label>

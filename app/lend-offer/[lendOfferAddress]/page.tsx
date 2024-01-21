@@ -91,6 +91,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const newTimelapRef = useRef<HTMLInputElement>(null)
   const newInterestRef = useRef<HTMLInputElement>(null)
   const newWantedVeRef = useRef<HTMLInputElement>(null)
+  const newAmountInterest_NFT = useRef<HTMLInputElement>(null)
+
   // for now we will set values into state, this might go into a machine soon, let's see
   const [newCollateralAmount, setNewCollateralAmount] = useState(0)
   const [newBorrowAmount, setNewBorrowAmount] = useState(0)
@@ -98,6 +100,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const [newTimelap, setNewTimelap] = useState(0)
   const [newInterest, setNewInterest] = useState(0)
   const [newWantedVe, setNewWantedVe] = useState(0)
+  const [newAmountInterestForNFT, setNewAmountInterestForNFT] = useState(0)
+
   const [selectedUserNft, setSelectedUserNft] = useState<UserNftInfo | undefined>(undefined)
 
   const currentChain = useCurrentChain()
@@ -182,7 +186,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           [newBorrow, newCollateral],
           [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
           toDecimals(newWantedVe, valuedAssetCollateral.decimals),
-          0,
+          newAmountInterestForNFT,
         ],
         account: address, // gas: BigInt(900000),
         // chainId: currentChain?.chainId,
