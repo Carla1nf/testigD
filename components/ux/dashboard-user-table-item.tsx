@@ -85,25 +85,25 @@ const DashboardUserTableItem = ({
 
     return (
       <tr
-        className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 cursor-pointer animate-enter-token hover:bg-[#383838] "
+        className="flex flex-col flex-no wrap sm:table-row mb-2 sm:mb-0 cursor-pointer animate-enter-token hover:bg-neutral-800/60 bg-neutral-900/70 shadow"
         key={data.loanId}
         onClick={() => router.push(`/loan/${data.loan.address}`)}
       >
-        <td className="p-3">
-          <DisplayToken token={data?.loan?.collaterals} size={24} chainSlug={currentChain.slug} />
+        <td className="p-2">
+          <DisplayToken token={data?.loan?.collaterals} size={20} chainSlug={currentChain.slug} />
         </td>
-        <td className="p-3">
-          <DisplayToken token={data.loan.token} size={24} chainSlug={currentChain.slug} />
+        <td className="p-2">
+          <DisplayToken token={data.loan.token} size={20} chainSlug={currentChain.slug} />
         </td>
-        <td className="p-3">{Number(data.loanId)}</td>
-        <td className="p-3">
+        <td className="p-2">{`${data.loan.address.substring(0, 5)}...${data.loan.address.substring(38)}`}</td>
+        <td className="p-2">
           <DaysHours deadline={Number(data.loan.deadline)} />
         </td>
-        <td className="p-3">
+        <td className="p-2">
           {" "}
           {Number(data.loan.paymentsPaid)}/{Number(data.loan.paymentCount)}
         </td>
-        <td className="p-3">
+        <td className="p-2">
           {data.loan.paymentCount === data.loan.paymentsPaid || data.loan.executed ? (
             <div className="text-yellow-500">Ended</div>
           ) : (

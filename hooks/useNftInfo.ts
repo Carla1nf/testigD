@@ -4,7 +4,7 @@ import { readContract } from "wagmi/actions"
 import veTokenInfoLensAbi from "../abis/v2/veTokenInfoLens.json"
 import { useQuery } from "@tanstack/react-query"
 
-type VeTokenInfoIncoming = {
+export type VeTokenInfoIncoming = {
   id: bigint
   amount: bigint
   voted: boolean

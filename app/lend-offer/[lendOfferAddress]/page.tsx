@@ -734,7 +734,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </>
                 <ShowWhenTrue when={!isNft(principleToken)}>
                   <div className="text-white/50 text-xs italic">
-                    Borrow value: {dollars({ value: principle?.valueUsd ?? 0 })}s
+                    Borrow value: {dollars({ value: principle?.valueUsd ?? 0 })}
                   </div>
                 </ShowWhenTrue>
               </div>

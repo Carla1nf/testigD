@@ -5,11 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 const DashboardResumeItem = ({ value, title, Icon }: { value: ReactNode; title: string; Icon: ReactNode }) => {
   return (
-    <div key={title} className="relative overflow-hidden dashboard-item-gradient p-3 rounded-lg">
-      <div className="text-sm font-bold mb-1">{title}</div>
-      <div className="text-2xl font-bold text-[#A957A4]">
-        {value === undefined ? <Skeleton className="h-4 h-[80px] w-[200px]" /> : value}
-        <div style={{ position: "absolute", color: "white", right: "10px", top: "5px", opacity: "1" }}>{Icon}</div>
+    <div key={title} className="relative overflow-hidden flex  rounded-lg items-center gap-2">
+      <div className="text-sm font-medium text-gray-400">{title}</div>
+      <div className="text-base font-bold text-[#A957A4]">
+        {value === undefined ? <Skeleton className="h-[80px] w-[200px]" /> : value}
       </div>
     </div>
   )

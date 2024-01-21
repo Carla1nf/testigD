@@ -12,9 +12,7 @@ import { SpinnerIcon } from "../icons"
 
 const DashboardUserTableItem = dynamic(() => import("../../components/ux/dashboard-user-table-item"), { ssr: false })
 
-const DashboardUserTable = () => {
-  const [status, setStatus] = useState<LoanStatus>("Borrowed")
-
+const DashboardUserTable = ({ currentStatus }: { currentStatus: LoanStatus }) => {
   // Leys simulate getting all the data required for Borrowed and see waht comes up
   // there arre a few RPC requetss here afaik
   const { address } = useControlledAddress()
@@ -30,18 +28,6 @@ const DashboardUserTable = () => {
 
   return (
     <div className="flex flex-col w-full gap-0 my-5">
-      <div className="w-full sm:bg-[#262525] border-b border-[#4A2F35] flex flex-row gap-2 ">
-        <div className={cn("min-w-[120px]", status === "Borrowed" ? "table-tab-active" : undefined)}>
-          <Button variant="table-tab" onClick={() => setStatus("Borrowed")}>
-            Borrowed
-          </Button>
-        </div>
-        <div className={cn("min-w-[120px]", status === "Lent" ? "table-tab-active" : undefined)}>
-          <Button variant="table-tab" onClick={() => setStatus("Lent")}>
-            Lent
-          </Button>
-        </div>
-      </div>
       <div>
         <table
           className="w-full flex flex-row flex-no-wrap sm:bg-[#262525] rounded-lg overflow-hidden sm:shadow-lg md:inline-table"
@@ -50,10 +36,11 @@ const DashboardUserTable = () => {
           <thead className="text-white" suppressHydrationWarning>
             {indexes.map((index) => {
               const responsiveClass = index === 0 ? "" : "sm:hidden"
+
               return (
                 <tr
                   className={cn(
-                    "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left text-white opacity-60 font-medium text-sm",
+                    "flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left text-white opacity-60 font-medium text-sm bg-black",
                     responsiveClass
                   )}
                   key={index}
@@ -61,7 +48,7 @@ const DashboardUserTable = () => {
                 >
                   <th className="p-3 text-left">Collateral</th>
                   <th className="p-3 text-left">Borrowed</th>
-                  <th className="p-3 text-left">ID</th>
+                  <th className="p-3 text-left">Address</th>
                   <th className="p-3 text-left">Next Payment</th>
                   <th className="p-3 text-left">Installments</th>
                   <th className="p-3 text-left">Status</th>
@@ -71,7 +58,9 @@ const DashboardUserTable = () => {
           </thead>
           <tbody className="flex-1 sm:flex-none">
             {indexes.map((index) => {
-              return <DashboardUserTableItem key={index} address={address as Address} index={index} status={status} />
+              return (
+                <DashboardUserTableItem key={index} address={address as Address} index={index} status={currentStatus} />
+              )
             })}
           </tbody>
         </table>

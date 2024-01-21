@@ -33,7 +33,7 @@ const SelectToken = ({
   selectedUserNft: UserNftInfo | undefined
   tokens?: Token[]
   defaultToken: Token
-  onSelectToken: (token: Token | null) => void
+  onSelectToken?: (token: Token | null) => void
   onSelectUserNft: (nftInfo: UserNftInfo | null) => void
   onAmountChange: (value: number | undefined) => void
   userNftInfo?: any

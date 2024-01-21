@@ -25,8 +25,8 @@ export default function LeaderBoardPage() {
           </div>
         </div>
         <div className=" w-full flex md:flex-row flex-col md:items-center gap-7 justify-end">
-          <Stat value={"12,000,000 DBT"} title={"Season bounties"} Icon={null} />
           <Stat value={"30d 20h 13m"} title={"Time left"} Icon={null} />
+          <Stat value={`${data?.pointsPerAddress.length}`} title={"Active wallets"} Icon={null} />
         </div>
       </div>
       <div className="flex w-full gap-12">
@@ -34,7 +34,6 @@ export default function LeaderBoardPage() {
           <div className="flex h-10 items-center justify-between font-bold text-gray-500/80 border-b-2 border-neutral-500/20">
             <div className="w-full px-2">Wallet</div>
             <div className="w-full px-2">Points</div>
-            <div className="w-full">Bounties</div>
           </div>
           {data?.pointsPerAddress.map((item, index) => {
             return (
@@ -52,10 +51,6 @@ export default function LeaderBoardPage() {
                         {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
                       </div>
                       <div className="w-full font-bold">{item[1]}</div>
-                      <div className="w-full flex gap-2">
-                        {((12000000 / Number(data?.pointsPerAddress[0][1])) * Number(item[1])).toFixed(1)}
-                        <div className="text-gray-400 font-bold">DBT</div>
-                      </div>
                     </div>
                   </>
                 )}
