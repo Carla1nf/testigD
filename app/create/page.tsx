@@ -20,7 +20,6 @@ import { toDecimals } from "@/lib/erc20"
 import { Token, findInternalTokenBySymbol, getAllTokens, isNft } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
-import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import { AlertCircle, LucideMinus, LucidePlus, XCircle } from "lucide-react"
 import Link from "next/link"
@@ -34,6 +33,7 @@ import { fromPromise } from "xstate"
 import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
+// import { createBrowserInspector } from "@statelyai/inspect"
 
 // function convertBigIntToString(obj: any): any {
 //   if (obj === null || obj === undefined) {
@@ -63,15 +63,8 @@ import { LendingMode, machine } from "./create-offer-machine"
 //   return obj
 // }
 
-// const { inspect } = createBrowserInspector({
-//   serialize: (event) => {
-//     const processed = convertBigIntToString(event)
+// const { inspect } = createBrowserInspector()
 
-//     return processed
-//   },
-// })
-
-const { inspect } = createBrowserInspector()
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
     value: estimatedApr ?? 0,
@@ -381,10 +374,10 @@ export default function Create() {
         checkingLendAllowance: fromPromise(checkingLendAllowance),
         approveLendAllowance: fromPromise(approveLendAllowance),
       },
-    }),
-    {
-      inspect,
-    }
+    })
+    // {
+    //   inspect,
+    // }
   )
 
   const mode = state.context.mode
