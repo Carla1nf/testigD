@@ -37,9 +37,15 @@ import erc20Abi from "../../../abis/erc20.json"
 import NotOwnerInfo from "./components/not-owner-info"
 import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import { machine } from "./lend-offer-machine"
+import { createBrowserInspector } from "@statelyai/inspect"
+import LendOfferStats from "./components/stats"
+import NotOwnerErc20Buttons from "./components/not-owner-erc20-buttons"
+import NotOwnerNftButtons from "./components/not-owner-nft-buttons"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
+
+const { inspect } = createBrowserInspector()
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -112,8 +118,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const principleNftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
   const addressNftInfos = useNftInfo({ address, token: collateralToken })
   const nftInfo = principleNftInfos?.[0]
-
-  console.log("addressNftInfos", addressNftInfos)
 
   // console.log("nftInfo", nftInfo)
   // console.log("offer", offer)
@@ -413,7 +417,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         increasePrincipleAllowance: fromPromise(increasePrincipleAllowance),
         updateOffer: fromPromise(updateOffer),
       },
-    })
+    }),
+    { inspect }
   )
 
   console.log("state.value", state.value)
@@ -430,12 +435,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const canAlterEditUpdateForm =
     state.matches("isOwner.editing") || state.matches("isOwner.errorIncreasingPrincipleAllowance")
 
-  const canShowCancelOfferButton =
-    state.matches("isOwner.idle") ||
-    state.matches("isOwner.editing") ||
-    state.matches("isOwner.checkPrincipleAllowance") ||
-    state.matches("isOwner.increasePrincipleAllowance") ||
-    state.matches("isOwner.errorIncreasingPrincipleAllowance")
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
   useEffect(() => {
@@ -449,6 +448,13 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
       // dual collateral mode
       if (collateral) {
+        // Is the user providing an nft or ERC20 token?
+        if (isNft(collateralToken)) {
+          send({ type: "is.nft" })
+        } else {
+          send({ type: "is.erc20" })
+        }
+
         // do they have the required allowance to pay for the offer?
         if (currentCollateralTokenAllowance === undefined) {
           return
@@ -577,23 +583,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       {/* Page content */}
       <div className="flex flex-col-reverse w-full xl:flex-row gap-16 animate-enter-div">
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col @6xl:flex-row gap-8 justify-between">
-            <div className="grid grid-cols-3 gap-8">
-              <Stat value={ltv(Number(offer?.ltv))} title={"LTV"} Icon={null} />
-
-              <Stat
-                value={dollars({ value: Number(offer?.totalCollateralValue) })}
-                title={"Collateral"}
-                Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
-              />
-
-              <Stat
-                value={dollars({ value: Number(principle?.valueUsd) })}
-                title={"Borrowing"}
-                Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
-              />
-            </div>
-          </div>
+          <LendOfferStats
+            ltvValue={Number(offer?.ltv)}
+            totalCollateralValue={Number(offer?.totalCollateralValue)}
+            borrowingValue={Number(principle?.valueUsd)}
+          />
           <div>
             <ChartWrapper>
               <LoanChart loanData={chartValues} />
@@ -851,131 +845,29 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
             {/* Buttons */}
             <div className="mt-8 flex justify-center">
-              <ShowWhenTrue when={state.matches("isNotOwner")}>
-                <>
-                  {/* Show the Increase Allowance button when the user doesn't not have enough allowance */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.notEnoughAllowance")}>
-                    <Button
-                      variant={"action"}
-                      className="px-16"
-                      onClick={async () => {
-                        send({ type: "user.allowance.increase" })
-                      }}
-                    >
-                      Accept Offer
-                    </Button>
-                  </ShowWhenTrue>
+              <ShowWhenTrue when={state.matches("isNotOwner.erc20")}>
+                <NotOwnerErc20Buttons
+                  state={state}
+                  send={send}
+                  handleWantedBorrow={handleWantedBorrow}
+                  collateralToken={collateralToken}
+                  principle={principle}
+                  amountCollateral={amountCollateral}
+                />
+              </ShowWhenTrue>
 
-                  {/* Show the Increasing Allowance spinner button while performing an increase allowance transaction */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.increaseAllowance")}>
-                    <Button variant={"action"} className="px-16">
-                      Increasing Allowance
-                      <SpinnerIcon className="ml-2 animate-spin-slow" />
-                    </Button>
-                  </ShowWhenTrue>
+              <ShowWhenTrue when={state.matches("isNotOwner.nft")}>
+                <NotOwnerNftButtons state={state} send={send} />
 
-                  {/* Increasing Allowance Failed - Allow the user to try increasing allowance again */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.increaseAllowanceError")}>
-                    <Button
-                      variant="error"
-                      className="h-full w-full gap-2"
-                      onClick={() => {
-                        send({ type: "user.increase.collateral.allowance.retry" })
-                      }}
-                    >
-                      <XCircle className="h-5 w-5" />
-                      Increasing Allowance Failed - Retry?
-                    </Button>
-                  </ShowWhenTrue>
-                  <ShowWhenTrue when={isNft(collateralToken)}>
-                    <SelectVeToken
-                      token={collateralToken}
-                      selectedUserNft={selectedUserNft}
-                      onSelectUserNft={onSelectCollateralUserNft}
-                      userNftInfo={addressNftInfos}
-                    />
-                  </ShowWhenTrue>
-
-                  {/* User has enough allowance, show them the accept offer button */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
-                    <div className="flex gap-10 items-center justify-center">
-                      <ShowWhenTrue when={!isNft(collateralToken) && !isNft(principleToken)}>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex gap-1 items-center italic opacity-80">
-                            <div className=" text-sm"> Collateral:</div>
-                            {collateral && collateralToken ? (
-                              <DisplayToken
-                                size={20}
-                                token={collateralToken}
-                                amount={amountCollateral}
-                                className="text-base"
-                                chainSlug={currentChain.slug}
-                              />
-                            ) : (
-                              ""
-                            )}
-                          </div>
-                          <input
-                            className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
-                            placeholder={`Amount of ${offer?.principle.token?.symbol}`}
-                            type="number"
-                            max={principle ? principle.amount : 0}
-                            onChange={(e) => {
-                              principle
-                                ? Number(e.currentTarget.value) > principle.amount
-                                  ? (e.currentTarget.value = String(principle.amount))
-                                  : ""
-                                : ""
-                              handleWantedBorrow(Number(e.currentTarget.value))
-                            }}
-                          />
-                        </div>
-                      </ShowWhenTrue>
-                      <div className="flex flex-col gap-1">
-                        <div className="opacity-0">holaa</div>
-                        <Button
-                          variant={"action"}
-                          className="px-16"
-                          onClick={async () => {
-                            send({ type: "user.accept.offer" })
-                          }}
-                        >
-                          Accept Offer
-                        </Button>
-                      </div>
-                    </div>
-                  </ShowWhenTrue>
-
-                  {/* Show the Accepting Offer spinner while we are accepting the offer */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.acceptingOffer")}>
-                    <Button variant={"action"} className="px-16">
-                      Accepting Offer...
-                      <SpinnerIcon className="ml-2 animate-spin-slow" />
-                    </Button>
-                  </ShowWhenTrue>
-
-                  {/* Accepted offer failed - Allow the user tor try accepting the offer again */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.acceptingOfferError")}>
-                    <Button
-                      variant="error"
-                      className="h-full w-full gap-2"
-                      onClick={() => {
-                        send({ type: "user.accept.offer.retry" })
-                      }}
-                    >
-                      <XCircle className="h-5 w-5" />
-                      Accept Offer Failed - Retry?
-                    </Button>
-                  </ShowWhenTrue>
-
-                  {/* The offer is accepted */}
-                  <ShowWhenTrue when={state.matches("isNotOwner.offerAccepted")}>
-                    <Button variant={"success"} className="px-16 gap-2">
-                      <CheckCircle className="w-5 h-5" />
-                      Offer Accepted
-                    </Button>
-                  </ShowWhenTrue>
-                </>
+                {/* <ShowWhenTrue when={isNft(collateralToken)}>
+                  <SelectVeToken
+                    token={collateralToken}
+                    selectedUserNft={selectedUserNft}
+                    onSelectUserNft={onSelectCollateralUserNft}
+                    userNftInfo={addressNftInfos}
+                  />
+                  NotOwnerNftButtons
+                </ShowWhenTrue> */}
               </ShowWhenTrue>
 
               <ShowWhenTrue when={shouldShowEditOfferForm}>
@@ -1055,17 +947,10 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               </ShowWhenTrue>
             </div>
           </div>
-
-          {/* Description panel */}
-          {/* <Description /> */}
         </div>
       </div>
     </>
   )
-}
-
-const NftSelector = ({ token }: { token: Token }) => {
-  return "Select for veNFTs holding"
 }
 
 /**

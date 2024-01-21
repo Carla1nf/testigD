@@ -322,7 +322,7 @@ export default function BorrowOffer({ params }: { params: { borrowOfferAddress: 
                 <ShowWhenTrue when={borrowMachineState.matches("isOwner.idle")}>
                   <Button
                     variant="action"
-                    className="h-full w-full"
+                    className="h-full w-full text-base"
                     onClick={() => {
                       borrowMachineSend({ type: "owner.cancel" })
                     }}

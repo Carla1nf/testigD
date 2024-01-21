@@ -26,7 +26,7 @@ const OwnerCancelButtons = ({ state, send }: { state: any; send: any }) => {
           <ShowWhenTrue when={canShowCancelOfferButton}>
             <Button
               variant="action"
-              className="h-full w-full"
+              className="h-full w-full text-base"
               onClick={() => {
                 send({ type: "owner.cancel" })
               }}
