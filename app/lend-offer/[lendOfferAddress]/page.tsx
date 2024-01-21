@@ -17,7 +17,7 @@ import { useOffer } from "@/hooks/useOffer"
 import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
-import { isVeTokenApprovedOrOwner } from "@/lib/nft"
+import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
 import { getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
@@ -431,13 +431,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   }
 
   const checkNftAllowance = async () => {
-    console.log("")
-    console.log("calling checkNftAllowance")
-
-    console.log("collateralToken", collateralToken)
-    console.log("isNft(collateralToken))", isNft(collateralToken))
-    console.log("selectedUserNft", selectedUserNft)
-
     if (isNft(collateralToken)) {
       const hasPermissions = await isVeTokenApprovedOrOwner({
         veToken: collateralToken?.address as Address,
@@ -451,9 +444,28 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       if (hasPermissions) {
         return Promise.resolve({ hasPermissions })
       }
-
-      throw "needs permission"
     }
+    throw "checkNftAllowance not able to function"
+  }
+
+  const approveNft = async () => {
+    console.log("")
+    console.log("calling approveNft")
+
+    console.log("collateralToken", collateralToken)
+    console.log("isNft(collateralToken))", isNft(collateralToken))
+    console.log("selectedUserNft", selectedUserNft)
+
+    if (isNft(collateralToken)) {
+      return approveVeToken({
+        veToken: collateralToken?.address as Address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        account: address as Address,
+        nftId: BigInt(selectedUserNft?.id ?? 0),
+        publicClient: config.publicClient,
+      })
+    }
+    throw "approveNft not able to function"
   }
 
   // STATE MACHINE
@@ -470,6 +482,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         updateOffer: fromPromise(updateOffer),
         checkCollateralAllowance: fromPromise(checkCollateralAllowance),
         checkNftAllowance: fromPromise(checkNftAllowance),
+        approveNft: fromPromise(approveNft),
       },
     }),
     { inspect }

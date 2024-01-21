@@ -128,28 +128,14 @@ export const machine = createMachine(
                       id: "checkNftAllowance",
                       onDone: [
                         {
-                          target: "canAcceptOffer",
+                          target: "acceptingOffer",
                         },
                       ],
                       onError: [
                         {
-                          target: "nftNeedsApproval",
+                          target: "approveNft",
                         },
                       ],
-                    },
-                  },
-                  canAcceptOffer: {
-                    on: {
-                      "user.accept.offer": {
-                        target: "acceptingOffer",
-                      },
-                    },
-                  },
-                  nftNeedsApproval: {
-                    on: {
-                      "user.approve.nft": {
-                        target: "approveNft",
-                      },
                     },
                   },
                   acceptingOffer: {
@@ -176,7 +162,7 @@ export const machine = createMachine(
                       input: {},
                       onDone: [
                         {
-                          target: "canAcceptOffer",
+                          target: "acceptingOffer",
                         },
                       ],
                       onError: [
@@ -371,7 +357,6 @@ export const machine = createMachine(
         | { type: "user.cancel" }
         | { type: "owner.cancel" }
         | { type: "owner.editing" }
-        | { type: "user.approve.nft" }
         | { type: "user.accept.offer" }
         | { type: "owner.update.offer" }
         | { type: "owner.cancel.editing" }
