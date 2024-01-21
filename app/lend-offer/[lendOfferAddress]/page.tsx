@@ -858,8 +858,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
               <ShowWhenTrue when={state.matches("isNotOwner.nft")}>
                 <NotOwnerNftButtons state={state} send={send} />
+              </ShowWhenTrue>
 
-                {/* <ShowWhenTrue when={isNft(collateralToken)}>
+              {/* <ShowWhenTrue when={isNft(collateralToken)}>
                   <SelectVeToken
                     token={collateralToken}
                     selectedUserNft={selectedUserNft}
@@ -868,7 +869,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   />
                   NotOwnerNftButtons
                 </ShowWhenTrue> */}
-              </ShowWhenTrue>
 
               <ShowWhenTrue when={shouldShowEditOfferForm}>
                 <ShowWhenTrue when={state.matches("isOwner.editing")}>
