@@ -2,7 +2,7 @@ import { createMachine } from "xstate"
 
 export const machine = createMachine(
   {
-    id: "lendOffer",
+    id: "v2-lendOffer",
     initial: "isNotOwner",
     states: {
       isNotOwner: {
@@ -197,7 +197,7 @@ export const machine = createMachine(
         },
         on: {
           owner: {
-            target: "#lendOffer.isOwner.idle",
+            target: "#v2-lendOffer.isOwner.idle",
           },
         },
       },
@@ -210,7 +210,7 @@ export const machine = createMachine(
                 target: "cancelling",
               },
               "owner.editing": {
-                target: "editing",
+                target: "#v2-lendOffer.isOwner.editing.idle",
               },
             },
           },
@@ -230,16 +230,6 @@ export const machine = createMachine(
               ],
             },
           },
-          editing: {
-            on: {
-              "owner.cancel": {
-                target: "idle",
-              },
-              "owner.update.offer": {
-                target: "checkPrincipleAllowance",
-              },
-            },
-          },
           cancelled: {
             type: "final",
           },
@@ -250,88 +240,87 @@ export const machine = createMachine(
               },
             },
           },
-          checkPrincipleAllowance: {
-            invoke: {
-              input: {},
-              src: "checkPrincipleAllowance",
-              id: "checkPrincipleAllowance",
-              onDone: [
-                {
-                  target: "updatingOffer",
+          editing: {
+            initial: "idle",
+            states: {
+              idle: {
+                on: {
+                  "owner.update.offer": {
+                    target: "checkPrincipleAllowance",
+                  },
                 },
-              ],
-              onError: [
-                {
-                  target: "increasePrincipleAllowance",
+              },
+              checkPrincipleAllowance: {
+                invoke: {
+                  input: {},
+                  src: "checkPrincipleAllowance",
+                  id: "checkPrincipleAllowance",
+                  onDone: [
+                    {
+                      target: "updatingOffer",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "increasePrincipleAllowance",
+                    },
+                  ],
                 },
-              ],
-            },
-          },
-          updatingOffer: {
-            invoke: {
-              input: {},
-              src: "updateOffer",
-              id: "updateOffer",
-              onDone: [
-                {
-                  target: "idle",
+              },
+              updatingOffer: {
+                invoke: {
+                  input: {},
+                  src: "updateOffer",
+                  id: "updateOffer",
+                  onError: [
+                    {
+                      target: "errorUpdatingOffer",
+                    },
+                  ],
                 },
-              ],
-              onError: [
-                {
-                  target: "errorUpdatingOffer",
+              },
+              increasePrincipleAllowance: {
+                invoke: {
+                  input: {},
+                  src: "increasePrincipleAllowance",
+                  id: "increasePrincipleAllowance",
+                  onDone: [
+                    {
+                      target: "updatingOffer",
+                    },
+                  ],
+                  onError: [
+                    {
+                      target: "errorIncreasingPrincipleAllowance",
+                    },
+                  ],
                 },
-              ],
-            },
-            on: {
-              cancel: {
-                target: "editing",
+              },
+              errorUpdatingOffer: {
+                on: {
+                  "owner.update.offer.retry": {
+                    target: "updatingOffer",
+                  },
+                },
+              },
+              errorIncreasingPrincipleAllowance: {
+                on: {
+                  "owner.increase.principle.allowance.retry": {
+                    target: "increasePrincipleAllowance",
+                  },
+                },
               },
             },
-          },
-          increasePrincipleAllowance: {
-            invoke: {
-              input: {},
-              src: "increasePrincipleAllowance",
-              id: "increasePrincipleAllowance",
-              onDone: [
-                {
-                  target: "updatingOffer",
-                },
-              ],
-              onError: [
-                {
-                  target: "errorIncreasingPrincipleAllowance",
-                },
-              ],
-            },
             on: {
-              cancel: {
-                target: "editing",
-              },
-            },
-          },
-          errorUpdatingOffer: {
-            on: {
-              "owner.update.offer.retry": {
-                target: "updatingOffer",
-              },
-            },
-          },
-          errorIncreasingPrincipleAllowance: {
-            on: {
-              "owner.increase.principle.allowance.retry": {
-                target: "increasePrincipleAllowance",
-              },
-              cancel: {
-                target: "editing",
+              "owner.cancel": {
+                target: "idle",
               },
             },
           },
         },
         on: {
           "not.owner": {
-            target: "#lendOffer.isNotOwner.idle",
+            target: "#v2-lendOffer.isNotOwner.idle",
           },
         },
       },
@@ -339,7 +328,6 @@ export const machine = createMachine(
     types: {
       events: {} as
         | { type: "owner" }
-        | { type: "cancel" }
         | { type: "is.nft" }
         | { type: "is.erc20" }
         | { type: "not.owner" }
@@ -348,14 +336,14 @@ export const machine = createMachine(
         | { type: "owner.cancel" }
         | { type: "owner.editing" }
         | { type: "user.accept.offer" }
-        | { type: "owner.update.offer" }
         | { type: "user.has.allowance" }
         | { type: "user.not.has.allowance" }
         | { type: "user.accept.offer.retry" }
         | { type: "user.allowance.increase" }
-        | { type: "owner.update.offer.retry" }
+        | { type: "user.increase.collateral.allowance.retry" }
         | { type: "owner.increase.principle.allowance.retry" }
-        | { type: "user.increase.collateral.allowance.retry" },
+        | { type: "owner.update.offer.retry" }
+        | { type: "owner.update.offer" },
     },
   },
   {

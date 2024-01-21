@@ -7,7 +7,7 @@ type ActionButtonParams = { title: string; when: boolean; disabled?: boolean; on
 export const ActionButton = ({ disabled, onClick, title, when }: ActionButtonParams) => {
   if (when) {
     return (
-      <Button variant="default" onClick={() => onClick?.()} disabled={disabled}>
+      <Button variant="action" onClick={() => onClick?.()} disabled={disabled}>
         {title}
       </Button>
     )
@@ -20,7 +20,7 @@ type ActionMutedButtonParams = { title: string; when: boolean }
 export const ActionMutedButton = ({ title, when }: ActionMutedButtonParams) => {
   if (when) {
     return (
-      <Button variant="muted" className="cursor-default">
+      <Button variant="action-muted" className="cursor-default">
         {title}
       </Button>
     )
@@ -33,7 +33,7 @@ type ActionSpinnerButtonParams = { title: string; when: boolean; disabled?: bool
 export const ActionSpinnerButton = ({ disabled, onClick, title, when }: ActionSpinnerButtonParams) => {
   if (when) {
     return (
-      <Button variant="default" onClick={() => onClick?.()} disabled={disabled}>
+      <Button variant="action" onClick={() => onClick?.()} disabled={disabled}>
         {title}
         <SpinnerIcon className="ml-2 animate-spin-slow" />
       </Button>
@@ -60,8 +60,9 @@ type ActionCancelButtonParams = { title?: string; when: boolean; onClick?: () =>
 
 export const ActionCancelButton = ({ onClick, title, when }: ActionCancelButtonParams) => {
   if (when) {
+    // outline or ghost?
     return (
-      <Button variant="outline" className="" onClick={() => onClick?.()}>
+      <Button variant="ghost" className="" onClick={() => onClick?.()}>
         {title ?? "Cancel"}
       </Button>
     )

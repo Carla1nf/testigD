@@ -41,6 +41,7 @@ import { createBrowserInspector } from "@statelyai/inspect"
 import LendOfferStats from "./components/stats"
 import NotOwnerErc20Buttons from "./components/not-owner-erc20-buttons"
 import NotOwnerNftButtons from "./components/not-owner-nft-buttons"
+import OwnerEditingButtons from "./components/owner-editing-buttons"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -870,80 +871,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   NotOwnerNftButtons
                 </ShowWhenTrue> */}
 
-              <ShowWhenTrue when={shouldShowEditOfferForm}>
-                <ShowWhenTrue when={state.matches("isOwner.editing")}>
-                  <Button
-                    variant="action"
-                    className="h-full w-1/2"
-                    onClick={() => {
-                      send({ type: "owner.update.offer" })
-                    }}
-                  >
-                    Update Offer
-                  </Button>
-                </ShowWhenTrue>
-                <ShowWhenTrue when={state.matches("isOwner.checkPrincipleAllowance")}>
-                  <Button variant="action" className="h-full w-1/2">
-                    Update Offer
-                  </Button>
-                </ShowWhenTrue>
-                <ShowWhenTrue when={state.matches("isOwner.increasePrincipleAllowance")}>
-                  <div className="flex justify-between w-full">
-                    <Button
-                      variant="ghost"
-                      className=""
-                      onClick={() => {
-                        send({ type: "cancel" })
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button variant="action" className="h-full w-1/2">
-                      Increase Allowance
-                      <SpinnerIcon className="ml-2 animate-spin-slow" />
-                    </Button>
-                  </div>
-                </ShowWhenTrue>
-                <ShowWhenTrue when={state.matches("isOwner.errorIncreasingPrincipleAllowance")}>
-                  <div className="flex justify-between w-full">
-                    <Button
-                      variant="ghost"
-                      className=""
-                      onClick={() => {
-                        send({ type: "cancel" })
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="error"
-                      className="px-12 gap-2"
-                      onClick={() => {
-                        send({ type: "owner.increase.principle.allowance.retry" })
-                      }}
-                    >
-                      <XCircle className="h-5 w-5" />
-                      Increase Allowance Failed - Retry?
-                    </Button>
-                  </div>
-                </ShowWhenTrue>
-                <ShowWhenTrue when={state.matches("isOwner.updatingOffer")}>
-                  <div className="flex justify-between w-full">
-                    <Button
-                      variant="ghost"
-                      className=""
-                      onClick={() => {
-                        send({ type: "cancel" })
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button variant="action" className="h-full px-8">
-                      Updating Offer
-                      <SpinnerIcon className="ml-2 animate-spin-slow" />
-                    </Button>
-                  </div>
-                </ShowWhenTrue>
+              <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                <OwnerEditingButtons state={state} send={send} />
               </ShowWhenTrue>
             </div>
           </div>
