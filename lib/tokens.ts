@@ -1,9 +1,8 @@
-import { ZERO_ADDRESS } from "@/services/constants"
-import { Address, formatUnits } from "viem"
+import { VeTokenInfoIncoming } from "@/hooks/useNftInfo"
+import { formatUnits } from "viem"
 import { fantom } from "wagmi/chains"
 import z from "zod"
 import { toDecimals } from "./erc20"
-import { VeTokenInfoIncoming } from "@/hooks/useNftInfo"
 
 const ethereumAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
 

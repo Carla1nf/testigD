@@ -1,14 +1,7 @@
-import { dollars, formatNumber, yesNo } from "@/lib/display"
-import { Token, isNft, nftUnderlyingToken } from "@/lib/tokens"
+import { formatNumber } from "@/lib/display"
+import { Token } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import TokenImage from "./token-image"
-import { UserNftInfo } from "@/hooks/useNftInfo"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { LucideCornerDownRight } from "lucide-react"
-import { ShowWhenTrue } from "./conditionals"
-import useTokenPrice from "@/hooks/useTokenPrice"
-import { Address } from "viem"
-import useNftUnderlying from "@/hooks/useNftUnderlying"
 
 type DisplayKeys = "Icon" | "Amount" | "Name"
 

@@ -60,7 +60,6 @@ const DisplayNftToken = ({
   }
 
   const underlyingValue = Number(wantedLockedEqual ?? nftInfo?.amount) * Number(underlyingPrice)
-  console.log("underlyingValue", underlyingValue)
 
   return (
     <div className="flex flex-col space-y-[2px]">

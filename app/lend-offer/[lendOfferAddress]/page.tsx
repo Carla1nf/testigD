@@ -7,26 +7,29 @@ import { useToast } from "@/components/ui/use-toast"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
+import DisplayNftToken from "@/components/ux/display-nft-token"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
+import SelectVeToken from "@/components/ux/select-ve-token"
 import Stat from "@/components/ux/stat"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
+import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 import { useOffer } from "@/hooks/useOffer"
 import { dollars, ltv, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, toDecimals } from "@/lib/erc20"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { isNft, nftUnderlying } from "@/lib/tokens"
+import { Token, isNft, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
-import { CheckCircle, ExternalLink, Info, LucideArrowDownRight, LucideCornerDownRight, XCircle } from "lucide-react"
+import { CheckCircle, ExternalLink, Info, XCircle } from "lucide-react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import pluralize from "pluralize"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
@@ -34,8 +37,6 @@ import erc20Abi from "../../../abis/erc20.json"
 import NotOwnerInfo from "./components/not-owner-info"
 import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import { machine } from "./lend-offer-machine"
-import useNftInfo from "@/hooks/useNftInfo"
-import DisplayNftToken from "@/components/ux/display-nft-token"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -89,6 +90,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const [newPaymentCount, setNewPaymentCount] = useState(0)
   const [newTimelap, setNewTimelap] = useState(0)
   const [newInterest, setNewInterest] = useState(0)
+  const [selectedUserNft, setSelectedUserNft] = useState<UserNftInfo | undefined>(undefined)
 
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
@@ -107,12 +109,20 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
 
   // Nft info
-  const nftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
-  const nftInfo = nftInfos?.[0]
+  const principleNftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
+  const addressNftInfos = useNftInfo({ address, token: collateralToken })
+  const nftInfo = principleNftInfos?.[0]
 
-  console.log("nftInfo", nftInfo)
+  console.log("addressNftInfos", addressNftInfos)
 
-  console.log("offer", offer)
+  // console.log("nftInfo", nftInfo)
+  // console.log("offer", offer)
+
+  const onSelectCollateralUserNft = useCallback((userNft: UserNftInfo | null) => {
+    if (userNft) {
+      setSelectedUserNft(userNft)
+    }
+  }, [])
 
   // check if the viewer/user/borrower has the allowance to spend the collateral token
   const { data: currentCollateralTokenAllowance } = useContractRead({
@@ -877,7 +887,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       Increasing Allowance Failed - Retry?
                     </Button>
                   </ShowWhenTrue>
-                  <ShowWhenTrue when={isNft(collateralToken)}>Select for veNFTs holding</ShowWhenTrue>
+                  <ShowWhenTrue when={isNft(collateralToken)}>
+                    <SelectVeToken
+                      token={collateralToken}
+                      selectedUserNft={selectedUserNft}
+                      onSelectUserNft={onSelectCollateralUserNft}
+                      userNftInfo={addressNftInfos}
+                    />
+                  </ShowWhenTrue>
 
                   {/* User has enough allowance, show them the accept offer button */}
                   <ShowWhenTrue when={state.matches("isNotOwner.canAcceptOffer")}>
@@ -1047,10 +1064,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   )
 }
 
+const NftSelector = ({ token }: { token: Token }) => {
+  return "Select for veNFTs holding"
+}
+
 /**
  * This panel will generate the borrow offer description from the passed collateral data
  *
- * The text is hard coded for now just to show what It coulkd look like
+ * The text is hard coded for now just to show what It could look like
  * @returns
  */
 

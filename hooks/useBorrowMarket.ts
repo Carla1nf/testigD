@@ -1,3 +1,5 @@
+import veTokenInfoLensAbi from "@/abis/v2/veTokenInfoLens.json"
+import { toDecimals } from "@/lib/erc20"
 import {
   findInternalTokenByAddress,
   findTokenByAddress,
@@ -10,11 +12,9 @@ import { useDebitaDataQuery } from "@/services/queries"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
-import useCurrentChain from "./useCurrentChain"
-import useNftInfo, { VeTokenInfoIncoming } from "./useNftInfo"
 import { readContract } from "wagmi/actions"
-import veTokenInfoLensAbi from "@/abis/v2/veTokenInfoLens.json"
-import { toDecimals } from "@/lib/erc20"
+import useCurrentChain from "./useCurrentChain"
+import { VeTokenInfoIncoming } from "./useNftInfo"
 export const useBorrowMarket = () => {
   const { data } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
