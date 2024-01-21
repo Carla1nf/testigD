@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import { XCircle, CheckCircle } from "lucide-react"
 
-import { send } from "process"
-
 const OwnerCancelButtons = ({ state, send }: { state: any; send: any }) => {
   const canShowCancelOfferButton =
     state.matches("isOwner.idle") ||
@@ -22,7 +20,6 @@ const OwnerCancelButtons = ({ state, send }: { state: any; send: any }) => {
           {/* {shortAddress(collateralData?.owner)} */}
         </div>
         <div>
-          {/* Cancel the offer */}
           <ShowWhenTrue when={canShowCancelOfferButton}>
             <Button
               variant="action"
@@ -46,7 +43,6 @@ const OwnerCancelButtons = ({ state, send }: { state: any; send: any }) => {
             </Button>
           </ShowWhenTrue>
 
-          {/* Cancelling the offer */}
           <ShowWhenTrue when={state.matches("isOwner.cancelling")}>
             <Button variant="action" className="h-full w-full">
               Cancelling
@@ -54,7 +50,6 @@ const OwnerCancelButtons = ({ state, send }: { state: any; send: any }) => {
             </Button>
           </ShowWhenTrue>
 
-          {/* Offer cancelled */}
           <ShowWhenTrue when={state.matches("isOwner.cancelled")}>
             <div className="h-full w-full inline-flex bg-success text-white gap-2 items-center justify-center border border-white/25 rounded-md">
               <CheckCircle className="w-5 h-5" /> Cancelled

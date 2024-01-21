@@ -1,5 +1,6 @@
 import ActionButtons from "@/components/ux/action-buttons"
 
+const noop = () => {}
 const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
   if (!state.matches("isOwner.editing")) {
     return null
@@ -22,6 +23,12 @@ const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
       />
 
       <ActionButtons.Group
+        when={state.matches("isOwner.editing.checkCollateralAllowance")}
+        right={<ActionButtons.Action title="Update Offer" when={true} onClick={noop} />}
+        className="w-full"
+      />
+
+      <ActionButtons.Group
         when={state.matches("isOwner.editing.offerUpdated")}
         right={
           <ActionButtons.Success
@@ -37,7 +44,7 @@ const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
 
       <ActionButtons.Group
         when={state.matches("isOwner.editing.checkPrincipleAllowance")}
-        right={<ActionButtons.Action title="Update Offer" onClick={() => {}} when={true} />}
+        right={<ActionButtons.Action title="Update Offer" onClick={noop} when={true} />}
         className="w-full"
       />
 
