@@ -277,6 +277,11 @@ export const machine = createMachine(
                       target: "errorUpdatingOffer",
                     },
                   ],
+                  onDone: [
+                    {
+                      target: "offerUpdated",
+                    },
+                  ],
                 },
               },
               increasePrincipleAllowance: {
@@ -300,6 +305,13 @@ export const machine = createMachine(
                 on: {
                   "owner.update.offer.retry": {
                     target: "updatingOffer",
+                  },
+                },
+              },
+              offerUpdated: {
+                on: {
+                  "owner.update.offer": {
+                    target: "checkPrincipleAllowance",
                   },
                 },
               },

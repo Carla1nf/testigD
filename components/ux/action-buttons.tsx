@@ -2,7 +2,7 @@ import { SpinnerIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { XCircle } from "lucide-react"
-import React, { Children, ReactNode } from "react"
+import { ReactNode } from "react"
 
 type ActionButtonParams = { title: string; when: boolean; disabled?: boolean; onClick: () => void }
 
@@ -72,6 +72,20 @@ export const ActionCancelButton = ({ onClick, title, when }: ActionCancelButtonP
   return null
 }
 
+type ActionSuccessButtonParams = { title?: string; when: boolean; onClick?: () => void }
+
+export const ActionSuccessButton = ({ onClick, title, when }: ActionSuccessButtonParams) => {
+  if (when) {
+    // outline or ghost?
+    return (
+      <Button variant="success" className="" onClick={() => onClick?.()}>
+        {title ?? "Cancel"}
+      </Button>
+    )
+  }
+  return null
+}
+
 const ActionButtonGroup = ({
   left,
   right,
@@ -109,6 +123,7 @@ const ActionButtons = {
   Spinner: ActionSpinnerButton,
   Error: ActionErrorButton,
   Cancel: ActionCancelButton,
+  Success: ActionSuccessButton,
   Group: ActionButtonGroup,
 }
 

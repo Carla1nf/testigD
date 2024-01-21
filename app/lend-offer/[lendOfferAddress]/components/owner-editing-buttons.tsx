@@ -22,6 +22,20 @@ const OwnerEditingButtons = ({ state, send }: { send: any; state: any }) => {
       />
 
       <ActionButtons.Group
+        when={state.matches("isOwner.editing.offerUpdated")}
+        right={
+          <ActionButtons.Success
+            title="Offer Updated"
+            when={true}
+            onClick={() => {
+              send({ type: "owner.update.offer" })
+            }}
+          />
+        }
+        className="w-full"
+      />
+
+      <ActionButtons.Group
         when={state.matches("isOwner.editing.checkPrincipleAllowance")}
         right={<ActionButtons.Action title="Update Offer" onClick={() => {}} when={true} />}
         className="w-full"
