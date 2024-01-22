@@ -8,7 +8,7 @@ import DisplayNetwork from "@/components/ux/display-network"
 import DisplayNftToken from "@/components/ux/display-nft-token"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
-import SelectVeToken from "@/components/ux/select-ve-token"
+import SelectVeToken, { calculateBorrow } from "@/components/ux/select-ve-token"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
@@ -375,14 +375,21 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
            throw `Insufficient ${collateral0Token?.symbol} balance`
          } */
       }
-
+      const borrowAmount =
+        isNft(collateralToken) && offer && selectedUserNft
+          ? toDecimals(
+              calculateBorrow(offer?.principle.amount, offer?.wantedLockedVeNFT, selectedUserNft?.amount),
+              principle?.token?.decimals ?? 0
+            )
+          : toDecimals(amountToBorrow, principle?.token?.decimals ?? 0)
+      console.log("To borrow:", borrowAmount)
       const { request } = await config.publicClient.simulateContract({
         address: OFFER_CREATED_ADDRESS,
         functionName: "acceptOfferAsBorrower",
         abi: createdOfferABI,
-        args: [toDecimals(amountToBorrow, principle?.token?.decimals ?? 0), 0],
+        args: [borrowAmount, selectedUserNft?.id ?? 0],
         account: address,
-
+        gas: BigInt(4800000),
         // chainId: currentChain?.chainId,
       })
       // console.log("userAcceptOffer→request", request)
@@ -438,7 +445,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     if (isNft(collateralToken)) {
       const hasPermissions = await isVeTokenApprovedOrOwner({
         veToken: collateralToken?.address as Address,
-        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        spender: OFFER_CREATED_ADDRESS,
         nftId: BigInt(selectedUserNft?.id ?? 0),
       })
 
@@ -463,7 +470,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     if (isNft(collateralToken)) {
       return approveVeToken({
         veToken: collateralToken?.address as Address,
-        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        spender: OFFER_CREATED_ADDRESS,
         account: address as Address,
         nftId: BigInt(selectedUserNft?.id ?? 0),
         publicClient: config.publicClient,
@@ -911,6 +918,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   selectedUserNft={selectedUserNft}
                   onSelectUserNft={onSelectCollateralUserNft}
                   userNftInfo={addressNftInfos}
+                  wantedLocked={offer?.wantedLockedVeNFT}
+                  principleToken={offer?.principle.token}
+                  principleAmount={offer?.principle.amount}
                 />
               </div>
             </ShowWhenTrue>

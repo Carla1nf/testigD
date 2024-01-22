@@ -13,17 +13,24 @@ import { Input } from "../ui/input"
 import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayNftToken from "./display-nft-token"
 import DisplayToken from "./display-token"
+import TokenImage from "./token-image"
 
 const SelectVeToken = ({
   token,
   selectedUserNft,
   onSelectUserNft,
   userNftInfo,
+  wantedLocked,
+  principleAmount,
+  principleToken,
 }: {
   token?: Token
   selectedUserNft: UserNftInfo | undefined
   onSelectUserNft: (nftInfo: UserNftInfo | null) => void
   userNftInfo?: any
+  wantedLocked?: number
+  principleAmount?: number
+  principleToken?: Token
 }) => {
   const currentChain = useCurrentChain()
   const [isTokenPopupOpen, setIsTokenPopupOpen] = useState(false)
@@ -106,6 +113,21 @@ const SelectVeToken = ({
                     {Number(nftInfo?.amount).toFixed(4)} {underlying?.symbol ?? ""}
                   </div>
                   <div>Voted? {yesNo(nftInfo?.voted)}</div>
+                  {principleAmount && wantedLocked && principleToken ? (
+                    <div className="flex items-center gap-2">
+                      Borrow: {calculateBorrow(principleAmount, wantedLocked, nftInfo?.amount).toFixed(2)}
+                      <TokenImage
+                        key="Icon"
+                        width={18}
+                        height={18}
+                        chainSlug={currentChain.slug}
+                        symbol={principleToken?.symbol}
+                        className="mr-[2px]"
+                      />
+                    </div>
+                  ) : (
+                    ""
+                  )}
                 </div>
               </CommandItem>
             ))}
@@ -117,3 +139,15 @@ const SelectVeToken = ({
 }
 
 export default SelectVeToken
+
+export const calculateBorrow = (
+  totalPrincipleAmount: number,
+  wantedVeLocked: number,
+  veLockedFromNFT: number
+): number => {
+  const porcentage = (veLockedFromNFT * 100) / wantedVeLocked
+  if (porcentage >= 100) {
+    return totalPrincipleAmount
+  }
+  return (porcentage * totalPrincipleAmount) / 100
+}
