@@ -28,12 +28,15 @@ import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import pluralize from "pluralize"
-import { useEffect, useMemo } from "react"
+import { use, useEffect, useMemo } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
 import { machine } from "./loan-machine"
+import { isNft } from "@/lib/tokens"
+import DisplayNftToken from "@/components/ux/display-nft-token"
+import useNftInfo from "@/hooks/useNftInfo"
 
 /**
  * This page shows the suer the FULL details of the loan
@@ -55,12 +58,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
 
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
-  const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.lending?.address)
+  const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.principleAddressChart)
   const collateral0 = loan?.collaterals
   const collateral0Token = collateral0 ? collateral0?.token : undefined
-  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, collateral0?.address)
+  const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, loan?.collateralAddressChart)
 
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
+  const principleNftInfos = useNftInfo({ address: loanAddress as Address, token: collateral0Token })
+  const nftInfo = principleNftInfos?.[0]
 
   // we need to know (if this is the borrower) how much they have approved the lending
   const { data: lendingTokenAllowance } = useContractRead({
@@ -282,7 +287,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   // DATA STRUCTURE
   const chartValues = {
     historicalLender: calcPriceHistory(lendingPrices, loan?.lending?.amount ?? 0),
-    historicalCollateral: calcCollateralsPriceHistory(collateral0Prices, Number(collateral0?.amount ?? 0)),
+    historicalCollateral: calcCollateralsPriceHistory(collateral0Prices, Number(loan?.collateralAmountChart ?? 0)),
     timestamps,
   }
 
@@ -521,13 +526,28 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                   </div>
                   <div className="-ml-[2px]">
                     {collateral0 && collateral0Token ? (
-                      <DisplayToken
-                        size={32}
-                        token={collateral0Token}
-                        amount={collateral0.amount}
-                        className="text-xl"
-                        chainSlug={currentChain.slug}
-                      />
+                      <>
+                        <ShowWhenTrue when={!isNft(collateral0Token)}>
+                          <DisplayToken
+                            size={32}
+                            token={collateral0Token}
+                            amount={collateral0.amount}
+                            className="text-xl"
+                            chainSlug={currentChain.slug}
+                          />
+                        </ShowWhenTrue>
+                        <ShowWhenTrue when={isNft(collateral0Token)}>
+                          <DisplayNftToken
+                            size={32}
+                            token={collateral0Token}
+                            amount={loan.collaterals.amount}
+                            className="text-xl"
+                            chainSlug={currentChain.slug}
+                            nftInfo={nftInfo}
+                            showExtendedUnderlying={true}
+                          />
+                        </ShowWhenTrue>
+                      </>
                     ) : null}
                   </div>
                 </div>

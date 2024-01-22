@@ -1,6 +1,12 @@
 import { LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { fromDecimals } from "@/lib/erc20"
-import { findInternalTokenByAddress } from "@/lib/tokens"
+import {
+  findInternalTokenByAddress,
+  getValuedAmountCollateral,
+  getValuedAmountPrinciple,
+  getValuedAsset,
+  nftInfoLensType,
+} from "@/lib/tokens"
 import { fetchTokenPrice, makeLlamaUuid } from "@/services/token-prices"
 import { useQuery } from "@tanstack/react-query"
 import { Address } from "viem"
@@ -9,6 +15,8 @@ import z from "zod"
 import ownershipsAbi from "../abis/ownerships.json"
 import loanCreatedAbi from "../abis/v2/createdLoan.json"
 import useCurrentChain from "./useCurrentChain"
+import veTokenInfoLensAbi from "../abis/v2/veTokenInfoLens.json"
+import { VeTokenInfoIncoming } from "./useNftInfo"
 
 const LoanDataReceivedSchema = z.object({
   IDS: z.array(z.bigint()),
@@ -78,9 +86,19 @@ export const useLoanData = (loanAddress: Address) => {
         valueUsd: 0,
       }
 
-      const priceCollateral = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, collateral.address as Address))
-      collateral.price = priceCollateral.price ?? 0
+      const valueAssetCollateral = getValuedAsset(collateralToken, currentChain.slug)
+      const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetCollateral.address as Address))
+      collateral.price = _price.price ?? 0
       collateral.valueUsd = collateral.amount * collateral.price
+
+      const valueFromUnderlying = nftInfoLensType(collateralToken)
+        ? ((await readContract({
+            address: (collateralToken?.nft?.infoLens ?? "") as Address,
+            abi: veTokenInfoLensAbi,
+            functionName: "getDataFrom",
+            args: [loanAddress],
+          })) as VeTokenInfoIncoming[])
+        : null
 
       // lets do the same for the lender token
       const lenderToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])
@@ -92,8 +110,20 @@ export const useLoanData = (loanAddress: Address) => {
         price: 0,
         valueUsd: 0,
       }
-      const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, lending.address as Address))
+      const valueAssetPrinciple = getValuedAsset(lenderToken, currentChain.slug)
+      const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address))
       lending.price = price.price ?? 0
+
+      const collateralAmount = getValuedAmountCollateral(
+        collateralToken,
+        false,
+        collateral.amount,
+        valueFromUnderlying,
+        null
+      )
+
+      collateral.valueUsd = collateralAmount * collateral.price
+
       lending.valueUsd = lending.amount * lending.price
 
       const ratio = collateral.valueUsd / lending.valueUsd
@@ -150,6 +180,10 @@ export const useLoanData = (loanAddress: Address) => {
         ratio,
         timelap: parsedData.timelap,
         totalCollateralValue: collateral.valueUsd,
+        principleAddressChart: valueAssetPrinciple.address,
+        principleAmountChart: lending.amount, // should be principleAmount
+        collateralAddressChart: valueAssetCollateral.address,
+        collateralAmountChart: collateralAmount,
       }
     },
   })
