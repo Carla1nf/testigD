@@ -121,8 +121,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
   // Nft info
   const principleNftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
-  const addressNftInfos = useNftInfo({ address, token: collateralToken })
   const nftInfo = principleNftInfos?.[0]
+
+  const addressNftInfos = useNftInfo({ address, token: collateralToken })
   const valuedAssetCollateral = getValuedAsset(collateralToken, currentChain.slug)
 
   // console.log("nftInfo", nftInfo)

@@ -81,7 +81,7 @@ export const useLoanValues = (address: Address, index: number, status: LoanStatu
       if (found_collateral) {
         const value = fromDecimals(amount_collateral, found_collateral.decimals)
         collaterals = {
-          ...pick(found_collateral, ["name", "symbol", "address", "chainId", "decimals", "icon"]),
+          ...pick(found_collateral, ["name", "symbol", "address", "chainId", "decimals", "icon", "nft"]),
           value,
           amount: Number(amount_collateral),
         }

@@ -20,7 +20,7 @@ import axios from "axios"
  */
 
 const fontSans = FontSans({
-  subsets: ["latin"],
+  subsets: ["latin-ext"],
   variable: "--font-sans",
 })
 
