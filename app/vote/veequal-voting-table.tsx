@@ -1,5 +1,4 @@
-import { Input } from "@/components/ui/input"
-import useVeEqualPairs from "@/hooks/useVeEqualPairs"
+import { useVeEqualPairsFixtures } from "@/hooks/useVeEqualPairs"
 import { dollars, formatNumber, percent } from "@/lib/display"
 import { LucideMinus, LucidePlus } from "lucide-react"
 import { InputNumber } from "primereact/inputnumber"
@@ -12,7 +11,7 @@ type Vote = {
 }
 
 const VeEqualVotingTable = () => {
-  const pairs = useVeEqualPairs()
+  const pairs = useVeEqualPairsFixtures()
   const [votes, setVotes] = useState<Array<Vote>>([])
   const [totalVotes, setTotalVotes] = useState<number>(0)
 
@@ -59,11 +58,9 @@ const VeEqualVotingTable = () => {
                           amount: Number(event.target.value),
                         })
                       }
-
                       const totalVotes = newVotes.reduce((acc, vote) => {
                         return acc + vote.amount
                       }, 0)
-
                       setVotes(newVotes)
                       setTotalVotes(totalVotes)
                     }}
