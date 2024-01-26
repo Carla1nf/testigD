@@ -112,7 +112,16 @@ const SelectVeToken = ({
                   <div>
                     {Number(nftInfo?.amount).toFixed(4)} {underlying?.symbol ?? ""}
                   </div>
-                  <div>Voted? {yesNo(nftInfo?.voted)}</div>
+                  <ShowWhenTrue when={nftInfo?.voted}>
+                    <div className="text-[11.4px] bg-red-400/20 py-1 px-2 rounded text-red-400 font-bold">
+                      Non transferable
+                    </div>
+                  </ShowWhenTrue>
+                  <ShowWhenFalse when={nftInfo?.voted}>
+                    <div className="text-[11.4px] bg-green-400/20 py-1 px-2 rounded text-green-400 font-bold">
+                      Transferable
+                    </div>
+                  </ShowWhenFalse>
                   {principleAmount && wantedLocked && principleToken ? (
                     <div className="flex items-center gap-2">
                       Borrow: {calculateBorrow(principleAmount, wantedLocked, nftInfo?.amount).toFixed(2)}

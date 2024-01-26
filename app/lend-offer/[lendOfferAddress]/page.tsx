@@ -897,16 +897,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
               <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
                 <div className="text-[#DCB5BC]">Each Payment Am.</div>
                 <div className="text-base">
-                  {isNft(offer?.collateral?.token) ? (
-                    <>
-                      {(offer?.nftInterestToken?.amount / offer?.paymentCount).toFixed(2)}{" "}
-                      {offer.nftInterestToken?.token?.symbol}
-                    </>
-                  ) : (
-                    <>
-                      {amountDuePerPayment.toFixed(2)} {principleToken?.symbol}
-                    </>
-                  )}
+                  <>
+                    {amountDuePerPayment.toFixed(2)} {principleToken?.symbol}
+                  </>
                 </div>
               </div>
             </div>
