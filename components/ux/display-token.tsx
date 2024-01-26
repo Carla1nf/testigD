@@ -1,5 +1,5 @@
 import { formatNumber } from "@/lib/display"
-import { Token } from "@/lib/tokens"
+import { Token, isNft } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import TokenImage from "./token-image"
 
@@ -33,7 +33,11 @@ const DisplayToken = ({
         className="mr-[2px]"
       />
     ),
-    Amount: displayOrder.includes("Amount") ? <DisplayAmount amount={amount} decimals={decimals} /> : null,
+    Amount: displayOrder.includes("Amount") ? (
+      isNft(token) ? null : (
+        <DisplayAmount amount={amount} decimals={decimals} />
+      )
+    ) : null,
     Name: displayOrder.includes("Name") ? <span key="Name">{token?.symbol}</span> : null,
   }
 

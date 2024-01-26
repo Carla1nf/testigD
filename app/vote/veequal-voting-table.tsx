@@ -1,8 +1,13 @@
+import { useLoanValues } from "@/hooks/useLoanValues"
 import { useVeEqualPairsFixtures } from "@/hooks/useVeEqualPairs"
 import { dollars, formatNumber, percent } from "@/lib/display"
 import { LucideMinus, LucidePlus } from "lucide-react"
 import { InputNumber } from "primereact/inputnumber"
 import { useState } from "react"
+import { Address } from "viem"
+import { useConfig } from "wagmi"
+import createdLoanABI from "@/abis/v2/createdLoan.json"
+import { writeContract } from "wagmi/actions"
 
 type Vote = {
   pair: string
@@ -10,17 +15,48 @@ type Vote = {
   amount: number
 }
 
-const VeEqualVotingTable = () => {
+const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number; address?: Address }) => {
   const pairs = useVeEqualPairsFixtures()
   const [votes, setVotes] = useState<Array<Vote>>([])
   const [totalVotes, setTotalVotes] = useState<number>(0)
+  console.log(votes)
+  const { isSuccess, isLoading, isError, data } = useLoanValues(address as Address, selectedIndex, "Borrowed")
+  console.log(data, "DATA")
+  const config = useConfig()
+
+  // 10000 --> 100%
+  // _voteWithVe(address[] calldata _poolVote, uint256[] calldata _weights)
+  const voteWith = async () => {
+    const getGauges = (await votes.map((item) => {
+      return item.gauge as Address
+    })) as Array<Address>
+    const getWeights = (await votes.map((item) => {
+      return item.amount
+    })) as Array<number>
+    console.log(getGauges)
+    const { request } = await config.publicClient.simulateContract({
+      address: data?.loan.address as Address,
+      functionName: "_voteWithVe",
+      abi: createdLoanABI,
+      args: [["0xC9ACB5716f1bc12444B5c9e60fE03dF943Ab8600"], ["10000"]],
+      account: address,
+      gas: BigInt(830000),
+    })
+    const result = await writeContract(request)
+  }
 
   return (
     <>
       <div className="flex justify-between mb-8">
-        <div>VOTE BUTTON GOES HERE!</div>
+        <div
+          className="cursor-pointer bg-debitaPink px-5 py-1 rounded text-white font-medium"
+          onClick={() => voteWith()}
+        >
+          Vote
+        </div>
         <div className="text-[#B45696]">
-          You have used {percent({ value: totalVotes / 100, decimalsWhenGteOne: 0, decimalsWhenLessThanOne: 0 })} votes.
+          You have used {percent({ value: totalVotes / 10000, decimalsWhenGteOne: 0, decimalsWhenLessThanOne: 0 })}{" "}
+          votes.
         </div>
       </div>
       <table className=" w-full text-right my-4 items-center table-auto">
@@ -52,12 +88,12 @@ const VeEqualVotingTable = () => {
                           const newVotes = [...votes]
                           const vote = newVotes.find((v) => v.pair === pair.address)
                           if (vote) {
-                            vote.amount = Number(event.target.value)
+                            vote.amount = Number(event.target.value) * 100
                           } else {
                             newVotes.push({
                               pair: pair.address,
                               gauge: pair.gauge.address,
-                              amount: Number(event.target.value),
+                              amount: Number(event.target.value) * 100,
                             })
                           }
                           const totalVotes = newVotes.reduce((acc, vote) => {
