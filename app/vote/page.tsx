@@ -10,6 +10,7 @@ import { useMemo, useState } from "react"
 import { Address, useConfig } from "wagmi"
 import createdLoanABI from "@/abis/v2/createdLoan.json"
 import { writeContract } from "wagmi/actions"
+import VeEqualVotingTable from "./veequal-voting-table"
 
 export default function VotePage({ params }: { params: { loanAddress: string } }) {
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -47,22 +48,26 @@ export default function VotePage({ params }: { params: { loanAddress: string } }
           </div>
           <div className="flex-1 sm:flex-none">
             {indexes.map((index: number) => {
-              return <SelectVoteLoan address={address as Address} index={index} />
+              return <SelectVoteLoan address={address as Address} index={index} key={index} />
             })}
           </div>
         </div>
+
         <ShowWhenTrue when={selectedIndex == 0}>
           <div className="w-full flex items-center justify-center text-neutral-500">Please select a collateral</div>
         </ShowWhenTrue>
 
         <ShowWhenTrue when={selectedIndex != 0}>
           <div
-            className="w-full flex flex-col items-center justify-centeranimate-enter-token"
+            className="w-full flex flex-col items-center justify-center animate-enter-token"
             onClick={() => voteWith()}
           >
             <div className="bg-debitaPink px-10 py-1 rounded font-bold cursor-pointer hover:scale-[1.03]">Vote</div>
           </div>
         </ShowWhenTrue>
+      </div>
+      <div className="w-full mt-16">
+        <VeEqualVotingTable />
       </div>
     </div>
   )
