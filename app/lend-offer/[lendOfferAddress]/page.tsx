@@ -22,7 +22,7 @@ import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
 import { getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
-import { createBrowserInspector } from "@statelyai/inspect"
+// import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import dayjs from "dayjs"
 import { ExternalLink, Info } from "lucide-react"
@@ -45,7 +45,7 @@ import { machine } from "./lend-offer-machine"
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
 
-const { inspect } = createBrowserInspector()
+// const { inspect } = createBrowserInspector()
 
 const calcPriceHistory = (prices: any, lendingAmount: number) => {
   if (Array.isArray(prices)) {
@@ -496,8 +496,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         checkNftAllowance: fromPromise(checkNftAllowance),
         approveNft: fromPromise(approveNft),
       },
-    }),
-    { inspect }
+    })
+    // { inspect }
   )
 
   // @ts-ignore
