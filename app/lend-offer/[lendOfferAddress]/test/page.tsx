@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useInternalToken } from "@/hooks/useInternalToken"
-import { createBrowserInspector } from "@statelyai/inspect"
+// import { createBrowserInspector } from "@statelyai/inspect"
 import { useMachine } from "@xstate/react"
 import { LucideArrowRight } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -18,7 +18,7 @@ import OwnerCancelButtons from "../components/owner-cancel-buttons"
 import { machine } from "../lend-offer-machine"
 import { Token } from "@/lib/tokens"
 
-const { inspect } = createBrowserInspector()
+// const { inspect } = createBrowserInspector()
 
 type ResponseMode = "ACCEPT" | "REJECT" | "WAITING"
 
@@ -63,8 +63,8 @@ export default function TestLendOffer() {
         increasePrincipleAllowance: fromPromise(waitForStateChange),
         updateOffer: fromPromise(waitForStateChange),
       },
-    }),
-    { inspect }
+    })
+    // { inspect }
   )
 
   // console.log("state", state)
