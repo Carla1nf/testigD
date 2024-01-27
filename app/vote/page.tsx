@@ -30,14 +30,18 @@ export default function VotePage({ params }: { params: { loanAddress: string } }
       <div className="font-bold text-sm text-gray-400">Use your veNFT as collateral to vote</div>
       <div className="flex gap-3 mt-12">
         <div className="flex flex-col w-full">
-          <div className="flex flex-col flex-no wrap sm:table-row rounded-t-xl mb-2 sm:mb-0 text-left text-white opacity-60 font-medium text-sm bg-black w-full p-3">
+          <div className="flex flex-col flex-no wrap sm:table-row rounded-t-xl mb-2 sm:mb-0 text-left text-gray-400 opacity-60 font-medium text-sm bg-black w-full p-3">
             Select collateral to vote{" "}
           </div>
           <div className="flex-1 sm:flex-none">
             {indexes.map((index: number) => {
               return (
-                <div onClick={() => setSelectedIndex(index)}>
-                  <SelectVoteLoan address={address as Address} index={index} key={index} />
+                <div
+                  onClick={() => {
+                    index == selectedIndex ? setSelectedIndex(0) : setSelectedIndex(index)
+                  }}
+                >
+                  <SelectVoteLoan address={address as Address} index={index} key={index} selected={selectedIndex} />
                 </div>
               )
             })}

@@ -8,6 +8,8 @@ import { Address } from "viem"
 import { useConfig } from "wagmi"
 import createdLoanABI from "@/abis/v2/createdLoan.json"
 import { writeContract } from "wagmi/actions"
+import DisplayToken from "@/components/ux/display-token"
+import DisplayPair from "@/components/ux/display-pair"
 
 type Vote = {
   pair: string
@@ -38,30 +40,38 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number;
       address: data?.loan.address as Address,
       functionName: "_voteWithVe",
       abi: createdLoanABI,
-      args: [["0xC9ACB5716f1bc12444B5c9e60fE03dF943Ab8600"], ["10000"]],
+      args: [getGauges, getWeights],
       account: address,
       gas: BigInt(830000),
     })
     const result = await writeContract(request)
   }
+  console.log(totalVotes)
 
   return (
     <>
-      <div className="flex justify-between mb-8">
+      <div className="flex justify-between items-center mb-8">
         <div
           className="cursor-pointer bg-debitaPink px-5 py-1 rounded text-white font-medium"
           onClick={() => voteWith()}
         >
           Vote
         </div>
-        <div className="text-[#B45696]">
-          You have used {percent({ value: totalVotes / 10000, decimalsWhenGteOne: 0, decimalsWhenLessThanOne: 0 })}{" "}
-          votes.
+        <div
+          className={`${
+            totalVotes > 10000 ? "text-red-400" : "text-gray-300"
+          } text-xs md:text-sm flex h-10 gap-2 md:gap-2 items-center justify-center px-6 bg-black/20 rounded-xl`}
+        >
+          Voting Power Used:
+          <div className={` text-base ${totalVotes > 10000 ? "text-red-400" : "text-white"} font-bold`}>
+            {percent({ value: totalVotes / 10000, decimalsWhenGteOne: 0, decimalsWhenLessThanOne: 0 })} votes
+          </div>
         </div>
       </div>
-      <table className=" w-full text-right my-4 items-center table-auto">
-        <thead className="font-bold text-lg">
-          <th className="text-left">Pair</th>
+      <table className="  text-right  items-center rounded-xl overflow-hidden border-seperate border-spacing-y-3 table-auto w-full shadow-md  border-separate">
+        <thead className="font-medium text-sm bg-black text-gray-500 rounded-full">
+          <th className="text-left px-4 py-3">Pair</th>
+          <th></th>
           <th>Votes</th>
           <th>Votes %</th>
           <th>Vote APR</th>
@@ -69,19 +79,27 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number;
           <th className="text-center">Vote</th>
         </thead>
 
-        <tbody>
+        <tbody className="">
           {Array.isArray(pairs)
-            ? pairs.map((pair: any) => {
+            ? pairs.map((pair: any, index: number) => {
                 return (
-                  <tr className="text-right py-2 items-center" key={pair.address}>
-                    <td className="text-left">{pair.name}</td>
+                  <tr
+                    className={`text-right items-center  ${
+                      index % 2 == 1 ? "" : "bg-stone-500/5"
+                    } hover:bg-slate-500/10 cursor-pointer animate-enter-token border-b border-[#383838]/50`}
+                    key={pair.address}
+                  >
+                    <td className="px-2">
+                      <DisplayPair token0={pair.token0.address} token1={pair.token1.address} size={26} />
+                    </td>
+                    <td className="text-left px-4 py-3">{pair.name}</td>
                     <td>{formatNumber({ value: pair.gauge.votes })}</td>
                     <td>{percent({ value: pair.gauge.weightPercent / 100 })}</td>
                     <td>
                       {percent({ value: Number(pair.gauge.aprUsd), decimalsWhenGteOne: 4, decimalsWhenLessThanOne: 4 })}
                     </td>
                     <td>{dollars({ value: pair.gauge.tbvUSD })}</td>
-                    <td className="flex flex-row gap-4 items-center justify-center">
+                    <td className="flex flex-row gap-4 items-center justify-center py-3">
                       <InputNumber
                         suffix="%"
                         onValueChange={(event) => {

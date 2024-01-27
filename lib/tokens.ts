@@ -20,7 +20,7 @@ export const tokenSchema = z.object({
       underlying: z.string().optional(),
       infoLens: ethereumAddressSchema.optional(),
       infoLensType: z.enum(["VeToken"]).optional(),
-      description: z.string().optional(),
+      voter: z.string().optional(),
     })
     .optional()
     .refine(
@@ -149,6 +149,18 @@ export const INTERNAL_TOKENS: Tokens = {
     },
 
     {
+      name: "TOMB+",
+      symbol: "TOMB+",
+      decimals: 18,
+      address: "0xE53aFA646d48E9EF68fCd559F2a598880a3f1370",
+      chainId: fantom.id,
+      isNative: false,
+      isLp: false,
+      icon: "/files/tokens/fantom/tomb.png",
+      nft: undefined,
+    },
+
+    {
       name: "Bassment Rats",
       symbol: "Rat NFT",
       decimals: 0,
@@ -172,8 +184,7 @@ export const INTERNAL_TOKENS: Tokens = {
         infoLensType: "VeToken",
         infoLens: "0xa0fD9265FAC42EcdfFF494e3dB6466b207D98C6D",
         underlying: "EQUAL",
-        description:
-          "veEQUAL represents locked EQUAL tokens and provides holders with weekly real-yield via epoch voting.",
+        voter: "0xe3d1a117df7dcac2eb0ac8219341bad92f18dac1",
       },
     },
   ],

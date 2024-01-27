@@ -27,6 +27,7 @@ const SelectToken = ({
   onAmountChange,
   userNftInfo,
   isSelectableNft,
+  hideNFT,
 }: {
   amount: number | undefined
   selectedToken: Token | undefined
@@ -38,6 +39,7 @@ const SelectToken = ({
   onAmountChange: (value: number | undefined) => void
   userNftInfo?: any
   isSelectableNft: boolean
+  hideNFT?: boolean
 }) => {
   const currentChain = useCurrentChain()
   const [isTokenPopupOpen, setIsTokenPopupOpen] = useState(false)
@@ -84,45 +86,52 @@ const SelectToken = ({
             <CommandEmpty>No token found.</CommandEmpty>
             <CommandGroup>
               {tokens?.map((token) => (
-                <CommandItem
-                  key={token.address}
-                  value={token.address}
-                  onSelect={(selected) => {
-                    // if we have a new token selected
-                    if (selected !== selectedToken?.address) {
-                      if (onSelectToken) {
-                        onSelectToken(token)
+                <ShowWhenFalse when={Boolean(token?.nft) && Boolean(hideNFT)}>
+                  <CommandItem
+                    key={token.address}
+                    value={token.address}
+                    onSelect={(selected) => {
+                      // if we have a new token selected
+                      if (selected !== selectedToken?.address) {
+                        if (onSelectToken) {
+                          onSelectToken(token)
+                        }
+                      } else {
+                        // we have the same token selected, so, act like a toggle and use the default token instead
+                        if (onSelectToken) {
+                          onSelectToken(defaultToken)
+                        }
                       }
-                    } else {
-                      // we have the same token selected, so, act like a toggle and use the default token instead
-                      if (onSelectToken) {
-                        onSelectToken(defaultToken)
-                      }
-                    }
-                    setIsTokenPopupOpen(false)
-                  }}
-                >
-                  <ShowWhenTrue
-                    when={selectedToken?.address ? getAddress(selectedToken?.address) === token.address : false}
+                      setIsTokenPopupOpen(false)
+                    }}
                   >
-                    <Check className={cn("mr-2 h-4 w-4", "opacity-100")} />
-                  </ShowWhenTrue>
-                  <ShowWhenFalse
-                    when={selectedToken?.address ? getAddress(selectedToken?.address) === token.address : false}
-                  >
-                    <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
-                  </ShowWhenFalse>
+                    <ShowWhenTrue
+                      when={selectedToken?.address ? getAddress(selectedToken?.address) === token.address : false}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", "opacity-100")} />
+                    </ShowWhenTrue>
+                    <ShowWhenFalse
+                      when={selectedToken?.address ? getAddress(selectedToken?.address) === token.address : false}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
+                    </ShowWhenFalse>
 
-                  <DisplayToken token={token} size={24} className="text-base font-bold" chainSlug={currentChain.slug} />
+                    <DisplayToken
+                      token={token}
+                      size={24}
+                      className="text-base font-bold"
+                      chainSlug={currentChain.slug}
+                    />
 
-                  <ShowWhenTrue when={Boolean(token?.nft)}>
-                    <div className="ml-auto flex-inline flex-row items-center">
-                      <Badge padding="tight" text="tiny" className="max-h-[18px]">
-                        NFT
-                      </Badge>
-                    </div>
-                  </ShowWhenTrue>
-                </CommandItem>
+                    <ShowWhenTrue when={Boolean(token?.nft)}>
+                      <div className="ml-auto flex-inline flex-row items-center">
+                        <Badge padding="tight" text="tiny" className="max-h-[18px]">
+                          NFTs
+                        </Badge>
+                      </div>
+                    </ShowWhenTrue>
+                  </CommandItem>
+                </ShowWhenFalse>
               ))}
             </CommandGroup>
           </Command>

@@ -547,6 +547,7 @@ export default function Create() {
                   userNftInfo={tokenNfts}
                   onSelectUserNft={onSelectTokenUserNft}
                   isSelectableNft={isLendingMode}
+                  hideNFT={true}
                 />
               </div>
             </div>
