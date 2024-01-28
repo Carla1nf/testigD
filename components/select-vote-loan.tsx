@@ -1,5 +1,5 @@
 import { useLoanValues } from "@/hooks/useLoanValues"
-import { isNft, nftInfoLens, nftInfoLensType } from "@/lib/tokens"
+import { Token, isNft, nftInfoLens, nftInfoLensType } from "@/lib/tokens"
 import { Address } from "viem"
 import DisplayNftToken from "./ux/display-nft-token"
 import useNftInfo from "@/hooks/useNftInfo"
@@ -33,7 +33,7 @@ const SelectVoteLoan = ({ address, index, selected }: { address: Address; index:
         <ShowWhenTrue when={isNft(data?.loan.collaterals)}>
           <div className="flex items-center">
             <div className="w-full py-1">
-              <DisplayNftToken token={data?.loan.collaterals} size={20} nftInfo={nftInfo[0]} />
+              <DisplayNftToken token={data?.loan.collaterals as Token} size={20} nftInfo={nftInfo[0]} />
             </div>
             <ShowWhenTrue when={selected == index && shouldVote}>
               <div className="w-full flex justify-end px-3 ">

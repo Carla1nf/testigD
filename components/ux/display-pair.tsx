@@ -36,7 +36,7 @@ const DisplayPair = ({
           width={size ?? 24}
           height={size ?? 24}
           chainSlug={chainSlug}
-          symbol={firstToken?.symbol}
+          symbol={firstToken?.symbol as string}
           className="mr-[2px]"
         />
 
@@ -45,7 +45,7 @@ const DisplayPair = ({
           width={size ?? 24}
           height={size ?? 24}
           chainSlug={chainSlug}
-          symbol={secondToken?.symbol}
+          symbol={secondToken?.symbol as string}
           className="mr-[2px] absolute ml-5"
         />
       </>

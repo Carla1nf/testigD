@@ -2,9 +2,10 @@
 
 import { AvailableIcon, MarketSizeIcon, TotalLentIcon } from "@/components/icons"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
+import Spinner from "@/components/ux/spin"
 import Stat from "@/components/ux/stat"
 import { useBorrowMarket } from "@/hooks/useBorrowMarket"
 import { useBorrowingMarketStats } from "@/hooks/useBorrowingMarketStats"
@@ -96,7 +97,11 @@ export default function Borrow() {
                     {dollars({ value: offer?.price ?? 0, decimals: 2 })}
                   </td>
                   <td className="p-2 text-center px-4 items-center">
-                    {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+                    {percent({
+                      value: offer.averageInterestRate / 10,
+                      decimalsWhenGteOne: 2,
+                      decimalsWhenLessThanOne: 2,
+                    })}
                   </td>
                 </tr>
               )
@@ -104,6 +109,9 @@ export default function Borrow() {
           </tbody>
         </table>
       </ShowWhenTrue>
+      <ShowWhenFalse when={Array.isArray(offers) && offers.length > 0}>
+        <Spinner />
+      </ShowWhenFalse>
     </>
   )
 }

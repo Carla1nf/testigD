@@ -106,7 +106,7 @@ export default function Create() {
     }
   }
 
-  const checkBorrowingAllowance = async ({ input: { context } }) => {
+  const checkBorrowingAllowance = async (context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
 
@@ -131,7 +131,7 @@ export default function Create() {
     throw "not enough allowance"
   }
 
-  const approveBorrowAllowance = async ({ input: { context } }) => {
+  const approveBorrowAllowance = async (context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
 
@@ -158,7 +158,7 @@ export default function Create() {
     return executed
   }
 
-  const creatingOffer = async ({ input }) => {
+  const creatingOffer = async ({ input }: { input: any }) => {
     console.log("creatingOffer")
     console.log("input", input)
     const { context, event } = input
@@ -225,7 +225,7 @@ export default function Create() {
     }
   }
 
-  const checkingLendAllowance = async ({ input: { context } }) => {
+  const checkingLendAllowance = async (context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
 
@@ -265,7 +265,7 @@ export default function Create() {
     // return allowance0
   }
 
-  const approveLendAllowance = async ({ input: { context } }) => {
+  const approveLendAllowance = async (context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
 

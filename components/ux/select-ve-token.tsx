@@ -45,11 +45,11 @@ const SelectVeToken = ({
           <div className="flex flex-row justify-between items-center">
             <Button variant="create" role="combobox" aria-expanded={isNftPopupOpen} className="pl-1 text-sm space-x-2">
               <ShowWhenFalse when={Boolean(selectedUserNft)}>
-                <DisplayNftToken token={token} size={20} className="text-sm" chainSlug={currentChain.slug} />
+                <DisplayNftToken token={token as Token} size={20} className="text-sm" chainSlug={currentChain.slug} />
               </ShowWhenFalse>
               <ShowWhenTrue when={Boolean(selectedUserNft)}>
                 <div className="flex flex-row gap-2 items-center">
-                  <DisplayNftToken token={token} size={20} className="text-sm" chainSlug={currentChain.slug} />
+                  <DisplayNftToken token={token as Token} size={20} className="text-sm" chainSlug={currentChain.slug} />
                   <div className="text-sm whitespace-nowrap">#{selectedUserNft?.id}</div>
                   <div>-</div>
                   <div className="text-sm whitespace-nowrap">
