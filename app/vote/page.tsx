@@ -36,6 +36,7 @@ export default function VotePage({ params }: { params: { loanAddress: string } }
             {indexes.map((index: number) => {
               return (
                 <div
+                  key={index}
                   onClick={() => {
                     index == selectedIndex ? setSelectedIndex(null) : setSelectedIndex(index)
                   }}

@@ -3,7 +3,7 @@
 import { useDebitaDataQuery } from "@/services/queries"
 import { Token } from "./tokens"
 
-export const getPoints = ({
+export const useGetPoints = ({
   token,
   loanValue,
   isBorrowMode,

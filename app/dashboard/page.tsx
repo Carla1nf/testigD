@@ -56,6 +56,7 @@ export default function Dashboard() {
           {["Lend offers", "Borrow offers", "Lent", "Borrowed"].map((item, index) => {
             return (
               <div
+                key={index}
                 onClick={() => setSelectedData(item)}
                 className={`${
                   selectedData == item ? "border-b-4 border-debitaPink" : "border-b-0"

@@ -41,7 +41,7 @@ import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import OwnerEditingButtons from "./components/owner-editing-buttons"
 import LendOfferStats from "./components/stats"
 import { machine } from "./lend-offer-machine"
-import { getPoints, pointsBorrow } from "@/lib/getPoints"
+import { useGetPoints, pointsBorrow } from "@/lib/getPoints"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -119,7 +119,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, offer?.principleAddressChart as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, offer?.collateralAddressChart as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
-  const pointsToGet = getPoints({
+  const pointsToGet = useGetPoints({
     token: principleToken,
     loanValue: Number(principle?.valueUsd),
     isBorrowMode: !isOwnerConnected,

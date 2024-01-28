@@ -86,7 +86,7 @@ const SelectToken = ({
             <CommandEmpty>No token found.</CommandEmpty>
             <CommandGroup>
               {tokens?.map((token) => (
-                <ShowWhenFalse when={Boolean(token?.nft) && Boolean(hideNFT)}>
+                <ShowWhenFalse when={Boolean(token?.nft) && Boolean(hideNFT)} key={token.address}>
                   <CommandItem
                     key={token.address}
                     value={token.address}

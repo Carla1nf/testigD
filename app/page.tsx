@@ -18,9 +18,9 @@ export default function Home() {
 
   return (
     <div>
-      <div className="bg-gradient-radial font-sans w-screen bg-[radial-gradient(50.40%_43.55%_at_50.56%_40.29%,rgba(84,64,114,0.3)_10%,rgba(33,33,33,1)_100%)] h-[70vh]">
+      <div className="bg-gradient-radial font-sans w-screen bg-[radial-gradient(50.40%_43.55%_at_50.56%_40.29%,rgba(84,64,114,0.3)_10%,rgba(33,33,33,1)_100%)] md:h-[70vh] md:text-start text-center">
         <div className="h-screen min-w-min animate-enter-div">
-          <div className="px-12 mx-auto flex items-center mt-10">
+          <div className="md:px-12 md:mx-auto flex flex-col md:flex-row  md:items-center mt-10">
             <div className="space-y-5">
               <div>
                 <div className="bg-clip-text px-1  py-2 text-transparent bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-pink-400 via-pink-400 to-purple-400 font-bold text-lg">
@@ -41,8 +41,14 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-            <div className="flex space-x-4 md:ml-32 relative">
-              <Image className="z-10 opacity-100 " height={580} src="/veNFT.png" alt="veNFT" width={580} />
+            <div className="flex space-x-4 md:ml-32 relative md:py-0 py-3">
+              <Image
+                className="z-10 opacity-100 md:h-auto md:w-auto h-[60vw] w-[80vw]"
+                height={580}
+                src="/veNFT.png"
+                alt="veNFT"
+                width={580}
+              />
             </div>
           </div>
         </div>

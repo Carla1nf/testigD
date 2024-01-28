@@ -99,8 +99,8 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             </tr>
           </thead>
           <tbody className="flex-1 sm:flex-none">
-            {events?.map((event: any) => {
-              return <TableRow event={event} token={token} key={event.address} />
+            {events?.map((event: any, index: number) => {
+              return <TableRow event={event} token={token} key={event.address} index={index} />
             })}
           </tbody>
         </table>

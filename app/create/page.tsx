@@ -34,7 +34,7 @@ import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
 import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
-import { getPoints } from "@/lib/getPoints"
+import { useGetPoints } from "@/lib/getPoints"
 // import { createBrowserInspector } from "@statelyai/inspect"
 
 // function convertBigIntToString(obj: any): any {
@@ -91,12 +91,15 @@ export default function Create() {
     let decoded = {}
     console.log("decoding..")
     try {
-      decoded = decodeEventLog({
-        abi: parseAbi(["event CreateOffer(address indexed owner, address indexed _add, bool indexed senderIsLender)"]),
-        data: tx?.logs[2].data,
-        topics: tx?.logs[2].topics,
-      })
-      setAddress(decoded?.args._add)
+      setAddress(
+        decodeEventLog({
+          abi: parseAbi([
+            "event CreateOffer(address indexed owner, address indexed _add, bool indexed senderIsLender)",
+          ]),
+          data: tx?.logs[2].data,
+          topics: tx?.logs[2].topics,
+        }).args._add
+      )
       console.log("withdrawFromVault->decoded", decoded)
     } catch (error) {
       console.log("withdrawFromVault->decode error", error)
@@ -335,7 +338,7 @@ export default function Create() {
   const mode = state.context.mode
   const isLendingMode = mode === ("lend" as LendingMode)
   const isBorrowingMode = mode === ("borrow" as LendingMode)
-  const points = getPoints({
+  const points = useGetPoints({
     token: state.context.token,
     loanValue: state.context.tokenValue as number,
     isBorrowMode: isBorrowingMode,
@@ -965,7 +968,7 @@ export default function Create() {
           <div className="bg-[#32282D]/40 border border-[#743A49] flex flex-col   w-full   py-3 px-3 rounded-lg h-28 animate-enter-div">
             <div>Points</div>
             <div className="text-gray-400 text-sm">
-              If this offer is fully accepted, you'll earn{" "}
+              If this offer is fully accepted, you&apos;ll earn{" "}
               <span className="text-white font-bold">{points} DBT Points</span>! (Points rewards can fluctuate based on
               multipliers and market condicions)
             </div>
