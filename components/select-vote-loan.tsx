@@ -7,6 +7,7 @@ import { ShowWhenFalse, ShowWhenTrue } from "./ux/conditionals"
 import { useLastVoted } from "@/hooks/useLastVoted"
 
 const SelectVoteLoan = ({ address, index, selected }: { address: Address; index: number; selected: number | null }) => {
+  // Select Vote Loan
   const { isSuccess, isLoading, isError, data } = useLoanValues(address, index, "Borrowed")
   const nftInfo = useNftInfo({ address: data?.loan.address, token: data?.loan.collaterals })
   const now = Math.floor(new Date().getTime() / 1000)
