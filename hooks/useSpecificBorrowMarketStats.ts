@@ -18,7 +18,7 @@ export const useSpecificBorrowMarketStats = (address: string) => {
     const offer = Array.isArray(filtered) && filtered.length > 0 ? filtered[0] : undefined
     setPrice(offer?.price ?? 0)
     setWaitingToBeLent(offer?.liquidityOffer ?? 0)
-    setMediumInterest(offer?.averageInterestRate ?? 0)
+    setMediumInterest((offer?.averageInterestRate ?? 0) / 10)
   }, [address, offers, token])
 
   return {

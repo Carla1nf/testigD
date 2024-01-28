@@ -10,6 +10,8 @@ import createdLoanABI from "@/abis/v2/createdLoan.json"
 import { writeContract } from "wagmi/actions"
 import DisplayToken from "@/components/ux/display-token"
 import DisplayPair from "@/components/ux/display-pair"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { SpinnerIcon } from "@/components/icons"
 
 type Vote = {
   pair: string
@@ -17,34 +19,42 @@ type Vote = {
   amount: number
 }
 
-const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number; address?: Address }) => {
+const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number | null; address?: Address }) => {
   const pairs = useVeEqualPairsFixtures()
   const [votes, setVotes] = useState<Array<Vote>>([])
   const [totalVotes, setTotalVotes] = useState<number>(0)
+  const [loading, setLoading] = useState<boolean>(false)
+
   console.log(votes)
-  const { isSuccess, isLoading, isError, data } = useLoanValues(address as Address, selectedIndex, "Borrowed")
+  const { isSuccess, isLoading, isError, data } = useLoanValues(address as Address, selectedIndex as number, "Borrowed")
   console.log(data, "DATA")
   const config = useConfig()
 
   // 10000 --> 100%
   // _voteWithVe(address[] calldata _poolVote, uint256[] calldata _weights)
   const voteWith = async () => {
+    setLoading(true)
     const getGauges = (await votes.map((item) => {
       return item.gauge as Address
     })) as Array<Address>
     const getWeights = (await votes.map((item) => {
       return item.amount
     })) as Array<number>
-    console.log(getGauges)
-    const { request } = await config.publicClient.simulateContract({
-      address: data?.loan.address as Address,
-      functionName: "_voteWithVe",
-      abi: createdLoanABI,
-      args: [getGauges, getWeights],
-      account: address,
-      gas: BigInt(830000),
-    })
-    const result = await writeContract(request)
+    try {
+      const { request } = await config.publicClient.simulateContract({
+        address: data?.loan.address as Address,
+        functionName: "_voteWithVe",
+        abi: createdLoanABI,
+        args: [getGauges, getWeights],
+        account: address,
+        gas: BigInt(830000),
+      })
+      const result = await writeContract(request)
+    } catch (e) {
+      console.log(e)
+      setLoading(false)
+    }
+    setLoading(false)
   }
   console.log(totalVotes)
 
@@ -52,10 +62,15 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number;
     <>
       <div className="flex justify-between items-center mb-8">
         <div
-          className="cursor-pointer bg-debitaPink px-5 py-1 rounded text-white font-medium"
+          className={`${
+            selectedIndex == null ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+          } bg-debitaPink px-5 py-1 rounded text-white font-medium flex gap-2 items-center`}
           onClick={() => voteWith()}
         >
           Vote
+          <ShowWhenTrue when={loading}>
+            <SpinnerIcon className=" w-4 animate-spin-slow" />
+          </ShowWhenTrue>
         </div>
         <div
           className={`${

@@ -34,6 +34,7 @@ import erc20Abi from "../../abis/erc20.json"
 import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
 import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
+import { getPoints } from "@/lib/getPoints"
 // import { createBrowserInspector } from "@statelyai/inspect"
 
 // function convertBigIntToString(obj: any): any {
@@ -334,7 +335,11 @@ export default function Create() {
   const mode = state.context.mode
   const isLendingMode = mode === ("lend" as LendingMode)
   const isBorrowingMode = mode === ("borrow" as LendingMode)
-
+  const points = getPoints({
+    token: state.context.token,
+    loanValue: state.context.tokenValue as number,
+    isBorrowMode: isBorrowingMode,
+  })
   const collateralNfts = useNftInfo({ address, token: state?.context?.collateralToken })
   const tokenNfts = useNftInfo({ address, token: state?.context?.token })
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
@@ -937,14 +942,35 @@ export default function Create() {
           </div>
         </ShowWhenTrue>
       </div>
-      <div className="flex flex-col md:w-1/2 w-full  md:mt-36">
-        <div className="bg-[#21232B]/40 border-2 flex flex-col gap-2  w-full border-white/10  py-2 px-3 rounded-lg h-28 ">
+      <div className="flex flex-col md:w-1/2 w-full  gap-4 md:mt-36">
+        <div className="bg-[#21232B]/40 border-2 flex flex-col  w-full border-white/10  py-3 px-3 rounded-lg h-28 ">
           <div>Disclaimer</div>
           <div className="text-gray-400 text-sm">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-            dolore magna aliqua.
+            The $ value and LTV are based on off chain data, and may not be accurate at times. It is highly suggested to
+            verify token values independently.
           </div>
         </div>
+        <ShowWhenTrue
+          when={
+            state.matches("confirmation") ||
+            state.matches("checkingBorrowAllowance") ||
+            state.matches("approveBorrowAllowance") ||
+            state.matches("checkingLendAllowance") ||
+            state.matches("approveLendAllowance") ||
+            state.matches("creating") ||
+            state.matches("created") ||
+            state.matches("error")
+          }
+        >
+          <div className="bg-[#32282D]/40 border border-[#743A49] flex flex-col   w-full   py-3 px-3 rounded-lg h-28 animate-enter-div">
+            <div>Points</div>
+            <div className="text-gray-400 text-sm">
+              If this offer is fully accepted, you'll earn{" "}
+              <span className="text-white font-bold">{points} DBT Points</span>! (Points rewards can fluctuate based on
+              multipliers and market condicions)
+            </div>
+          </div>
+        </ShowWhenTrue>
       </div>
     </div>
   )

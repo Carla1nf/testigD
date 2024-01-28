@@ -31,7 +31,7 @@ export default function LeaderBoardPage() {
       </div>
       <div className="flex w-full gap-12">
         <div className="flex flex-col w-full gap-2 text-gray-200">
-          <div className="flex h-10 items-center justify-between font-bold text-neutral-500 border-b-2 border-neutral-500/20 bg-black rounded">
+          <div className="flex h-10 items-center justify-between font-bold text-gray-400 border-b-2 border-neutral-500/20 bg-black rounded">
             <div className="w-full px-2">Wallet</div>
             <div className="w-full px-2">Points</div>
           </div>
@@ -44,7 +44,7 @@ export default function LeaderBoardPage() {
                       key={index}
                       className={`${
                         index % 2 == 0 ? "" : "bg-stone-500/5"
-                      }  h-10 flex animate-enter-div rounded items-center   text-sm`}
+                      }  h-10 flex animate-enter-token rounded items-center   text-sm`}
                     >
                       <div className="w-full px-4 flex gap-3">
                         <div className="text-gray-400"> {index}.</div>{" "}

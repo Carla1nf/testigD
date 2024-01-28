@@ -19,7 +19,7 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useLoanData } from "@/hooks/useLoanData"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
-import { DEBITA_ADDRESS, LOAN_CREATED_ADDRESS } from "@/lib/contracts"
+import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { LoanStatus, dollars, formatFullDate, loanStatus, shortAddress } from "@/lib/display"
 import { balanceOf } from "@/lib/erc20"
 import { cn } from "@/lib/utils"
@@ -49,7 +49,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   const loanAddress = params.loanAddress
   const config = useConfig()
   const { toast } = useToast()
-
+  const LOAN_CREATED_ADDRESS = loanAddress as Address
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(loanAddress as Address)

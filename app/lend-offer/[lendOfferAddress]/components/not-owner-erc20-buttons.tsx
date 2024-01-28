@@ -4,6 +4,7 @@ import ActionButtons from "@/components/ux/action-buttons"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
+import { pointsBorrow } from "@/lib/getPoints"
 import { Token } from "@/lib/tokens"
 
 const NotOwnerErc20Buttons = ({
@@ -80,7 +81,7 @@ const NotOwnerErc20Buttons = ({
         <div className="flex gap-10 items-center justify-center">
           <div className="flex flex-col gap-1">
             <div className="flex gap-1 items-center italic opacity-80">
-              <div className=" text-sm"> Collateral:</div>
+              <div className=" text-sm"> Collateral required:</div>
               {collateralToken ? (
                 <DisplayToken
                   size={20}
@@ -94,8 +95,8 @@ const NotOwnerErc20Buttons = ({
               )}
             </div>
             <input
-              className="text-center rounded-lg text-sm px-4 py-2 bg-[#21232B]/40 border-2 border-white/10"
-              placeholder={`Amount of ${principle?.token?.symbol}`}
+              className="text-center rounded-lg px-7 py-2 text-xs bg-[#21232B]/40 border-2 border-white/10"
+              placeholder={`Wanted borrow of ${principle?.token?.symbol}`}
               type="number"
               max={principle ? principle.amount : 0}
               onChange={(e) => {

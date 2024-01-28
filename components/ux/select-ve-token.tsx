@@ -98,7 +98,11 @@ const SelectVeToken = ({
                   setIsNftPopupOpen(false)
                 }}
               >
-                <div className="flex flex-row justify-between w-full items-center px-1 py-2">
+                <div
+                  className={`${
+                    nftInfo?.voted ? "cursor-not-allowed" : ""
+                  } flex flex-row justify-between w-full items-center px-1 py-2`}
+                >
                   {/* {selectedToken ? (
                         <DisplayToken
                           token={selectedToken}

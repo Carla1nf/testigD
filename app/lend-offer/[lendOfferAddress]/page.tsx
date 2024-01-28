@@ -16,7 +16,7 @@ import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 import { useOffer } from "@/hooks/useOffer"
 import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent, thresholdLow, yesNo } from "@/lib/display"
-import { balanceOf, toDecimals } from "@/lib/erc20"
+import { balanceOf, fromDecimals, toDecimals } from "@/lib/erc20"
 import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
 import { getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
@@ -41,6 +41,7 @@ import OwnerCancelButtons from "./components/owner-cancel-buttons"
 import OwnerEditingButtons from "./components/owner-editing-buttons"
 import LendOfferStats from "./components/stats"
 import { machine } from "./lend-offer-machine"
+import { getPoints, pointsBorrow } from "@/lib/getPoints"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -118,7 +119,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, offer?.principleAddressChart as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, offer?.collateralAddressChart as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
-
+  const pointsToGet = getPoints({
+    token: principleToken,
+    loanValue: Number(principle?.valueUsd),
+    isBorrowMode: !isOwnerConnected,
+  })
   // Nft info
   const principleNftInfos = useNftInfo({ address: lendOfferAddress as Address, token: principleToken })
   const nftInfo = principleNftInfos?.[0]
@@ -360,6 +365,13 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       throw error
     }
   }
+  const borrowAmount =
+    isNft(collateralToken) && offer && selectedUserNft
+      ? toDecimals(
+          calculateBorrow(offer?.principle.amount, offer?.wantedLockedVeNFT, selectedUserNft?.amount),
+          principle?.token?.decimals ?? 0
+        )
+      : toDecimals(amountToBorrow, principle?.token?.decimals ?? 0)
 
   const userAcceptOffer = async () => {
     try {
@@ -376,13 +388,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
            throw `Insufficient ${collateral0Token?.symbol} balance`
          } */
       }
-      const borrowAmount =
-        isNft(collateralToken) && offer && selectedUserNft
-          ? toDecimals(
-              calculateBorrow(offer?.principle.amount, offer?.wantedLockedVeNFT, selectedUserNft?.amount),
-              principle?.token?.decimals ?? 0
-            )
-          : toDecimals(amountToBorrow, principle?.token?.decimals ?? 0)
+
       console.log("To borrow:", borrowAmount)
       const { request } = await config.publicClient.simulateContract({
         address: OFFER_CREATED_ADDRESS,
@@ -637,6 +643,13 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <ChartWrapper>
               <LoanChart loanData={chartValues} />
             </ChartWrapper>
+            <div className="bg-[#21232B]/40 border-2 flex flex-col  w-full border-white/10  py-3 px-3 rounded-xl h-28 mt-5">
+              <div className="font-bold">Disclaimer</div>
+              <div className="text-gray-400 text-sm">
+                The $ value and LTV are based on off chain data, and may not be accurate at times. It is highly
+                suggested to verify token values independently.
+              </div>
+            </div>
           </div>
         </div>
         <div className="space-y-8 max-w-xl w-full xl:ml-16">
@@ -905,8 +918,8 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             </div>
 
             <ShowWhenTrue when={state.matches("isNotOwner.nft")}>
-              <div className="mt-8">
-                <div className="text-sm">Select your NFT:</div>
+              <div className="mt-8 flex flex-col gap-2">
+                <div className="text-sm text-gray-400">Select your NFT:</div>
                 <SelectVeToken
                   token={collateralToken}
                   selectedUserNft={selectedUserNft}
@@ -916,6 +929,17 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   principleToken={offer?.principle.token}
                   principleAmount={offer?.principle.amount}
                 />
+                <div className=" text-sm text-gray-400">
+                  Points:{" "}
+                  <span className="text-white font-bold">
+                    {pointsBorrow({
+                      totalPointsAvailable: Number(pointsToGet),
+                      amountToBorrow: fromDecimals(borrowAmount, principleToken?.decimals ?? 0),
+                      totalPrincipleAmount: principle?.amount ?? 1,
+                    })}
+                    DBT
+                  </span>{" "}
+                </div>
               </div>
             </ShowWhenTrue>
 
@@ -930,6 +954,27 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   principle={principle}
                   amountCollateral={amountCollateral}
                 />
+                <ShowWhenTrue when={state.matches("isNotOwner.erc20.canAcceptOffer")}>
+                  <div className="text-gray-400 text-sm py-2 px-7 ">
+                    You will get{" "}
+                    <span className="text-white font-bold">
+                      {pointsBorrow({
+                        totalPointsAvailable: Number(pointsToGet),
+                        amountToBorrow: fromDecimals(borrowAmount, principleToken?.decimals ?? 0),
+                        totalPrincipleAmount: principle?.amount ?? 1,
+                      })}
+                      DBT
+                    </span>{" "}
+                    Points
+                  </div>
+                </ShowWhenTrue>
+              </ShowWhenTrue>
+
+              <ShowWhenTrue when={state.matches("isOwner")}>
+                <div className="text-gray-400">
+                  If this offer is fully accepted now, you will get{" "}
+                  <span className="text-white font-bold">{pointsToGet} DBT</span>
+                </div>
               </ShowWhenTrue>
 
               <ShowWhenTrue when={state.matches("isNotOwner.nft")}>

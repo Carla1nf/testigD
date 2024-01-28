@@ -41,8 +41,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <>
               <BetaWarning />
               <Nav />
-              <main className="flex min-h-screen flex-col py-16 px-12 grow">{children}</main>
-              <footer className="p-8 text-center">&copy; 2023 Dēbita</footer>
+              <main className="flex min-h-screen flex-col py-16 px-12 grow h-auto">{children}</main>
+              <footer className="p-8 text-center mt-14">&copy; 2023 Dēbita</footer>
               <Toaster />
             </>
           </Providers>

@@ -12,9 +12,8 @@ import { writeContract } from "wagmi/actions"
 import VeEqualVotingTable from "./veequal-voting-table"
 
 export default function VotePage({ params }: { params: { loanAddress: string } }) {
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const config = useConfig()
-  const currentChain = useCurrentChain()
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+
   const { address } = useControlledAddress()
   const { ownershipBalance } = useOwnershipBalance(address)
 
@@ -38,7 +37,7 @@ export default function VotePage({ params }: { params: { loanAddress: string } }
               return (
                 <div
                   onClick={() => {
-                    index == selectedIndex ? setSelectedIndex(0) : setSelectedIndex(index)
+                    index == selectedIndex ? setSelectedIndex(null) : setSelectedIndex(index)
                   }}
                 >
                   <SelectVoteLoan address={address as Address} index={index} key={index} selected={selectedIndex} />

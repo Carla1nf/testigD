@@ -21,14 +21,17 @@ export default function Home() {
       <div className="bg-gradient-radial font-sans w-screen bg-[radial-gradient(50.40%_43.55%_at_50.56%_40.29%,rgba(84,64,114,0.3)_10%,rgba(33,33,33,1)_100%)] h-[70vh]">
         <div className="h-screen min-w-min animate-enter-div">
           <div className="px-12 mx-auto flex items-center mt-10">
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
+                <div className="bg-clip-text px-1  py-2 text-transparent bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-pink-400 via-pink-400 to-purple-400 font-bold text-lg">
+                  Season 1{" "}
+                </div>
                 <h1 className="text-5xl font-bold">Customize & Create </h1>
-                <h1 className="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-800">
+                <h1 className="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r from-pink-400 to-purple-700 ">
                   your loans
                 </h1>
               </div>
-              <p className="text-xl text-gray-400">P2P Oracle-less Lending Protocol</p>
+              <p className="text-lg text-gray-400">P2P Oracle-less Lending Protocol</p>
               <div className="flex space-x-4">
                 <Button className="bg-black/30 text-white" variant="secondary">
                   Launch app

@@ -6,7 +6,7 @@ import useNftInfo from "@/hooks/useNftInfo"
 import { ShowWhenFalse, ShowWhenTrue } from "./ux/conditionals"
 import { useLastVoted } from "@/hooks/useLastVoted"
 
-const SelectVoteLoan = ({ address, index, selected }: { address: Address; index: number; selected: number }) => {
+const SelectVoteLoan = ({ address, index, selected }: { address: Address; index: number; selected: number | null }) => {
   const { isSuccess, isLoading, isError, data } = useLoanValues(address, index, "Borrowed")
   const nftInfo = useNftInfo({ address: data?.loan.address, token: data?.loan.collaterals })
   const now = Math.floor(new Date().getTime() / 1000)
@@ -28,11 +28,11 @@ const SelectVoteLoan = ({ address, index, selected }: { address: Address; index:
   return (
     <>
       <div
-        className={`flex flex-col flex-no cursor-pointer animate-enter-token hover:bg-neutral-800/60 shadow w-full py-3 px-3 rounded-b-xl `}
+        className={`flex flex-col flex-no cursor-pointer animate-enter-token hover:bg-neutral-800/60 shadow w-full py-3 px-3 rounded-b-xl bg-stone-500/5`}
       >
         <ShowWhenTrue when={isNft(data?.loan.collaterals)}>
           <div className="flex items-center">
-            <div className="w-full">
+            <div className="w-full py-1">
               <DisplayNftToken token={data?.loan.collaterals} size={20} nftInfo={nftInfo[0]} />
             </div>
             <ShowWhenTrue when={selected == index && shouldVote}>

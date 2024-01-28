@@ -54,6 +54,15 @@ const Nav = () => {
         >
           Leaderboard
         </Link>
+
+        <Link
+          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
+            path == "/vote" ? "border-b-2 border-debitaPink/50 rounded-none" : "rounded-xl"
+          }`}
+          href="/vote"
+        >
+          Vote
+        </Link>
       </div>
 
       <div className="flex gap-4 flex-row justify-between items-center p-4">

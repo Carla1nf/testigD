@@ -27,7 +27,7 @@ export function DashboardResume({
     <div className="flex w-full gap-6">
       <DashboardResumeItem
         value={ownershipBalance}
-        title={"Historical loans"}
+        title={"Active loans"}
         Icon={<DashboardEqualizer className="w-[120px] h-[120px] mt-[3px] fill-[#A6A766]" />}
       />
       <DashboardResumeItem
