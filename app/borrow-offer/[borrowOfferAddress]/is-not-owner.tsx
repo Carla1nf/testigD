@@ -29,6 +29,7 @@ import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
+import ActionButtons from "@/components/ux/action-buttons"
 
 function getAcceptLendingOfferValue(offer: any) {
   if (!offer) {
@@ -297,76 +298,71 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
             {/* Buttons */}
             <div className="mt-8 flex justify-end">
               <div>
-                <ShowWhenTrue when={state.matches("notEnoughAllowance")}>
-                  <Button
-                    variant={"action"}
-                    className="px-16"
-                    onClick={async () => {
-                      send({ type: "user.allowance.increase" })
-                    }}
-                  >
-                    Accept Offer
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("notEnoughAllowance")}
+                  right={
+                    <ActionButtons.Action
+                      title="Accept Offer"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.allowance.increase" })
+                      }}
+                    />
+                  }
+                />
 
-                <ShowWhenTrue when={state.matches("increaseAllowance")}>
-                  <Button variant={"action"} className="px-16">
-                    Increasing Allowance
-                    <SpinnerIcon className="ml-2 animate-spin-slow" />
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("increaseAllowance")}
+                  right={<ActionButtons.Spinner title="Increasing Allowance" when={true} />}
+                />
 
-                <ShowWhenTrue when={state.matches("increaseAllowanceError")}>
-                  <Button
-                    variant="error"
-                    className="h-full w-full gap-2"
-                    onClick={() => {
-                      send({ type: "user.allowance.increase.retry" })
-                    }}
-                  >
-                    <XCircle className="h-5 w-5" />
-                    Increasing Allowance Failed - Retry?
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("increaseAllowanceError")}
+                  right={
+                    <ActionButtons.Error
+                      title="Increasing Allowance Failed - Retry?"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.allowance.increase.retry" })
+                      }}
+                    />
+                  }
+                />
 
-                <ShowWhenTrue when={state.matches("canAcceptOffer")}>
-                  <Button
-                    variant={"action"}
-                    className="px-16"
-                    onClick={async () => {
-                      send({ type: "user.accept.offer" })
-                    }}
-                  >
-                    Accept Offer
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("canAcceptOffer")}
+                  right={
+                    <ActionButtons.Action
+                      title="Accept Offer"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.accept.offer" })
+                      }}
+                    />
+                  }
+                />
+                <ActionButtons.Group
+                  when={state.matches("acceptingOffer")}
+                  right={<ActionButtons.Spinner title="Accepting Offer" when={true} />}
+                />
 
-                <ShowWhenTrue when={state.matches("acceptingOffer")}>
-                  <Button variant={"action"} className="px-16">
-                    Accepting Offer...
-                    <SpinnerIcon className="ml-2 animate-spin-slow" />
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("acceptingOfferError")}
+                  right={
+                    <ActionButtons.Error
+                      title="Accept Offer Failed - Retry?"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.accept.offer.retry" })
+                      }}
+                    />
+                  }
+                />
 
-                <ShowWhenTrue when={state.matches("acceptingOfferError")}>
-                  <Button
-                    variant="error"
-                    className="h-full w-full gap-2"
-                    onClick={() => {
-                      send({ type: "user.accept.offer.retry" })
-                    }}
-                  >
-                    <XCircle className="h-5 w-5" />
-                    Accept Offer Failed - Retry?
-                  </Button>
-                </ShowWhenTrue>
-
-                <ShowWhenTrue when={state.matches("offerAccepted")}>
-                  <Button variant={"success"} className="px-16 gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    Offer Accepted
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("offerAccepted")}
+                  right={<ActionButtons.Success title="Offer Accepted" when={true} />}
+                />
               </div>
             </div>
           </div>
