@@ -1,7 +1,7 @@
 "use client"
 
+import createdOfferABI from "@/abis/v2/createdOffer.json"
 import { PersonIcon } from "@/components/icons"
-import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import ActionButtons from "@/components/ux/action-buttons"
 import DisplayToken from "@/components/ux/display-token"
@@ -9,8 +9,8 @@ import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-sh
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useOffer } from "@/hooks/useOffer"
-import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, percent, shortAddress, thresholdLow } from "@/lib/display"
+import { toDecimals } from "@/lib/erc20"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import { ExternalLink } from "lucide-react"
@@ -19,7 +19,6 @@ import { useEffect, useState } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
-import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
@@ -44,7 +43,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
   const { toast } = useToast()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, borrowOfferAddress)
-  const [amountToBorrow, setAmountToBorrow] = useState(0)
+  const [amountToLend, setAmountToLend] = useState(0)
   const [amountCollateral, setAmountCollateral] = useState(0)
 
   const principle = offer?.principle
@@ -57,12 +56,12 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     address: principle?.address as Address,
     functionName: "allowance",
     abi: erc20Abi,
-    args: [address, DEBITA_ADDRESS],
+    args: [address, borrowOfferAddress],
   })
 
-  const handleWantedBorrow = (newValue: number) => {
+  const handleWantedLend = (newValue: number) => {
     const amountCollateral = collateral && principle ? (collateral?.amount * newValue) / principle?.amount : 0
-    setAmountToBorrow(newValue)
+    setAmountToLend(newValue)
     setAmountCollateral(amountCollateral)
   }
 
@@ -72,7 +71,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
         address: principle?.address as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [DEBITA_ADDRESS, BigInt(principle?.amountRaw ?? 0)],
+        args: [borrowOfferAddress, BigInt(principle?.amountRaw ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -95,16 +94,18 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     }
   }
 
+  const lendingAmount = toDecimals(amountToLend, principle?.token?.decimals ?? 0)
   const userAcceptOffer = async () => {
     try {
-      const value = getAcceptLendingOfferValue(offer)
+      console.log("To borrow:", lendingAmount)
       const { request } = await config.publicClient.simulateContract({
-        address: DEBITA_ADDRESS,
-        functionName: "acceptCollateralOffer",
-        abi: debitaAbi,
-        args: [borrowOfferAddress],
+        address: borrowOfferAddress,
+        functionName: "acceptOfferAsLender",
+        abi: createdOfferABI,
+        args: [lendingAmount, 0],
         account: address,
-        value: BigInt(value),
+        gas: BigInt(4800000),
+        // chainId: currentChain?.chainId,
       })
 
       const executed = await writeContract(request)
@@ -361,7 +362,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                               ? (e.currentTarget.value = String(principle.amount))
                               : ""
                             : ""
-                          handleWantedBorrow(Number(e.currentTarget.value))
+                          handleWantedLend(Number(e.currentTarget.value))
                         }}
                       />
                     </div>
