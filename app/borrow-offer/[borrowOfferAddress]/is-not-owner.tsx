@@ -9,7 +9,7 @@ import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-sh
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useOffer } from "@/hooks/useOffer"
-import { dollars, percent, shortAddress, thresholdLow } from "@/lib/display"
+import { dollars, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
 import { toDecimals } from "@/lib/erc20"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
@@ -24,6 +24,7 @@ import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
+import { cn } from "@/lib/utils"
 
 function getAcceptLendingOfferValue(offer: any) {
   if (!offer) {
@@ -276,9 +277,9 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                   {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                 </div>
               </div>
-              <div className="border border-[#41353B] rounded-sm p-2">
-                <div className="text-[#DCB5BC]">Whitelist</div>
-                <div className="text-base">n/a</div>
+              <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
+                <div className="text-[#DCB5BC]">Perpetual</div>
+                <div className={cn("text-base")}>{yesNo(offer?.perpetual)}</div>
               </div>
             </div>
 
