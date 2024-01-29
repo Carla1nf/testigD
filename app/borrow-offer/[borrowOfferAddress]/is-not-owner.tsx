@@ -295,9 +295,8 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="mt-8 flex justify-end">
-              <div>
+              <>
                 <ActionButtons.Group
                   when={state.matches("notEnoughAllowance")}
                   right={
@@ -363,7 +362,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                   when={state.matches("offerAccepted")}
                   right={<ActionButtons.Success title="Offer Accepted" when={true} />}
                 />
-              </div>
+              </>
             </div>
           </div>
         </div>
