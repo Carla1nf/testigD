@@ -1,25 +1,21 @@
 "use client"
 
-import { PersonIcon, SpinnerIcon } from "@/components/icons"
+import { PersonIcon } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import ActionButtons from "@/components/ux/action-buttons"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
-import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOffer } from "@/hooks/useOffer"
-import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
 import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { dollars, percent, shortAddress, thresholdLow } from "@/lib/display"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
-import dayjs from "dayjs"
-import { CheckCircle, ExternalLink, XCircle } from "lucide-react"
-import dynamic from "next/dynamic"
+import { ExternalLink } from "lucide-react"
 import pluralize from "pluralize"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
@@ -29,7 +25,6 @@ import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
-import ActionButtons from "@/components/ux/action-buttons"
 
 function getAcceptLendingOfferValue(offer: any) {
   if (!offer) {
@@ -49,6 +44,8 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
   const { toast } = useToast()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, borrowOfferAddress)
+  const [amountToBorrow, setAmountToBorrow] = useState(0)
+  const [amountCollateral, setAmountCollateral] = useState(0)
 
   const principle = offer?.principle
   const collateral = offer?.collateral
@@ -62,6 +59,12 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     abi: erc20Abi,
     args: [address, DEBITA_ADDRESS],
   })
+
+  const handleWantedBorrow = (newValue: number) => {
+    const amountCollateral = collateral && principle ? (collateral?.amount * newValue) / principle?.amount : 0
+    setAmountToBorrow(newValue)
+    setAmountCollateral(amountCollateral)
+  }
 
   const increaseAllowance = async () => {
     try {
@@ -295,7 +298,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8">
               <>
                 <ActionButtons.Group
                   when={state.matches("notEnoughAllowance")}
@@ -329,7 +332,40 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                 />
 
                 <ActionButtons.Group
+                  className="flex-rowc items-center"
                   when={state.matches("canAcceptOffer")}
+                  left={
+                    <div className="">
+                      <div className="flex gap-1 items-center italic opacity-80">
+                        <div className=" text-sm"> Collateral required:</div>
+                        {collateralToken ? (
+                          <DisplayToken
+                            size={20}
+                            token={collateralToken}
+                            amount={amountCollateral}
+                            className="text-base"
+                            chainSlug={currentChain.slug}
+                          />
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                      <input
+                        className="text-center rounded-lg px-7 py-2 text-xs bg-[#21232B]/40 border-2 border-white/10"
+                        placeholder={`Wanted borrow of ${principle?.token?.symbol}`}
+                        type="number"
+                        max={principle ? principle.amount : 0}
+                        onChange={(e) => {
+                          principle
+                            ? Number(e.currentTarget.value) > principle.amount
+                              ? (e.currentTarget.value = String(principle.amount))
+                              : ""
+                            : ""
+                          handleWantedBorrow(Number(e.currentTarget.value))
+                        }}
+                      />
+                    </div>
+                  }
                   right={
                     <ActionButtons.Action
                       title="Accept Offer"
