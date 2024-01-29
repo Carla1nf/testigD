@@ -9,6 +9,7 @@ import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
 import { Toaster } from "@/components/ui/toaster"
 import axios from "axios"
+import TermsAndConditions from "@/components/ux/terms-and-conditions"
 
 /**
  * These are the google fonts imported in the V1 website. find out if they are still used and import as necessary
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Providers>
             <>
+              <TermsAndConditions />
               <BetaWarning />
               <Nav />
               <main className="flex min-h-screen flex-col py-16 px-12 grow h-auto">{children}</main>
