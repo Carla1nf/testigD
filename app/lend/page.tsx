@@ -35,7 +35,7 @@ export default function Lend() {
           <div className="flex items-center">
             <h1 className="text-3xl font-bold">Lending Market</h1>
           </div>
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-3 gap-8">
             <Stat
               value={dollars({ value: stats.available, decimals: 0 })}
               title={"Available liquidity"}

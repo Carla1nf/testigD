@@ -32,7 +32,7 @@ export default function Dashboard() {
     <>
       <div className="flex items-center text-2xl font-bold gap-2 mb-8 -mt-10">
         <div className="flex flex-col gap-2">
-          <div className="flex gap-3  text-sm font-medium items-center">
+          <div className="flex gap-3 md:flex-row flex-col  text-sm font-medium md:items-center">
             <div className="h-20 overflow-hidden w-20 items-center flex justify-center rounded-full bg-pink-600/5">
               <img src="files/icon/Grupo.svg" />
             </div>

@@ -44,6 +44,7 @@ const SelectToken = ({
   const currentChain = useCurrentChain()
   const [isTokenPopupOpen, setIsTokenPopupOpen] = useState(false)
   const [isNftPopupOpen, setIsNftPopupOpen] = useState(false)
+  const [wantedType, setWantedType] = useState("ERC-20")
   const selectedTokenIsNft = isNft(selectedToken)
   const underlying = selectedTokenIsNft ? nftUnderlyingToken(selectedToken, currentChain.slug) : undefined
 
@@ -85,8 +86,31 @@ const SelectToken = ({
             <CommandInput placeholder="Select Token / Paste an address" />
             <CommandEmpty>No token found.</CommandEmpty>
             <CommandGroup>
+              <div className="flex px-6 gap-5 py-3 font-bold text-gray-500">
+                <div
+                  className={`cursor-pointer ${wantedType == "ERC-20" ? "text-white" : ""}`}
+                  onClick={() => setWantedType("ERC-20")}
+                >
+                  ERC-20
+                </div>
+                <ShowWhenFalse when={hideNFT ?? false}>
+                  <div
+                    className={`cursor-pointer ${wantedType == "ERC-721" ? "text-white" : ""} transition-all`}
+                    onClick={() => setWantedType("ERC-721")}
+                  >
+                    NFT
+                  </div>
+                </ShowWhenFalse>
+              </div>
               {tokens?.map((token) => (
-                <ShowWhenFalse when={Boolean(token?.nft) && Boolean(hideNFT)} key={token.address}>
+                <ShowWhenFalse
+                  when={
+                    (Boolean(token?.nft) && Boolean(hideNFT)) ||
+                    (Boolean(token?.nft) && wantedType != "ERC-721") ||
+                    (!Boolean(token?.nft) && wantedType != "ERC-20")
+                  }
+                  key={token.address}
+                >
                   <CommandItem
                     key={token.address}
                     value={token.address}
@@ -192,12 +216,20 @@ const SelectToken = ({
                               chainSlug={currentChain.slug}
                             />
                           ) : null}
-
                           <div>#{Number(nftInfo?.id)}</div>
                           <div>
                             {Number(nftInfo?.amount).toFixed(4)} {underlying?.symbol ?? ""}
                           </div>
-                          <div>Voted? {yesNo(nftInfo?.voted)}</div>
+                          <ShowWhenTrue when={nftInfo?.voted}>
+                            <div className="text-[11.4px] bg-red-400/20 py-1 px-2 rounded text-red-400 font-bold">
+                              Non transferable
+                            </div>
+                          </ShowWhenTrue>
+                          <ShowWhenFalse when={nftInfo?.voted}>
+                            <div className="text-[11.4px] bg-green-400/20 py-1 px-2 rounded text-green-400 font-bold">
+                              Transferable
+                            </div>
+                          </ShowWhenFalse>{" "}
                         </div>
                       </CommandItem>
                     ))}

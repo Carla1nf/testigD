@@ -1,5 +1,6 @@
 "use client"
 
+import { ShowWhenFalse } from "@/components/ux/conditionals"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
 import useCurrentChain from "@/hooks/useCurrentChain"
@@ -29,7 +30,7 @@ export default function LeaderBoardPage() {
           <Stat value={`${data?.pointsPerAddress.length}`} title={"Active wallets"} Icon={null} />
         </div>
       </div>
-      <div className="flex w-full gap-12">
+      <div className="flex w-full  md:flex-row flex-col gap-12">
         <div className="flex flex-col w-full gap-2 text-gray-200">
           <div className="flex h-10 items-center justify-between font-bold text-gray-400 border-b-2 border-neutral-500/20 bg-black rounded">
             <div className="w-full px-2">Wallet</div>
@@ -38,22 +39,20 @@ export default function LeaderBoardPage() {
           {data?.pointsPerAddress.map((item, index) => {
             return (
               <>
-                {index == 0 ? null : (
-                  <>
-                    <div
-                      key={index}
-                      className={`${
-                        index % 2 == 0 ? "" : "bg-stone-500/5"
-                      }  h-10 flex animate-enter-token rounded items-center   text-sm`}
-                    >
-                      <div className="w-full px-4 flex gap-3">
-                        <div className="text-gray-400"> {index}.</div>{" "}
-                        {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
-                      </div>
-                      <div className="w-full font-bold">{item[1]}</div>
+                <ShowWhenFalse when={index == 0}>
+                  <div
+                    key={index}
+                    className={`${
+                      index % 2 == 0 ? "" : "bg-stone-500/5"
+                    }  h-10 flex animate-enter-token rounded items-center   text-sm`}
+                  >
+                    <div className="w-full px-4 flex gap-3">
+                      <div className="text-gray-400"> {index}.</div>{" "}
+                      {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
                     </div>
-                  </>
-                )}
+                    <div className="w-full font-bold">{item[1]}</div>
+                  </div>
+                </ShowWhenFalse>
               </>
             )
           })}

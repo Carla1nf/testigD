@@ -24,7 +24,7 @@ export function DashboardResume({
   const { ownershipBalance } = useOwnershipBalance(address)
 
   return (
-    <div className="flex w-full gap-6">
+    <div className="flex md:flex-row flex-col w-full gap-6">
       <DashboardResumeItem
         value={ownershipBalance}
         title={"Active loans"}

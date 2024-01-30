@@ -42,7 +42,61 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <BetaWarning />
               <Nav />
               <main className="flex min-h-screen flex-col py-16 px-12 grow h-auto">{children}</main>
-              <footer className="p-8 text-center mt-14">&copy; 2023 Dēbita</footer>
+              <footer className=" text-center mt-14 ">
+                <div className="bg-neutral-800 md:h-96 w-screen">
+                  <div className="flex flex-col py-12 px-20 gap-10">
+                    <img src="files/navbar/debita.svg" width={130} />
+                    <div className="flex md:flex-row flex-col w-full justify-between md:gap-0 gap-10">
+                      <div className="flex flex-col text-center">
+                        <div className=" font-semibold text-xl text-gray-400">Start now</div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all ">
+                          Lend
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          Borrow
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          Create offer
+                        </div>
+
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          Leaderboard
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col text-center">
+                        <div className=" font-semibold text-xl text-gray-400">Information</div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          Docs
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          Contracts
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          How does Debita V2 work?
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          Points
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col text-center">
+                        <div className=" font-semibold text-xl text-gray-400">Contact</div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          team@debita.fi
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          @DebitaFinance{" "}
+                        </div>
+                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                          @MoraDebita | Debita BD
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-24 flex items-end justify-center px-20 py-5"> &copy; 2023 Dēbita</div>
+                </div>
+              </footer>
               <Toaster />
             </>
           </Providers>

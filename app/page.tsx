@@ -18,21 +18,21 @@ export default function Home() {
 
   return (
     <div>
-      <div className="bg-gradient-radial font-sans w-screen bg-[radial-gradient(50.40%_43.55%_at_50.56%_40.29%,rgba(84,64,114,0.3)_10%,rgba(33,33,33,1)_100%)] md:h-[70vh] md:text-start text-center">
+      <div className="bg-gradient-radial font-sans md:w-screen bg-[radial-gradient(50.40%_43.55%_at_50.56%_40.29%,rgba(84,64,114,0.3)_10%,rgba(33,33,33,1)_100%)] md:h-[70vh] md:text-start text-center">
         <div className="h-screen min-w-min animate-enter-div">
-          <div className="md:px-12 md:mx-auto flex flex-col md:flex-row  md:items-center mt-10">
+          <div className="md:px-12 md:mx-auto flex flex-col md:flex-row md:gap-0 gap-10   md:items-center mt-10">
             <div className="space-y-5">
               <div>
                 <div className="bg-clip-text px-1  py-2 text-transparent bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-pink-400 via-pink-400 to-purple-400 font-bold text-lg">
                   Season 1{" "}
                 </div>
-                <h1 className="text-5xl font-bold">Customize & Create </h1>
-                <h1 className="font-extrabold text-transparent text-5xl bg-clip-text bg-gradient-to-r from-pink-400 to-purple-700 ">
+                <h1 className=" text-5xl font-bold">Customize & Create </h1>
+                <h1 className="font-extrabold text-transparent  text-5xl bg-clip-text bg-gradient-to-r from-pink-400 to-purple-700 ">
                   your loans
                 </h1>
               </div>
               <p className="text-lg text-gray-400">P2P Oracle-less Lending Protocol</p>
-              <div className="flex space-x-4">
+              <div className="flex md:flex-row flex-col md:justify-start justify-center gap-3 md:gap-0 md:space-x-4">
                 <Button className="bg-black/30 text-white" variant="secondary">
                   Launch app
                 </Button>
@@ -43,7 +43,7 @@ export default function Home() {
             </div>
             <div className="flex space-x-4 md:ml-32 relative md:py-0 py-3">
               <Image
-                className="z-10 opacity-100 md:h-auto md:w-auto h-[60vw] w-[80vw]"
+                className="z-10 opacity-100 md:h-auto md:w-auto h-[50vw] w-[80vw] min-h-[180px] min-w-[240px]"
                 height={580}
                 src="/veNFT.png"
                 alt="veNFT"
@@ -53,38 +53,38 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className=" flex justify-center gap-5">
-        <div className=" w-[600px] bg-gradient-to-t from-background to-gray-500/10 h-96 rounded-xl">
+      <div className=" flex md:flex-row flex-col  justify-center md:gap-5 gap-24 ">
+        <div className="  md:w-[600px] bg-gradient-to-t from-background to-gray-500/10 md:h-96 rounded-xl h-auto">
           <div className="p-8 font-bold text-2xl"> Time-based liquidiation </div>
           <div className="p-8 text-gray-400 -mt-10">
             Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit,
             nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class
             orci augue convallis.
           </div>
-          <div className="flex justify-center gap-5">
+          <div className=" justify-center gap-5 flex md:flex px-4">
             <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
             <div className=" h-40 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
             <div className=" h-28 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
           </div>
         </div>
 
-        <div className=" w-[600px] bg-gradient-to-t from-background to-gray-500/10 h-96 rounded-xl">
+        <div className=" md:w-[600px] bg-gradient-to-t from-background to-gray-500/10 md:h-96 h-auto rounded-xl">
           <div className="p-8 font-bold text-2xl"> Use any Token as Collateral </div>
           <div className="p-8 text-gray-400 -mt-10">
             Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit,
             nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class
             orci augue convallis.
           </div>
-          <div className="flex justify-center gap-5">
-            <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
-            <div className=" h-40 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
-            <div className=" h-28 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
+          <div className="flex justify-center gap-5 px-4">
+            <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-purple-500"></div>
+            <div className=" h-40 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-purple-500"></div>
+            <div className=" h-28 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-purple-500"></div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-rows-2 ml-14 mt-28">
-        <div className=" p-5 font-bold text-2xl flex items-center gap-10 ">
+      <div className="grid grid-rows-2 md:ml-14 mt-28">
+        <div className=" p-5 font-bold text-2xl flex md:flex-row flex-col md:items-center gap-10 ">
           <div>Most traded tokens </div>
           <div className=" bg-black/20 rounded-xl">
             {" "}
@@ -92,7 +92,7 @@ export default function Home() {
           </div>
         </div>
         <div className="flex flex-col">
-          <div className="flex font-bold border-b-2 border-gray-400/5 -mt-5 text-gray-500 text-sm text-center">
+          <div className="md:flex hidden font-bold border-b-2 border-gray-400/5 -mt-5 text-gray-500 text-sm text-center ">
             <div className="p-3 w-48 ">TOKEN</div>
             <div className="p-3 w-72">LIQUIDITY</div>
             <div className="p-3 w-72">OFFERS</div>
@@ -136,14 +136,14 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-10 ml-16 mt-28">
+      <div className="flex flex-col gap-10 md:ml-16 mt-28">
         <div className="p-5 font-bold text-2xl">Debita Markets</div>
         <div className="flex">
           {["Fantom"].map((chain, index) => {
             return (
               <div
                 key={chain}
-                className={`w-[350px] relative flex flex-col ml-5 rounded-md h-80 ${
+                className={`md:w-[350px] relative flex flex-col ml-5 rounded-md md:h-80 ${
                   !index ? "hover:bg-slate-400/20" : ""
                 }`}
               >
@@ -164,7 +164,7 @@ export default function Home() {
                   src={`${!index ? "/files/tokens/fantom/ftm-native.svg" : "/files/tokens/base/Base.svg"}`}
                 />
                 <div className="p-4 font-bold text-xl -mt-3">{chain}</div>
-                <div className="p-4 font-semibold text-sm text-gray-400 -mt-3">
+                <div className="p-4 font-semibold md:text-sm text-xs text-gray-400 -mt-3">
                   Lorem ipsum dolor sit amet consectetur adipiscing elit, consequat potenti etiam at suspendisse blandit
                   donec aptent, lectus venenatis bibendum facilisis accumsan euismod. Scelerisque penatibus potenti per
                   mauris volutpat nam nullam

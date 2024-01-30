@@ -29,9 +29,8 @@ const Stat = ({
       {/* mobile / tablets - centralised design */}
       <div
         key={title}
-        className="overflow-hidden dashboard-item-gradient py-1 px-2 rounded-lg flex flex-row gap-2 justify-center items-center border border-white/5 h-full md:hidden"
+        className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-3 rounded-lg  flex-row items-center h-full  shadow-lg shadow-neutral-950/30 md:hidden"
       >
-        <div className="flex justify-center items-center ">{Icon}</div>
         <div className="text-left">
           {titleSmall ? (
             <>
@@ -39,10 +38,10 @@ const Stat = ({
               <div className="hidden md:flex text-xs md:font-bold">{title}</div>
             </>
           ) : (
-            <div className="text-xs md:font-bold">{title}</div>
+            <div className="text-xs md:font-bold text-gray-400">{title}</div>
           )}
 
-          <div className="text-sm md:text-2xl font-medium text-[#A957A4]">
+          <div className="text-sm md:text-2xl font-medium text-white">
             {value === undefined ? <Skeleton className="h-[80px] w-[200px]" /> : value}
           </div>
         </div>

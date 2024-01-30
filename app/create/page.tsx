@@ -106,9 +106,10 @@ export default function Create() {
     }
   }
 
-  const checkBorrowingAllowance = async (context: any) => {
+  const checkBorrowingAllowance = async (_context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+    const context = _context.input.context
 
     // collateralAmount of collateralToken
     if (context.collateralToken.address === ZERO_ADDRESS) {
@@ -131,31 +132,34 @@ export default function Create() {
     throw "not enough allowance"
   }
 
-  const approveBorrowAllowance = async (context: any) => {
+  const approveBorrowAllowance = async (_context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
-
-    // collateralAmount of collateralToken
+    const context = _context.input.context
+    console.log(context, "context")
     if (context.collateralToken.address === ZERO_ADDRESS) {
       return Promise.resolve({ nativeToken: true })
     }
 
     const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
 
-    const { request } = await config.publicClient.simulateContract({
-      address: context.collateralToken.address,
-      functionName: "approve",
-      abi: erc20Abi,
-      args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
-      account: address,
-    })
+    try {
+      const { request } = await config.publicClient.simulateContract({
+        address: context.collateralToken.address,
+        functionName: "approve",
+        abi: erc20Abi,
+        args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
+        account: address,
+      })
+      const executed = await writeContract(request)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
 
-    const executed = await writeContract(request)
+      return executed
+    } catch (e) {
+      console.log(e)
+    }
     // console.log("approveBorrowAllowance", executed)
-    const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-    console.log("transaction", transaction)
-
-    return executed
   }
 
   const creatingOffer = async ({ input }: { input: any }) => {
@@ -225,9 +229,10 @@ export default function Create() {
     }
   }
 
-  const checkingLendAllowance = async (context: any) => {
+  const checkingLendAllowance = async (_context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+    const context = _context.input.context
 
     // collateralAmount of collateralToken
     if (context.token.address === ZERO_ADDRESS) {
@@ -265,9 +270,10 @@ export default function Create() {
     // return allowance0
   }
 
-  const approveLendAllowance = async (context: any) => {
+  const approveLendAllowance = async (_context: any) => {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
+    const context = _context.input.context
 
     // collateralAmount of collateralToken
     if (context.token.address === ZERO_ADDRESS) {
@@ -565,7 +571,7 @@ export default function Create() {
             {/* LTV Ratio */}
             <div>
               <Label variant="create">LTV Ratio</Label>
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid sm:grid-cols-5 gap-4 sm:mt-0 mt-5">
                 <Button
                   variant={state.matches("form.ltvRatio.ltv25") ? "option" : "option-muted"}
                   onClick={() => {
@@ -642,7 +648,7 @@ export default function Create() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 gap-y-8 my-4">
+            <div className="grid sm:grid-cols-2 gap-4 gap-y-8 my-4">
               <div className="flex flex-col gap-1">
                 <Label variant="create">Interest on Loan (%)</Label>
                 <NumberInput
