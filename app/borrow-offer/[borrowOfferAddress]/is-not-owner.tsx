@@ -1,34 +1,30 @@
 "use client"
 
-import { PersonIcon, SpinnerIcon } from "@/components/icons"
-import { Button } from "@/components/ui/button"
+import createdOfferABI from "@/abis/v2/createdOffer.json"
+import { PersonIcon } from "@/components/icons"
 import { useToast } from "@/components/ui/use-toast"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import ActionButtons from "@/components/ux/action-buttons"
 import DisplayToken from "@/components/ux/display-token"
 import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-shortly"
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
-import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useOffer } from "@/hooks/useOffer"
-import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
-import { DEBITA_ADDRESS } from "@/lib/contracts"
-import { dollars, percent, shortAddress, thresholdLow } from "@/lib/display"
+import { dollars, percent, shortAddress, thresholdLow, yesNo } from "@/lib/display"
+import { toDecimals } from "@/lib/erc20"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
-import dayjs from "dayjs"
-import { CheckCircle, ExternalLink, XCircle } from "lucide-react"
-import dynamic from "next/dynamic"
+import { ExternalLink } from "lucide-react"
 import pluralize from "pluralize"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
-import debitaAbi from "../../../abis/debita.json"
 import erc20Abi from "../../../abis/erc20.json"
 import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
+import { cn } from "@/lib/utils"
 
 function getAcceptLendingOfferValue(offer: any) {
   if (!offer) {
@@ -48,6 +44,8 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
   const { toast } = useToast()
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, borrowOfferAddress)
+  const [amountToLend, setAmountToLend] = useState(0)
+  const [amountCollateral, setAmountCollateral] = useState(0)
 
   const principle = offer?.principle
   const collateral = offer?.collateral
@@ -59,8 +57,14 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     address: principle?.address as Address,
     functionName: "allowance",
     abi: erc20Abi,
-    args: [address, DEBITA_ADDRESS],
+    args: [address, borrowOfferAddress],
   })
+
+  const handleWantedLend = (newValue: number) => {
+    const amountCollateral = collateral && principle ? (collateral?.amount * newValue) / principle?.amount : 0
+    setAmountToLend(newValue)
+    setAmountCollateral(amountCollateral)
+  }
 
   const increaseAllowance = async () => {
     try {
@@ -68,7 +72,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
         address: principle?.address as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [DEBITA_ADDRESS, BigInt(principle?.amountRaw ?? 0)],
+        args: [borrowOfferAddress, BigInt(principle?.amountRaw ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -91,16 +95,18 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     }
   }
 
+  const lendingAmount = toDecimals(amountToLend, principle?.token?.decimals ?? 0)
   const userAcceptOffer = async () => {
     try {
-      const value = getAcceptLendingOfferValue(offer)
+      console.log("To borrow:", lendingAmount)
       const { request } = await config.publicClient.simulateContract({
-        address: DEBITA_ADDRESS,
-        functionName: "acceptCollateralOffer",
-        abi: debitaAbi,
-        args: [borrowOfferAddress],
+        address: borrowOfferAddress,
+        functionName: "acceptOfferAsLender",
+        abi: createdOfferABI,
+        args: [lendingAmount, 0],
         account: address,
-        value: BigInt(value),
+        gas: BigInt(4800000),
+        // chainId: currentChain?.chainId,
       })
 
       const executed = await writeContract(request)
@@ -271,9 +277,9 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                   {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
                 </div>
               </div>
-              <div className="border border-[#41353B] rounded-sm p-2">
-                <div className="text-[#DCB5BC]">Whitelist</div>
-                <div className="text-base">n/a</div>
+              <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
+                <div className="text-[#DCB5BC]">Perpetual</div>
+                <div className={cn("text-base")}>{yesNo(offer?.perpetual)}</div>
               </div>
             </div>
 
@@ -294,80 +300,107 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
               </div>
             </div>
 
-            {/* Buttons */}
-            <div className="mt-8 flex justify-end">
-              <div>
-                <ShowWhenTrue when={state.matches("notEnoughAllowance")}>
-                  <Button
-                    variant={"action"}
-                    className="px-16"
-                    onClick={async () => {
-                      send({ type: "user.allowance.increase" })
-                    }}
-                  >
-                    Accept Offer
-                  </Button>
-                </ShowWhenTrue>
+            <div className="mt-8">
+              <>
+                <ActionButtons.Group
+                  when={state.matches("notEnoughAllowance")}
+                  right={
+                    <ActionButtons.Action
+                      title="Accept Offer"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.allowance.increase" })
+                      }}
+                    />
+                  }
+                />
 
-                <ShowWhenTrue when={state.matches("increaseAllowance")}>
-                  <Button variant={"action"} className="px-16">
-                    Increasing Allowance
-                    <SpinnerIcon className="ml-2 animate-spin-slow" />
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("increaseAllowance")}
+                  right={<ActionButtons.Spinner title="Increasing Allowance" when={true} />}
+                />
 
-                <ShowWhenTrue when={state.matches("increaseAllowanceError")}>
-                  <Button
-                    variant="error"
-                    className="h-full w-full gap-2"
-                    onClick={() => {
-                      send({ type: "user.allowance.increase.retry" })
-                    }}
-                  >
-                    <XCircle className="h-5 w-5" />
-                    Increasing Allowance Failed - Retry?
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("increaseAllowanceError")}
+                  right={
+                    <ActionButtons.Error
+                      title="Increasing Allowance Failed - Retry?"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.allowance.increase.retry" })
+                      }}
+                    />
+                  }
+                />
 
-                <ShowWhenTrue when={state.matches("canAcceptOffer")}>
-                  <Button
-                    variant={"action"}
-                    className="px-16"
-                    onClick={async () => {
-                      send({ type: "user.accept.offer" })
-                    }}
-                  >
-                    Accept Offer
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  className="flex-rowc items-center"
+                  when={state.matches("canAcceptOffer")}
+                  left={
+                    <div className="">
+                      <div className="flex gap-1 items-center italic opacity-80">
+                        <div className=" text-sm"> Collateral required:</div>
+                        {collateralToken ? (
+                          <DisplayToken
+                            size={20}
+                            token={collateralToken}
+                            amount={amountCollateral}
+                            className="text-base"
+                            chainSlug={currentChain.slug}
+                          />
+                        ) : (
+                          ""
+                        )}
+                      </div>
+                      <input
+                        className="text-center rounded-lg px-7 py-2 text-xs bg-[#21232B]/40 border-2 border-white/10"
+                        placeholder={`Wanted borrow of ${principle?.token?.symbol}`}
+                        type="number"
+                        max={principle ? principle.amount : 0}
+                        onChange={(e) => {
+                          principle
+                            ? Number(e.currentTarget.value) > principle.amount
+                              ? (e.currentTarget.value = String(principle.amount))
+                              : ""
+                            : ""
+                          handleWantedLend(Number(e.currentTarget.value))
+                        }}
+                      />
+                    </div>
+                  }
+                  right={
+                    <ActionButtons.Action
+                      title="Accept Offer"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.accept.offer" })
+                      }}
+                    />
+                  }
+                />
+                <ActionButtons.Group
+                  when={state.matches("acceptingOffer")}
+                  right={<ActionButtons.Spinner title="Accepting Offer" when={true} />}
+                />
 
-                <ShowWhenTrue when={state.matches("acceptingOffer")}>
-                  <Button variant={"action"} className="px-16">
-                    Accepting Offer...
-                    <SpinnerIcon className="ml-2 animate-spin-slow" />
-                  </Button>
-                </ShowWhenTrue>
+                <ActionButtons.Group
+                  when={state.matches("acceptingOfferError")}
+                  right={
+                    <ActionButtons.Error
+                      title="Accept Offer Failed - Retry?"
+                      when={true}
+                      onClick={async () => {
+                        send({ type: "user.accept.offer.retry" })
+                      }}
+                    />
+                  }
+                />
 
-                <ShowWhenTrue when={state.matches("acceptingOfferError")}>
-                  <Button
-                    variant="error"
-                    className="h-full w-full gap-2"
-                    onClick={() => {
-                      send({ type: "user.accept.offer.retry" })
-                    }}
-                  >
-                    <XCircle className="h-5 w-5" />
-                    Accept Offer Failed - Retry?
-                  </Button>
-                </ShowWhenTrue>
-
-                <ShowWhenTrue when={state.matches("offerAccepted")}>
-                  <Button variant={"success"} className="px-16 gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    Offer Accepted
-                  </Button>
-                </ShowWhenTrue>
-              </div>
+                <ActionButtons.Group
+                  when={state.matches("offerAccepted")}
+                  right={<ActionButtons.Success title="Offer Accepted" when={true} />}
+                />
+              </>
             </div>
           </div>
         </div>

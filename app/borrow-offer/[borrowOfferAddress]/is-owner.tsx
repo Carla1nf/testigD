@@ -18,10 +18,10 @@ import pluralize from "pluralize"
 import { Address, useConfig } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
-import { machine } from "./owner-machine"
 import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
+import { machine } from "./owner-machine"
 
 export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAddress: Address } }) {
   const borrowOfferAddress = params.borrowOfferAddress

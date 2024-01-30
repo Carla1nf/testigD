@@ -49,7 +49,7 @@ type ActionErrorButtonParams = { title: string; when: boolean; disabled?: boolea
 export const ActionErrorButton = ({ disabled, onClick, title, when }: ActionErrorButtonParams) => {
   if (when) {
     return (
-      <Button variant="error" className="px-12 gap-2" onClick={() => onClick?.()} disabled={disabled}>
+      <Button variant="error" className="gap-2" onClick={() => onClick?.()} disabled={disabled}>
         <XCircle className="h-5 w-5" />
         {title}
       </Button>
