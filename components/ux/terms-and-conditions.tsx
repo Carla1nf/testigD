@@ -22,69 +22,18 @@ const TermsAndConditions: React.FC = () => {
         <div className="text-lg font-semibold">Terms and Conditions</div>
         <div className="mt-2 h-[80vh] overflow-auto p-3 space-y-4 bg-secondary text-secondary-foreground text-xs">
           {/* Long Lorem Ipsum for the scrollable content */}
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
+          <p>Acknowledgement of Terms & Conditions of access.</p>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed ligula vitae sem lobortis aliquam. Sed
-            nec nisl quis urna aliquet aliquam. Nullam sed nisl vel nisl aliquam luctus. Donec auctor, nunc in laoreet
-            ultricies, nunc odio aliquam leo, non consectetur tortor risus eget nunc. Nullam aliquam, sem nec aliquet
-            ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel turpis. Nullam sed nisl vel nisl aliquam
-            luctus. Donec auctor, nunc in laoreet ultricies, nunc odio aliquam leo, non consectetur tortor risus eget
-            nunc. Nullam aliquam, sem nec aliquet ultricies, purus tortor aliquam elit, eu aliquet nisl velit vel
-            turpis.
+            Use of the Debita.fi website, services, dapp, or application is subject to the following terms and
+            conditions and I hereby confirm that by proceeding and interacting with the protocol I am aware of these and
+            accept them in full: Debita.fi is a smart contract protocol in alpha stage of launch, and even though a
+            security audit has been completed on the smart contracts, I understand the risks associated with using the
+            Debita protocol and associated functions. Any interactions that I have with the associated Debita protocol
+            apps, smart contracts or any related functions MAY place my funds at risk, and I hereby release the Debita
+            protocol and its contributors, team members, and service providers from any and all liability associated
+            with my use of the above-mentioned functions. I am lawfully permitted to access this site and use the
+            Debita.fi application functions, and I am not in contravention of any laws governing my jurisdiction of
+            residence or citizenship.
           </p>
         </div>
         <div className="mt-4 flex justify-end">
