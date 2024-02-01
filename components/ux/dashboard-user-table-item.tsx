@@ -7,6 +7,8 @@ import { useEffect } from "react"
 import { Address } from "viem"
 import DaysHours from "./deadline-datetime"
 import DisplayToken from "./display-token"
+import { fromDecimals, toDecimals } from "@/lib/erc20"
+import { bigint } from "zod"
 
 const DashboardUserTableItem = ({
   address,
@@ -22,9 +24,11 @@ const DashboardUserTableItem = ({
   const router = useRouter()
   const currentChain = useCurrentChain()
   console.log(data, "LOAN")
-
   const hasLoanCompleted = Number(data?.loan.paymentsPaid) === Number(data?.loan.paymentCount)
   const hasLoanExecuted = data?.loan.executed
+  if (data) {
+    console.log(Number(data?.loan.collaterals.amount) / Number(10 ** data?.loan.collaterals.decimals))
+  }
 
   // This is a weird pattern, we need to render the same number of hooks so cant exit early, but also
   // means we need to access the data before it is tested..
@@ -90,10 +94,20 @@ const DashboardUserTableItem = ({
         onClick={() => router.push(`/loan/${data.loan.address}`)}
       >
         <td className="p-2">
-          <DisplayToken token={data?.loan?.collaterals} size={20} chainSlug={currentChain.slug} />
+          <DisplayToken
+            token={data?.loan?.collaterals}
+            size={20}
+            chainSlug={currentChain.slug}
+            amount={Number(data?.loan.collaterals.amount) / Number(10 ** data?.loan.collaterals.decimals)}
+          />
         </td>
         <td className="p-2">
-          <DisplayToken token={data.loan.token} size={20} chainSlug={currentChain.slug} />
+          <DisplayToken
+            token={data.loan.token}
+            size={20}
+            chainSlug={currentChain.slug}
+            amount={Number(data?.loan.collaterals.amount) / Number(10 ** data?.loan.collaterals.decimals)}
+          />
         </td>
         <td className="p-2">{`${data.loan.address.substring(0, 5)}...${data.loan.address.substring(38)}`}</td>
         <td className="p-2">

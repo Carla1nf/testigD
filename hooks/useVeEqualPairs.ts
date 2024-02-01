@@ -14,7 +14,7 @@ const sortByMostFees = (a: any, b: any) => b?.gauge?.tbvUSD - a?.gauge?.tbvUSD
 
 // ["https://beta.equalizer.exchange", "https://equalizer.exchange"]
 async function getPools() {
-  const res = await fetch("https://eqapi-main-7cmme.ondigitalocean.app/fantom/pairs", {
+  const res = await fetch("https://eqapi-beta-8868m.ondigitalocean.app/fantom/pairs", {
     headers: {
       "Content-Type": "application/json",
       Origin: "https://equalizer.exchange",

@@ -174,7 +174,9 @@ const SelectToken = ({
                   aria-expanded={isNftPopupOpen}
                   className="pl-1 text-sm space-x-2"
                 >
-                  <div>NFT #{selectedUserNft?.id ?? ""}</div>
+                  <div className="text-gray-300 font-bold">
+                    {selectedUserNft?.id ? `NFT #${selectedUserNft?.id}` : "Click to select NFT"}{" "}
+                  </div>
                   <ShowWhenTrue when={Boolean(selectedUserNft)}>
                     <div>-</div>
                     <div className="text-sm whitespace-nowrap">
@@ -199,7 +201,8 @@ const SelectToken = ({
                             (nftInfo: UserNftInfo) => nftInfo?.id?.toString() === selected
                           )
 
-                          // we have the same token selected, so, act like a toggle and use the default token instead
+                          // we have the same token selected, so, act like a
+                          // toggle and use the default token instead
                           if (found && onSelectUserNft) {
                             onSelectUserNft(found)
                           }

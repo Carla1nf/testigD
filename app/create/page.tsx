@@ -35,6 +35,7 @@ import offerFactoryABI from "../../abis/v2/debitaOfferFactoryV2.json"
 import { LendingMode, machine } from "./create-offer-machine"
 import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
 import { useGetPoints } from "@/lib/getPoints"
+import DisplayToken from "@/components/ux/display-token"
 // import { createBrowserInspector } from "@statelyai/inspect"
 
 // function convertBigIntToString(obj: any): any {
@@ -66,7 +67,6 @@ import { useGetPoints } from "@/lib/getPoints"
 // }
 
 // const { inspect } = createBrowserInspector()
-
 const displayEstimatedApr = (estimatedApr: number) => {
   return percent({
     value: estimatedApr ?? 0,
@@ -79,6 +79,7 @@ const displayEstimatedApr = (estimatedApr: number) => {
 
 export default function Create() {
   const config = useConfig()
+  const [_id, setId] = useState<number>(0)
   const { address } = useControlledAddress()
   const currentChain = useCurrentChain()
   const wftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "wFTM"), [currentChain.slug])
@@ -110,12 +111,24 @@ export default function Create() {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
     const context = _context.input.context
-
     // collateralAmount of collateralToken
     if (context.collateralToken.address === ZERO_ADDRESS) {
       return Promise.resolve({ nativeToken: true })
     }
+    if (isNft(context.collateralToken)) {
+      console.log(context, "sBORRIG23")
+      const hasPermissions = await isVeTokenApprovedOrOwner({
+        veToken: context.collateralToken.address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        nftId: BigInt(_id),
+      })
 
+      if (hasPermissions) {
+        return Promise.resolve({ hasPermissions })
+      }
+
+      throw "needs permission"
+    }
     const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
 
     const currentAllowance = (await readContract({
@@ -141,6 +154,18 @@ export default function Create() {
       return Promise.resolve({ nativeToken: true })
     }
 
+    if (isNft(context.collateralToken)) {
+      console.log("NFT")
+      console.log("approveLendAllowance")
+
+      return approveVeToken({
+        veToken: context.collateralToken.address,
+        spender: DEBITA_OFFER_FACTORY_ADDRESS,
+        account: address as Address,
+        nftId: BigInt(_id),
+        publicClient: config.publicClient,
+      })
+    }
     const amountRequired = toDecimals(context.collateralAmount, context.collateralToken.decimals)
 
     try {
@@ -233,6 +258,7 @@ export default function Create() {
     // We need to know if we have enough allowance to create the offer
     // If the token is the native token (ZERO_ADDRESS) then we don't need to check the allowance
     const context = _context.input.context
+    console.log("PERMIS")
 
     // collateralAmount of collateralToken
     if (context.token.address === ZERO_ADDRESS) {
@@ -243,7 +269,7 @@ export default function Create() {
       const hasPermissions = await isVeTokenApprovedOrOwner({
         veToken: context.token.address,
         spender: DEBITA_OFFER_FACTORY_ADDRESS,
-        nftId: context.tokenUserNft.id,
+        nftId: BigInt(_id),
       })
 
       if (hasPermissions) {
@@ -288,7 +314,7 @@ export default function Create() {
         veToken: context.token.address,
         spender: DEBITA_OFFER_FACTORY_ADDRESS,
         account: address as Address,
-        nftId: context.tokenUserNft.id,
+        nftId: BigInt(_id),
         publicClient: config.publicClient,
       })
 
@@ -296,7 +322,7 @@ export default function Create() {
       //   address: context.token.address,
       //   functionName: "approve",
       //   abi: veTokenAbi,
-      //   args: [DEBITA_OFFER_FACTORY_ADDRESS, context.tokenUserNft.id],
+      //   args: [DEBITA_OFFER_FACTORY_ADDRESS, _id],
       //   account: address,
       // })
 
@@ -373,7 +399,7 @@ export default function Create() {
       setLtvCustomInputValue(fixedDecimals(state?.context?.ltvRatio ?? 0, 3).toString())
     }
   }, [state.context.ltvRatio, ltvCustomInputValue])
-
+  console.log(state.context, "STATE")
   // Default tokens
   useEffect(() => {
     if (wftm && state.context.collateralToken === undefined) {
@@ -424,6 +450,8 @@ export default function Create() {
   const onSelectCollateralUserNft = useCallback(
     (userNft: UserNftInfo | null) => {
       if (userNft) {
+        setId(userNft.id)
+        send({ type: "collateralAmount", value: userNft.amount })
         send({ type: "collateralUserNft", value: userNft })
       }
     },
@@ -744,7 +772,7 @@ export default function Create() {
               {/* <hr className="h-px mt-4 bg-[#4D4348] border-0" /> */}
             </div>
 
-            <div className="grid grid-cols-2 gap-x-16 gap-y-4">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
               <div className="border border-white/10 rounded-sm p-2 px-2 md:pr-32 col-span-2">
                 <Label variant="create">Payments</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
@@ -786,10 +814,20 @@ export default function Create() {
 
               <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">Collateral Value</Label>
-                <div className="font-bold text-base text-[#D0D0D0]">
+                <div className="font-bold text-base text-[#D0D0D0] flex gap-3">
                   {dollars({
-                    value: state.context.collateralValue + Number(state?.context?.collateralPrice),
+                    value: state.context.collateralValue,
                   })}
+                  <div className=" opacity-60 flex w-96">
+                    ({" "}
+                    <DisplayToken
+                      size={22}
+                      token={state.context.collateralToken as Token}
+                      chainSlug={currentChain.slug}
+                      amount={state.context.collateralAmount}
+                    />
+                    )
+                  </div>
                 </div>
               </div>
 
@@ -802,10 +840,21 @@ export default function Create() {
 
               <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">Loan Value</Label>
-                <div className="font-bold text-base text-[#D0D0D0]">
+                <div className="font-bold text-base text-[#D0D0D0] flex gap-3 min-w-min">
                   {dollars({
                     value: Number(state?.context?.tokenValue),
                   })}
+
+                  <div className=" opacity-60 flex min-w-min">
+                    ({" "}
+                    <DisplayToken
+                      size={22}
+                      token={state.context.token as Token}
+                      chainSlug={currentChain.slug}
+                      amount={state.context.tokenAmount}
+                    />
+                    )
+                  </div>
                 </div>
               </div>
             </div>

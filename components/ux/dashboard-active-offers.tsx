@@ -120,11 +120,15 @@ const DashboardActiveOffersTableLendItem = ({ address, item }: { address: Addres
     >
       {/* Collateral */}
       <td className="p-2 flex flex-col gap-1 px-5">
-        {collateralToken ? <DisplayToken token={collateralToken} size={20} chainSlug={currentChain.slug} /> : null}
+        {collateralToken ? (
+          <DisplayToken token={collateralToken} size={20} chainSlug={currentChain.slug} amount={collateral.amount} />
+        ) : null}
       </td>
       {/* Lending */}
       <td className="p-2 align-top text-center items-center">
-        {lenderToken ? <DisplayToken token={lenderToken} size={20} chainSlug={currentChain.slug} /> : null}
+        {lenderToken ? (
+          <DisplayToken token={lenderToken} size={20} chainSlug={currentChain.slug} amount={offer.principle.amount} />
+        ) : null}
       </td>
       <td className="p-2 align-top">{percent({ value: Number(offer.interest) })}</td>
       <td className="p-2 align-top">{Number(offer.paymentCount)}</td>

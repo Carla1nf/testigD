@@ -692,7 +692,7 @@ export const machine = createMachine(
       },
       isNonNegativeInteger: ({ context, event }, params) => {
         if ("value" in event) {
-          return Number.isInteger(event.value) && Number(event.value) >= 0
+          return Number(event.value) >= 0
         }
         return false
       },
