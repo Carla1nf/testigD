@@ -1,17 +1,16 @@
+import createdLoanABI from "@/abis/v2/createdLoan.json"
+import { SpinnerIcon } from "@/components/icons"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
+import DisplayPair from "@/components/ux/display-pair"
 import { useLoanValues } from "@/hooks/useLoanValues"
-import { useVeEqualPairsFixtures } from "@/hooks/useVeEqualPairs"
+import useVeEqualPairs from "@/hooks/useVeEqualPairs"
 import { dollars, formatNumber, percent } from "@/lib/display"
 import { LucideMinus, LucidePlus } from "lucide-react"
 import { InputNumber } from "primereact/inputnumber"
 import { useState } from "react"
 import { Address } from "viem"
 import { useConfig } from "wagmi"
-import createdLoanABI from "@/abis/v2/createdLoan.json"
 import { writeContract } from "wagmi/actions"
-import DisplayToken from "@/components/ux/display-token"
-import DisplayPair from "@/components/ux/display-pair"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
-import { SpinnerIcon } from "@/components/icons"
 
 type Vote = {
   pair: string
@@ -20,7 +19,7 @@ type Vote = {
 }
 
 const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number | null; address?: Address }) => {
-  const pairs = useVeEqualPairsFixtures()
+  const pairs = useVeEqualPairs()
   const [votes, setVotes] = useState<Array<Vote>>([])
   const [totalVotes, setTotalVotes] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
@@ -107,11 +106,15 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
                     <td className="px-2">
                       <DisplayPair token0={pair.token0.address} token1={pair.token1.address} size={26} />
                     </td>
-                    <td className="text-left px-4 py-3">{pair.name}</td>
+                    <td className="text-left px-4 py-3">{pair.displayName}</td>
                     <td>{formatNumber({ value: pair.gauge.votes })}</td>
                     <td>{percent({ value: pair.gauge.weightPercent / 100 })}</td>
                     <td>
-                      {percent({ value: Number(pair.gauge.aprUsd), decimalsWhenGteOne: 4, decimalsWhenLessThanOne: 4 })}
+                      {percent({
+                        value: Number(pair.gauge.aprUsd) / 100,
+                        decimalsWhenGteOne: 4,
+                        decimalsWhenLessThanOne: 4,
+                      })}
                     </td>
                     <td>{dollars({ value: pair.gauge.tbvUSD })}</td>
                     <td className="flex flex-row gap-4 items-center justify-center py-3">

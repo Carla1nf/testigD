@@ -1,9 +1,20 @@
 // hard coded for now
-import pairs from "@/fixtures/equalizer-pairs.json"
+
 import { useQuery } from "@tanstack/react-query"
 
-const sortByMostVotes = (a: any, b: any) => b?.gauge?.weightPercent - a?.gauge?.weightPercent
 const sortByMostFees = (a: any, b: any) => b?.gauge?.tbvUSD - a?.gauge?.tbvUSD
+
+const filterGauges = (pairs: any[]) => {
+  const gauges = pairs
+    // we only want pairs that have gauges
+    .filter((pair) => Boolean(pair.hasGauge))
+    // we only want pairs that have $ fees and votes available (remove if users want to vote on pairs that give no revenue)
+    .filter((pair) => Number(pair?.gauge?.tbvUSD) > 0 && Number(pair?.gauge?.weightPercent) > 0)
+
+  gauges.sort(sortByMostFees)
+
+  return gauges
+}
 
 /**
  * total votes = pair.gauge.votes
@@ -24,6 +35,7 @@ async function getPools() {
     throw new Error("Failed to fetch data")
   }
   const json = await res.json()
+
   return json?.data ?? []
 }
 
@@ -33,15 +45,7 @@ const useVeEqualPairs = () => {
     queryFn: async () => {
       try {
         const pairs = await getPools()
-        const gauges = pairs
-          // we only want pairs that have gauges
-          .filter((pair: any) => Boolean(pair.hasGauge))
-          // we only want pairs that have $ fees and votes available (remove if users want to vote on pairs that give no revenue)
-          .filter((pair: any) => Number(pair?.gauge?.tbvUSD) > 0 && Number(pair?.gauge?.weightPercent) > 0)
-
-        gauges.sort(sortByMostFees)
-
-        return gauges
+        return filterGauges(pairs)
       } catch (error) {
         console.log("error", error)
       }
@@ -49,20 +53,8 @@ const useVeEqualPairs = () => {
       return []
     },
   })
-}
 
-export const useVeEqualPairsFixtures = () => {
-  console.warn("You are using a static fixture file for votes and it will NOT be up to date")
-
-  const gauges = pairs
-    // we only want pairs that have gauges
-    .filter((pair) => Boolean(pair.hasGauge))
-    // we only want pairs that have $ fees and votes available (remove if users want to vote on pairs that give no revenue)
-    .filter((pair) => Number(pair?.gauge?.tbvUSD) > 0 && Number(pair?.gauge?.weightPercent) > 0)
-
-  gauges.sort(sortByMostFees)
-
-  return gauges
+  return query.data ?? []
 }
 
 export default useVeEqualPairs
