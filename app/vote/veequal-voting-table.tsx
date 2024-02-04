@@ -33,8 +33,8 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
   // _voteWithVe(address[] calldata _poolVote, uint256[] calldata _weights)
   const voteWith = async () => {
     setLoading(true)
-    const getGauges = (await votes.map((item) => {
-      return item.gauge as Address
+    const getPairs = (await votes.map((item) => {
+      return item.pair as Address
     })) as Array<Address>
     const getWeights = (await votes.map((item) => {
       return item.amount
@@ -44,7 +44,7 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
         address: data?.loan.address as Address,
         functionName: "_voteWithVe",
         abi: createdLoanABI,
-        args: [getGauges, getWeights],
+        args: [getPairs, getWeights],
         account: address,
         gas: BigInt(830000),
       })
@@ -96,6 +96,7 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
         <tbody className="">
           {Array.isArray(pairs)
             ? pairs.map((pair: any, index: number) => {
+                console.log(pair, index)
                 return (
                   <tr
                     className={`text-right items-center  ${

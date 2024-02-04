@@ -91,7 +91,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const newTimelapRef = useRef<HTMLInputElement>(null)
   const newInterestRef = useRef<HTMLInputElement>(null)
   const newWantedVeRef = useRef<HTMLInputElement>(null)
-  const newAmountInterest_NFT = useRef<HTMLInputElement>(null)
 
   // for now we will set values into state, this might go into a machine soon, let's see
   const [newCollateralAmount, setNewCollateralAmount] = useState(0)
@@ -183,7 +182,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     try {
       const newBorrow = principleToken ? Number(newBorrowAmount) * 10 ** principleToken?.decimals : 0
       const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
-
       const { request } = await config.publicClient.simulateContract({
         address: OFFER_CREATED_ADDRESS,
         functionName: "editOffer",

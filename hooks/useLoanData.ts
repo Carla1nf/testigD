@@ -17,6 +17,8 @@ import loanCreatedAbi from "../abis/v2/createdLoan.json"
 import useCurrentChain from "./useCurrentChain"
 import veTokenInfoLensAbi from "../abis/v2/veTokenInfoLens.json"
 import { VeTokenInfoIncoming } from "./useNftInfo"
+import { useState } from "react"
+import { ZERO_ADDRESS } from "@/services/constants"
 
 const LoanDataReceivedSchema = z.object({
   IDS: z.array(z.bigint()),
@@ -35,6 +37,7 @@ const LoanDataReceivedSchema = z.object({
 })
 
 export const useLoanData = (loanAddress: Address) => {
+  const [lenderAddress, setLenderAddress] = useState<Address>()
   const currentChain = useCurrentChain()
   const useLoanDataQuery: any = useQuery({
     queryKey: ["loan-data", currentChain.slug, loanAddress],
@@ -49,6 +52,7 @@ export const useLoanData = (loanAddress: Address) => {
       })
 
       const parsedData = LoanDataReceivedSchema.parse(loanData)
+      console.log("borrower")
 
       const borrowerId = parsedData?.IDS[1] ?? undefined
       const borrower = await readContract({
@@ -58,13 +62,20 @@ export const useLoanData = (loanAddress: Address) => {
         args: [borrowerId],
       })
 
-      const lenderId = parsedData?.IDS[0] ?? undefined
-      const lender = await readContract({
-        address: OWNERSHIP_ADDRESS,
-        abi: ownershipsAbi,
-        functionName: "ownerOf",
-        args: [lenderId],
-      })
+      try {
+        const lenderId = parsedData?.IDS[0] ?? 0
+        const lender = await readContract({
+          address: OWNERSHIP_ADDRESS,
+          abi: ownershipsAbi,
+          functionName: "ownerOf",
+          args: [lenderId],
+        })
+        setLenderAddress(lender as Address)
+      } catch (e) {
+        setLenderAddress(ZERO_ADDRESS as Address)
+        console.log(e)
+      }
+      const lenderId = parsedData?.IDS[0] ?? 0
 
       // get the amount of debt that the user has already repaid (if any)
       const claimableDebtRaw = (await readContract({
@@ -75,6 +86,7 @@ export const useLoanData = (loanAddress: Address) => {
       })) as bigint
 
       // gets the tokens from the loan
+      console.log("testing2")
 
       const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
       const collateral = {
@@ -90,6 +102,7 @@ export const useLoanData = (loanAddress: Address) => {
       const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetCollateral.address as Address))
       collateral.price = _price.price ?? 0
       collateral.valueUsd = collateral.amount * collateral.price
+      console.log("testing3")
 
       const valueFromUnderlying = nftInfoLensType(collateralToken)
         ? ((await readContract({
@@ -113,14 +126,16 @@ export const useLoanData = (loanAddress: Address) => {
       const valueAssetPrinciple = getValuedAsset(lenderToken, currentChain.slug)
       const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address))
       lending.price = price.price ?? 0
+      console.log(collateralToken, collateral.amount, valueFromUnderlying)
 
       const collateralAmount = getValuedAmountCollateral(
         collateralToken,
         false,
         collateral.amount,
         valueFromUnderlying,
-        null
+        BigInt(0)
       )
+      console.log("testing4")
 
       collateral.valueUsd = collateralAmount * collateral.price
 
@@ -140,6 +155,7 @@ export const useLoanData = (loanAddress: Address) => {
       // Debt left
       const debtLeftRaw = Number(parsedData.paymentAmount) * (parsedData.paymentCount - parsedData.paymentsPaid)
       const debtLeft = fromDecimals(BigInt(debtLeftRaw), lenderToken?.decimals ?? 18)
+      console.log("testing5")
 
       const now = new Date().getTime()
       const daysInSeconds = Number(parsedData?.deadlineNext) * 1000 - now
@@ -167,7 +183,7 @@ export const useLoanData = (loanAddress: Address) => {
         hasRepaidLoan,
         hasDefaulted,
         loanAddress,
-        lender,
+        lenderAddress,
         lenderId,
         lending,
         ltv,

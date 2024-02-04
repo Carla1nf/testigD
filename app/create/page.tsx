@@ -720,7 +720,10 @@ export default function Create() {
               </div>
             </div>
 
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex items-center gap-5 justify-end">
+              <ShowWhenTrue when={!state.can({ type: "next" })}>
+                <div className="text-red-300 font-light">Please complete all the inputs correctly</div>
+              </ShowWhenTrue>
               <Button
                 variant="action"
                 className="px-12"

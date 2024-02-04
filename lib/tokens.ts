@@ -273,7 +273,9 @@ export const getValuedAmountCollateral = (
   const amount = (
     nftInfoLensType(token)
       ? formatUnits(
-          !isLending && underlying ? underlying[0]?.amount : valueOfVeNFT ?? toDecimals(0, 18),
+          !isLending && underlying && underlying?.length > 0
+            ? underlying[0]?.amount
+            : valueOfVeNFT ?? toDecimals(0, 18),
           token?.decimals ?? 0
         )
       : regularAmount

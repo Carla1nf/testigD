@@ -24,7 +24,7 @@ const TableRow = ({ event, token, index }: { event: any; token?: Token; index: n
     >
       <td className="p-4 text-left">
         {token ? (
-          <DisplayToken size={28} token={token} amount={event.lendingAmount} chainSlug={currentChain.slug} />
+          <DisplayToken size={28} token={token} amount={offer?.principle.amount} chainSlug={currentChain.slug} />
         ) : null}
       </td>
       <td className="p-3 text-left">

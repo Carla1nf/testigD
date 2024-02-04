@@ -10,7 +10,7 @@ import RedirectToDashboardShortly from "@/components/ux/redirect-to-dashboard-sh
 import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useOffer } from "@/hooks/useOffer"
-import { dollars, percent, thresholdLow } from "@/lib/display"
+import { dollars, percent, thresholdLow, yesNo } from "@/lib/display"
 import { DISCORD_INVITE_URL } from "@/services/constants"
 import { useMachine } from "@xstate/react"
 import { CheckCircle, ExternalLink, XCircle } from "lucide-react"
@@ -22,6 +22,8 @@ import BorrowOfferBreadcrumbs from "./components/breadcrumbs"
 import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./owner-machine"
+import { useEffect, useRef, useState } from "react"
+import { isNft } from "@/lib/tokens"
 
 export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAddress: Address } }) {
   const borrowOfferAddress = params.borrowOfferAddress
@@ -31,11 +33,34 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
   const { address } = useControlledAddress()
   const { data: offer } = useOffer(address, borrowOfferAddress)
 
+  const newCollateralAmountRef = useRef<HTMLInputElement>(null)
+  const newBorrowAmountRef = useRef<HTMLInputElement>(null)
+  const newPaymentCountRef = useRef<HTMLInputElement>(null)
+  const newTimelapRef = useRef<HTMLInputElement>(null)
+  const newInterestRef = useRef<HTMLInputElement>(null)
+
+  // for now we will set values into state, this might go into a machine soon, let's see
+  const [newCollateralAmount, setNewCollateralAmount] = useState(0)
+  const [newBorrowAmount, setNewBorrowAmount] = useState(0)
+  const [newPaymentCount, setNewPaymentCount] = useState(0)
+  const [newTimelap, setNewTimelap] = useState(0)
+  const [newInterest, setNewInterest] = useState(0)
+  const [editing, setEditing] = useState<boolean>(false)
+
   const principle = offer?.principle
   const collateral = offer?.collateral
   const principleToken = principle ? principle?.token : undefined
   const collateralToken = collateral ? collateral?.token : undefined
 
+  useEffect(() => {
+    if (editing) {
+      setNewCollateralAmount(collateral?.amount ?? 0)
+      setNewBorrowAmount(principle?.amount ?? 0)
+      setNewPaymentCount(offer?.paymentCount ?? 0)
+      setNewTimelap(offer?.numberOfLoanDays ?? 0)
+      setNewInterest(offer?.interest ?? 0)
+    }
+  }, [collateral?.amount, offer?.interest, offer?.numberOfLoanDays, offer?.paymentCount, principle?.amount, editing])
   const cancelOffer = async () => {
     try {
       const { request } = await config.publicClient.simulateContract({
@@ -73,6 +98,46 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
       },
     })
   )
+
+  const updateOffer = async () => {
+    try {
+      const newBorrow = principleToken ? Number(newBorrowAmount) * 10 ** principleToken?.decimals : 0
+      const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
+
+      const { request } = await config.publicClient.simulateContract({
+        address: borrowOfferAddress,
+        functionName: "editOffer",
+        abi: createdOfferABI,
+        args: [
+          [newBorrow, newCollateral],
+          [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
+          0,
+          0,
+        ],
+        account: address, // gas: BigInt(900000),
+        // chainId: currentChain?.chainId,
+      })
+
+      const executed = await writeContract(request)
+      console.log(executed)
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      console.log("transaction", transaction)
+
+      toast({
+        variant: "success",
+        title: "Offer Updated",
+        description: "You have updated the offer.",
+        // tx: executed,
+      })
+
+      /* args: [[newAmountLending, newAmountCollateral], [newInterest,
+        newPaymentCount, newTimelap], newVeValue, _newInterestRateForNFT], */
+    } catch (error) {
+      console.log("updateOffer→error", error)
+
+      throw error
+    }
+  }
 
   const totalLoan = Number(principle?.amount ?? 0)
   const totalInterestOnLoan = Number(offer?.interest ?? 0) * Number(principle?.amount ?? 0)
@@ -177,6 +242,18 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
 
           {/* Form Panel */}
           <div className="bg-[#32282D]/40 border border-[#743A49] p-8 rounded-md">
+            <div className="flex py-2">
+              <div
+                onClick={() => setEditing(!editing)}
+                className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300"
+              >
+                <div>
+                  <ShowWhenTrue when={editing}>Cancel</ShowWhenTrue>
+
+                  <ShowWhenTrue when={!editing}>Edit Offer</ShowWhenTrue>
+                </div>
+              </div>
+            </div>
             {/* Tokens row */}
             <div className="grid grid-cols-2 justify-between gap-8">
               <div className="flex flex-col gap-3">
@@ -188,13 +265,33 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
                 </div>
                 <div className="-ml-[2px]">
                   {collateral && collateralToken ? (
-                    <DisplayToken
-                      size={32}
-                      token={collateralToken}
-                      amount={collateral.amount}
-                      chainSlug={currentChain.slug}
-                      className="text-xl"
-                    />
+                    <>
+                      {!isNft(collateralToken) && editing ? (
+                        <div className="flex gap-2 items-center">
+                          <input
+                            min={0}
+                            max={10000000000000}
+                            type="number"
+                            ref={newCollateralAmountRef}
+                            className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                            placeholder={`new ${collateralToken.symbol} amount`}
+                            defaultValue={collateral.amount}
+                            onChange={(e) => {
+                              setNewCollateralAmount(Number(e.target.value))
+                            }}
+                          />
+                          {collateralToken.symbol}
+                        </div>
+                      ) : (
+                        <DisplayToken
+                          size={32}
+                          token={collateralToken}
+                          amount={collateral.amount}
+                          chainSlug={currentChain.slug}
+                          className="text-xl"
+                        />
+                      )}
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -208,13 +305,31 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
 
                 {principle && principleToken ? (
                   <div className="-ml-[2px]">
-                    <DisplayToken
-                      size={32}
-                      token={principleToken}
-                      amount={principle.amount}
-                      chainSlug={currentChain.slug}
-                      className="text-xl"
-                    />
+                    {editing ? (
+                      <div className="flex items-center gap-2 animate-enter-div">
+                        <input
+                          min={0}
+                          type="number"
+                          max={isNft(offer?.collateral?.token) ? 1 : 10000000000000}
+                          ref={newBorrowAmountRef}
+                          className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                          placeholder={`new ${principleToken.symbol} amount`}
+                          defaultValue={principle.amount}
+                          onChange={(e) => {
+                            setNewBorrowAmount(Number(e.target.value))
+                          }}
+                        />
+                        {principleToken.symbol}
+                      </div>
+                    ) : (
+                      <DisplayToken
+                        size={32}
+                        token={principleToken}
+                        amount={principle.amount}
+                        chainSlug={currentChain.slug}
+                        className="text-xl"
+                      />
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -225,17 +340,51 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
             <div className="grid grid-cols-3 justify-between gap-6 text-sm">
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Payments Am.</div>
-                <div className="text-base">{Number(offer?.paymentCount ?? 0)}</div>
+                <div className="text-base">
+                  {editing ? (
+                    <input
+                      min={0}
+                      type="number"
+                      ref={newPaymentCountRef}
+                      className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                      placeholder={`new amount`}
+                      defaultValue={Number(offer?.paymentCount ?? 0)}
+                      onChange={(e) => {
+                        setNewPaymentCount(Number(e.target.value))
+                      }}
+                    />
+                  ) : (
+                    Number(offer?.paymentCount ?? 0)
+                  )}
+                </div>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
                 <div className="text-[#DCB5BC]">Payments Every</div>
                 <div className="text-base">
-                  {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
+                  {editing ? (
+                    <div className="flex items-center gap-2 animate-enter-div mt-1">
+                      <input
+                        min={0}
+                        type="number"
+                        ref={newTimelapRef}
+                        className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                        placeholder={`new timelap`}
+                        defaultValue={Number(offer?.numberOfLoanDays ?? 0)}
+                        onChange={(e) => {
+                          setNewTimelap(Number(e.target.value))
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex gap-4">
+                      {Number(offer?.numberOfLoanDays ?? 0)} {pluralize("day", Number(offer?.numberOfLoanDays ?? 0))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
-                <div className="text-[#DCB5BC]">Whitelist</div>
-                <div className="text-base">n/a</div>
+                <div className="text-[#DCB5BC]">Perpetual</div>
+                <div className="text-base">{yesNo(offer?.perpetual)}</div>
               </div>
             </div>
 
@@ -244,8 +393,26 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
               <div className="border border-[#41353B] rounded-sm p-2 px-4">
                 <div className="text-[#DCB5BC]">Total Interest</div>
                 <div className="text-base">
-                  {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")} {principleToken?.symbol} (
-                  {percent({ value: offer?.interest ?? 0 })})
+                  {editing ? (
+                    <div className="flex items-center gap-2 animate-enter-div mt-1">
+                      <input
+                        min={0}
+                        type="number"
+                        ref={newInterestRef}
+                        className="px-3 py-1.5 w-1/2 text-sm rounded-lg bg-debitaPink/20 text-white"
+                        placeholder={`new interest`}
+                        defaultValue={Number(offer?.interest ?? 0) * 100}
+                        onChange={(e) => {
+                          setNewInterest(Number(e.target.value))
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      {thresholdLow(totalInterestOnLoan, 0.01, "< 0.01")}
+                      {principleToken?.symbol} ({percent({ value: offer?.interest ?? 0 })})
+                    </div>
+                  )}{" "}
                 </div>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2">
@@ -255,6 +422,11 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
                 </div>
               </div>
             </div>
+            <ShowWhenTrue when={editing}>
+              <Button variant="action" className="h-full w-full mt-4 text-base" onClick={() => updateOffer()}>
+                Edit
+              </Button>
+            </ShowWhenTrue>
           </div>
         </div>
       </div>

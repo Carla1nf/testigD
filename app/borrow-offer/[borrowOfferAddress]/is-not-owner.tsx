@@ -25,6 +25,7 @@ import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
 import { cn } from "@/lib/utils"
+import { findInternalTokenByAddress } from "@/lib/tokens"
 
 function getAcceptLendingOfferValue(offer: any) {
   if (!offer) {
@@ -204,9 +205,9 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
           <div>
             <BorrowOfferChart
               principleToken={principleToken}
-              collateralToken={collateralToken}
+              collateralToken={findInternalTokenByAddress(currentChain.slug, offer?.collateralAddressChart as string)}
               principleAmount={principle?.amount}
-              collateralAmount={offer?.collateral?.amount}
+              collateralAmount={offer?.collateralAmountChart}
             />
           </div>
         </div>
