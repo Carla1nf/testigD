@@ -82,5 +82,5 @@ export const fromDecimals = (amount: bigint, decimals: number) => {
  * @returns
  */
 export const toDecimals = (amount: number, decimals: number) => {
-  return BigInt(amount * 10 ** decimals)
+  return BigInt((Number(amount) * 10 ** decimals).toFixed(0))
 }

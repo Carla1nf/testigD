@@ -14,6 +14,7 @@ const NotOwnerErc20Buttons = ({
   collateralToken,
   amountCollateral,
   principle,
+  borrowAmount,
 }: {
   send: any
   state: any
@@ -21,6 +22,7 @@ const NotOwnerErc20Buttons = ({
   collateralToken?: Token
   amountCollateral: number
   principle: any
+  borrowAmount: number
 }) => {
   const currentChain = useCurrentChain()
   if (!state.matches("isNotOwner.erc20")) {
@@ -29,18 +31,60 @@ const NotOwnerErc20Buttons = ({
 
   return (
     <>
-      <ActionButtons.Group
-        when={state.matches("isNotOwner.erc20.idle")}
-        right={
-          <ActionButtons.Action
-            title="Accept Offer"
-            when={true}
-            onClick={async () => {
-              send({ type: "user.accept.offer" })
-            }}
-          />
-        }
-      />
+      <ShowWhenTrue when={state.matches("isNotOwner.erc20.idle")}>
+        <div className="flex gap-10 items-center justify-center">
+          <div className="flex flex-col gap-1">
+            <div className="flex gap-1 items-center italic opacity-80">
+              <div className=" text-sm"> Collateral required:</div>
+              {collateralToken ? (
+                <DisplayToken
+                  size={20}
+                  token={collateralToken}
+                  amount={amountCollateral}
+                  className="text-base"
+                  chainSlug={currentChain.slug}
+                />
+              ) : (
+                ""
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="customRange1"
+                className="mb-2 inline-block text-neutral-700 dark:text-neutral-200"
+              ></label>
+              <input
+                type="range"
+                min={1}
+                max={100}
+                defaultValue={0}
+                className="transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
+                id="customRange1"
+                onChange={(e) => {
+                  handleWantedBorrow(Number(e.currentTarget.value))
+                }}
+              />
+            </div>
+            <div className="flex gap-3">
+              <div>Borrow amount:</div>
+              <DisplayToken token={principle ? principle.token : ""} amount={borrowAmount} size={20} />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="opacity-0">holaa</div>
+            <Button
+              variant={"action"}
+              className="px-16"
+              onClick={async () => {
+                send({ type: "user.accept.offer" })
+              }}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </ShowWhenTrue>
 
       <ActionButtons.Group
         when={state.matches("isNotOwner.erc20.notEnoughAllowance")}
@@ -80,47 +124,18 @@ const NotOwnerErc20Buttons = ({
       <ShowWhenTrue when={state.matches("isNotOwner.erc20.canAcceptOffer")}>
         <div className="flex gap-10 items-center justify-center">
           <div className="flex flex-col gap-1">
-            <div className="flex gap-1 items-center italic opacity-80">
-              <div className=" text-sm"> Collateral required:</div>
-              {collateralToken ? (
-                <DisplayToken
-                  size={20}
-                  token={collateralToken}
-                  amount={amountCollateral}
-                  className="text-base"
-                  chainSlug={currentChain.slug}
-                />
-              ) : (
-                ""
-              )}
+            <div className="flex flex-col gap-1">
+              <div className="opacity-0">holaa</div>
+              <Button
+                variant={"action"}
+                className="px-16"
+                onClick={async () => {
+                  send({ type: "user.accept.offer" })
+                }}
+              >
+                Accept Offer
+              </Button>
             </div>
-            <input
-              className="text-center rounded-lg px-7 py-2 text-xs bg-[#21232B]/40 border-2 border-white/10"
-              placeholder={`Wanted borrow of ${principle?.token?.symbol}`}
-              type="number"
-              max={principle ? principle.amount : 0}
-              onChange={(e) => {
-                principle
-                  ? Number(e.currentTarget.value) > principle.amount
-                    ? (e.currentTarget.value = String(principle.amount))
-                    : ""
-                  : ""
-                handleWantedBorrow(Number(e.currentTarget.value))
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <div className="opacity-0">holaa</div>
-            <Button
-              variant={"action"}
-              className="px-16"
-              onClick={async () => {
-                send({ type: "user.accept.offer" })
-              }}
-            >
-              Accept Offer
-            </Button>
           </div>
         </div>
       </ShowWhenTrue>

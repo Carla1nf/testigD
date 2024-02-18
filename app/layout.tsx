@@ -21,7 +21,7 @@ import TermsAndConditions from "@/components/ux/terms-and-conditions"
  */
 
 const fontSans = FontSans({
-  subsets: ["latin-ext"],
+  subsets: ["latin"],
   variable: "--font-sans",
 })
 

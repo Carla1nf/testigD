@@ -157,10 +157,13 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     // watch: true,
   })
 
-  const handleWantedBorrow = (newValue: number) => {
-    const amountCollateral = collateral && principle ? (collateral?.amount * newValue) / principle?.amount : 0
-    setAmountToBorrow(newValue)
-    setAmountCollateral(amountCollateral)
+  const handleWantedBorrow = (porcentage: number) => {
+    const newValue = principle ? (principle.amount * porcentage) / 100 : 0
+    const amountCollateral =
+      collateral && principle ? (collateral?.amount * Number(newValue.toFixed(2))) / principle?.amount : 0
+    setAmountToBorrow(Number(newValue.toFixed(2)))
+    setAmountCollateral(Number(amountCollateral.toFixed(2)))
+    checkCollateralAllowance()
   }
 
   const interactPerpetual = async () => {
@@ -261,11 +264,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       if (collateral?.address === ZERO_ADDRESS) {
         return true
       }
+      // APPROVE ACA
       const { request } = await config.publicClient.simulateContract({
         address: (collateral?.address ?? "") as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [OFFER_CREATED_ADDRESS, BigInt(collateral?.amountRaw ?? 0)],
+        args: [OFFER_CREATED_ADDRESS, toDecimals(amountCollateral ?? 0, collateral?.token?.decimals ?? 0)],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -369,7 +373,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
           calculateBorrow(offer?.principle.amount, offer?.wantedLockedVeNFT, selectedUserNft?.amount),
           principle?.token?.decimals ?? 0
         )
-      : toDecimals(amountToBorrow, principle?.token?.decimals ?? 0)
+      : toDecimals(Number(amountToBorrow.toFixed(2)), principle?.token?.decimals ?? 0)
 
   const userAcceptOffer = async () => {
     try {
@@ -433,9 +437,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         return Promise.resolve()
       }
 
-      const collateralAmountRaw = BigInt(collateral?.amountRaw ?? 0)
-
-      if (Number(currentCollateralTokenAllowance) >= Number(collateralAmountRaw ?? 0)) {
+      if (Number(currentCollateralTokenAllowance) >= Number(borrowAmount)) {
         return Promise.resolve()
       }
 
@@ -943,6 +945,12 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
             {/* Buttons */}
             <div className="mt-8">
+              <ShowWhenTrue when={state.matches("isNotOwner.erc20.canAcceptOffer")}>
+                <div className="text-gray-400 text-sm px-7 text-center mt-5 ">
+                  You will borrow <span className="text-white font-bold">{amountToBorrow}</span>
+                  <span className="text-white font-bold ml-1">{principle?.token?.symbol}</span>
+                </div>
+              </ShowWhenTrue>
               <ShowWhenTrue when={state.matches("isNotOwner.erc20")}>
                 <NotOwnerErc20Buttons
                   state={state}
@@ -951,9 +959,10 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   collateralToken={collateralToken}
                   principle={principle}
                   amountCollateral={amountCollateral}
+                  borrowAmount={amountToBorrow}
                 />
                 <ShowWhenTrue when={state.matches("isNotOwner.erc20.canAcceptOffer")}>
-                  <div className="text-gray-400 text-sm py-2 px-7 ">
+                  <div className="text-gray-400 text-sm py-2 px-7 text-center">
                     You will get{" "}
                     <span className="text-white font-bold">
                       {pointsBorrow({

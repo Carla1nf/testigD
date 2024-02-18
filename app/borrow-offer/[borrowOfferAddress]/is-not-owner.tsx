@@ -25,18 +25,7 @@ import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
 import { cn } from "@/lib/utils"
-import { findInternalTokenByAddress } from "@/lib/tokens"
-
-function getAcceptLendingOfferValue(offer: any) {
-  if (!offer) {
-    return 0
-  }
-  if (offer?.principle?.address === ZERO_ADDRESS) {
-    return Number(offer?.principle?.amount ?? 0)
-  }
-
-  return 0
-}
+import { findInternalTokenByAddress, isNft } from "@/lib/tokens"
 
 export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOfferAddress: Address } }) {
   const borrowOfferAddress = params.borrowOfferAddress
@@ -73,7 +62,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
         address: principle?.address as Address,
         functionName: "approve",
         abi: erc20Abi,
-        args: [borrowOfferAddress, BigInt(principle?.amountRaw ?? 0)],
+        args: [borrowOfferAddress, lendingAmount],
         account: address,
       })
       // console.log("increaseAllowance→request", request)
@@ -89,6 +78,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
         description: "You have increased the allowance and can now accept the offer.",
         // tx: executed,
       })
+      send({ type: "user.accept.offer" })
       return executed
     } catch (error) {
       console.log("increaseAllowance→error", error)
@@ -96,7 +86,18 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     }
   }
 
-  const lendingAmount = toDecimals(amountToLend, principle?.token?.decimals ?? 0)
+  const handleWantedBorrow = (porcentage: number) => {
+    const newValue = principle ? (principle.amount * porcentage) / 100 : 0
+    const amountCollateral =
+      collateral && principle ? (collateral?.amount * Number(newValue.toFixed(2))) / principle?.amount : 0
+    setAmountToLend(Number(newValue.toFixed(2)))
+    setAmountCollateral(Number(amountCollateral.toFixed(2)))
+  }
+
+  const lendingAmount = toDecimals(amountToLend, principleToken?.decimals ?? 0)
+
+  console.log(Number(currentLendingTokenAllowance) < Number(lendingAmount))
+
   const userAcceptOffer = async () => {
     try {
       console.log("To borrow:", lendingAmount)
@@ -114,7 +115,6 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
       console.log("userAcceptOffer→executed", executed)
       const transaction = await config.publicClient.waitForTransactionReceipt(executed)
       console.log("transaction", transaction)
-
       toast({
         variant: "success",
         title: "Offer Accepted",
@@ -145,9 +145,10 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     if (currentLendingTokenAllowance === undefined) {
       return
     }
+    send({ type: "user.has.allowance" })
 
     // do they have the required allowance to pay for the offer?
-    if (Number(currentLendingTokenAllowance) >= Number(principle?.amount ?? 0)) {
+    if (Number(currentLendingTokenAllowance) >= lendingAmount) {
       send({ type: "user.has.allowance" })
     } else if (!state.matches("isNotOwner.notEnoughAllowance")) {
       send({ type: "user.not.has.allowance" })
@@ -340,7 +341,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                   left={
                     <div className="">
                       <div className="flex gap-1 items-center italic opacity-80">
-                        <div className=" text-sm"> Collateral required:</div>
+                        <div className=" text-sm"> Collateral:</div>
                         {collateralToken ? (
                           <DisplayToken
                             size={20}
@@ -353,28 +354,45 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                           ""
                         )}
                       </div>
-                      <input
-                        className="text-center rounded-lg px-7 py-2 text-xs bg-[#21232B]/40 border-2 border-white/10"
-                        placeholder={`Wanted borrow of ${principle?.token?.symbol}`}
-                        type="number"
-                        max={principle ? principle.amount : 0}
-                        onChange={(e) => {
-                          principle
-                            ? Number(e.currentTarget.value) > principle.amount
-                              ? (e.currentTarget.value = String(principle.amount))
-                              : ""
-                            : ""
-                          handleWantedLend(Number(e.currentTarget.value))
-                        }}
-                      />
+                      <div>
+                        <label
+                          htmlFor="customRange1"
+                          className="mb-2 inline-block text-neutral-700 dark:text-neutral-200"
+                        ></label>
+                        <input
+                          type="range"
+                          min={isNft(collateralToken) ? 100 : 1}
+                          max={100}
+                          defaultValue={isNft(collateralToken) ? 100 : 0}
+                          className="transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
+                          id="customRange1"
+                          onChange={(e) => {
+                            handleWantedBorrow(Number(e.currentTarget.value))
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-3">
+                        <div>Lend amount:</div>
+                        {principleToken ? (
+                          <DisplayToken
+                            token={principleToken}
+                            amount={isNft(collateralToken) ? principle?.amount : amountToLend}
+                            size={20}
+                          />
+                        ) : (
+                          ""
+                        )}
+                      </div>
                     </div>
                   }
                   right={
                     <ActionButtons.Action
-                      title="Accept Offer"
+                      title={`Accept Offer`}
                       when={true}
                       onClick={async () => {
-                        send({ type: "user.accept.offer" })
+                        Number(currentLendingTokenAllowance) < Number(lendingAmount)
+                          ? increaseAllowance()
+                          : send({ type: "user.accept.offer" })
                       }}
                     />
                   }

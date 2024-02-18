@@ -106,7 +106,7 @@ const DashboardUserTableItem = ({
             token={data.loan.token}
             size={20}
             chainSlug={currentChain.slug}
-            amount={Number(data?.loan.collaterals.amount) / Number(10 ** data?.loan.collaterals.decimals)}
+            amount={Number(data?.loan.token.amount) / Number(10 ** data?.loan.token.decimals)}
           />
         </td>
         <td className="p-2">{`${data.loan.address.substring(0, 5)}...${data.loan.address.substring(38)}`}</td>

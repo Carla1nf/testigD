@@ -122,40 +122,47 @@ const TableRow = ({ event, token, _index }: { event: any; token?: Token; _index:
   const collateralToken = collateral?.token
 
   return (
-    <tr
-      onClick={() => {
-        router.push(`/borrow-offer/${event.address}`)
-      }}
-      key={`${offer?.principle?.token?.symbol}_${event.address}`}
-      className={` ${
-        _index % 2 == 1 ? "" : "bg-stone-500/5"
-      } hover:bg-slate-500/10 cursor-pointer animate-enter-token border-b border-[#383838]/50`}
-    >
-      <td className="p-4 text-left">
-        {token ? (
-          <DisplayToken size={28} token={token} amount={offer?.principle.amount} chainSlug={currentChain.slug} />
-        ) : null}
-      </td>
-      <td className="p-4 text-left">
-        <div className="flex flex-col gap-2">
-          {collateralToken ? (
-            <DisplayToken size={28} token={collateralToken} amount={collateral?.amount} chainSlug={currentChain.slug} />
-          ) : (
-            <div className="animate-pulse flex space-x-4">
-              <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>
-            </div>
-          )}
-        </div>
-      </td>
-      <td className="p-4 text-center">{ltv(Number(offer?.ltv))}</td>
-      <td className="p-4 text-center">{offer?.numberOfLoanDays} Days</td>
-      <td className="p-4 text-center ">{Number(offer?.paymentCount ?? 0)}</td>
-      <td className="p-3 text-center">
-        {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
-      </td>
-      <td className="p-3 text-center">
-        {percent({ value: offer?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
-      </td>
-    </tr>
+    <ShowWhenTrue when={offer != undefined && offer?.principle.amount > 0}>
+      <tr
+        onClick={() => {
+          router.push(`/borrow-offer/${event.address}`)
+        }}
+        key={`${offer?.principle?.token?.symbol}_${event.address}`}
+        className={` ${
+          _index % 2 == 1 ? "" : "bg-stone-500/5"
+        } hover:bg-slate-500/10 cursor-pointer animate-enter-token border-b border-[#383838]/50`}
+      >
+        <td className="p-4 text-left">
+          {token ? (
+            <DisplayToken size={28} token={token} amount={offer?.principle.amount} chainSlug={currentChain.slug} />
+          ) : null}
+        </td>
+        <td className="p-4 text-left">
+          <div className="flex flex-col gap-2">
+            {collateralToken ? (
+              <DisplayToken
+                size={28}
+                token={collateralToken}
+                amount={collateral?.amount}
+                chainSlug={currentChain.slug}
+              />
+            ) : (
+              <div className="animate-pulse flex space-x-4">
+                <div className=" bg-debitaPink/80 h-3 w-28 rounded"></div>
+              </div>
+            )}
+          </div>
+        </td>
+        <td className="p-4 text-center">{ltv(Number(offer?.ltv))}</td>
+        <td className="p-4 text-center">{offer?.numberOfLoanDays} Days</td>
+        <td className="p-4 text-center ">{Number(offer?.paymentCount ?? 0)}</td>
+        <td className="p-3 text-center">
+          {percent({ value: event?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+        </td>
+        <td className="p-3 text-center">
+          {percent({ value: offer?.apr ?? 0, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
+        </td>
+      </tr>
+    </ShowWhenTrue>
   )
 }

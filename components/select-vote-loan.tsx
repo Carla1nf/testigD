@@ -18,6 +18,10 @@ const SelectVoteLoan = ({ address, index, selected }: { address: Address; index:
   })
   const shouldVote = Math.floor(now / Duration) * Duration > Number(lastVoted)
 
+  if (data?.loan.executed) {
+    return null
+  }
+
   if (Number(data?.ownerNftTokenId) % 2 == 1) {
     return null
   }

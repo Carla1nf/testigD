@@ -1,19 +1,48 @@
 "use client"
 
-import { ShowWhenFalse } from "@/components/ux/conditionals"
+import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
+import { useControlledAddress } from "@/hooks/useControlledAddress"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { Token, findInternalTokenByAddress, getAllTokens } from "@/lib/tokens"
 import { useDebitaDataQuery } from "@/services/queries"
+import { Address } from "viem"
 
 export default function LeaderBoardPage() {
   const { data, isSuccess } = useDebitaDataQuery()
   const currentChain = useCurrentChain()
+  const { address } = useControlledAddress()
 
   const getToken = (address: string): Token => {
     const token = findInternalTokenByAddress(currentChain.slug, address)
     return token ? token : getAllTokens(currentChain.slug)[0]
+  }
+
+  const pointsForAddress = () => {
+    if (data) {
+      let founded = 0
+      data?.pointsPerAddress.map((item: any) => {
+        console.log(item[0] == address)
+        if (item[0] == address) {
+          founded = item[1]
+        }
+      })
+      return founded
+    }
+  }
+
+  const showAddress = (): boolean => {
+    if (data) {
+      let show = true
+      data?.pointsPerAddress.map((item: any) => {
+        if (item[0] == address && item[1] > data?.pointsPerAddress[5][1]) {
+          show = false
+        }
+      })
+      return show
+    }
+    return true
   }
 
   return (
@@ -36,18 +65,18 @@ export default function LeaderBoardPage() {
             <div className="w-full px-2">Wallet</div>
             <div className="w-full px-2">Points</div>
           </div>
-          {data?.pointsPerAddress.map((item, index) => {
+          {data?.pointsPerAddress.slice(0, 7).map((item, index) => {
             return (
               <>
                 <ShowWhenFalse when={index == 0}>
                   <div
                     key={index}
-                    className={`${
-                      index % 2 == 0 ? "" : "bg-stone-500/5"
+                    className={`${index % 2 == 0 || item[0] == address ? "" : "bg-stone-500/5"}   ${
+                      item[0] == address ? "bg-debitaPink" : ""
                     }  h-10 flex animate-enter-token rounded items-center   text-sm`}
                   >
                     <div className="w-full px-4 flex gap-3">
-                      <div className="text-gray-400"> {index}.</div>{" "}
+                      <div className={`${item[0] == address ? "text-gray-100" : "text-gray-400"}`}> {index}.</div>{" "}
                       {`${item[0].substring(0, 5)}...${item[0].substring(38)}`}
                     </div>
                     <div className="w-full font-bold">{item[1]}</div>
@@ -56,7 +85,21 @@ export default function LeaderBoardPage() {
               </>
             )
           })}
+          <ShowWhenTrue when={address != undefined && showAddress()}>
+            <div
+              className={`
+                     bg-debitaPink
+                     h-10 flex animate-enter-token rounded items-center   text-sm`}
+            >
+              <div className="w-full px-4 flex gap-3">
+                <div className="text-gray-100">You </div>{" "}
+                {`${(address ?? "").substring(0, 5)}...${(address ?? "").substring(38)}`}
+              </div>
+              <div className="w-full font-bold">{pointsForAddress()}</div>
+            </div>
+          </ShowWhenTrue>
         </div>
+
         <div className="w-10/12">
           <div className="flex flex-col w-full gap-2 text-gray-200">
             <div className="flex h-10 items-center justify-between font-bold text-gray-500/80 border-b-2 border-neutral-500/20">

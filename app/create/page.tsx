@@ -85,6 +85,7 @@ export default function Create() {
   const wftm = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "wFTM"), [currentChain.slug])
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
   const [offerAddress, setAddress] = useState("")
+  const [confirmed, setConfirmed] = useState(false)
 
   // CREATE BORROW MACHINE
 
@@ -188,12 +189,7 @@ export default function Create() {
   }
 
   const creatingOffer = async ({ input }: { input: any }) => {
-    console.log("creatingOffer")
-    console.log("input", input)
     const { context, event } = input
-
-    console.log("context", context)
-    console.log("event", event)
 
     //  value used in both modes
     const _interest = context.interestPercent * 100
@@ -760,7 +756,18 @@ export default function Create() {
             state.matches("error")
           }
         >
-          <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
+          <div className="bg-[#252324] relative p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
+            <ShowWhenTrue
+              when={
+                (state.context.tokenPrice * Number(state.context.tokenAmount) > 500 ||
+                  state.context.collateralPrice * Number(state.context.collateralAmount) > 500) &&
+                !confirmed
+              }
+            >
+              <div className="absolute top-0 right-0 left-0 bottom-0 bg-black/60 flex items-center justify-center font-bold z-10 ">
+                Confirm warning
+              </div>
+            </ShowWhenTrue>
             <div className="">
               <div className="flex flex-row justify-between items-center">
                 <div className="flex flex-row gap-2 items-center">
@@ -1011,6 +1018,30 @@ export default function Create() {
             verify token values independently.
           </div>
         </div>
+
+        <ShowWhenTrue
+          when={
+            (state.context.tokenPrice * Number(state.context.tokenAmount) > 500 ||
+              state.context.collateralPrice * Number(state.context.collateralAmount) > 500) &&
+            !confirmed
+          }
+        >
+          <div className="bg-debitaPink/40 border-2 flex flex-col  w-full border-white/10  py-3 px-3 rounded-lg h-32 ">
+            <div className=" font-bold">High amount warning</div>
+            <div className="text-gray-200 text-sm">
+              If you wish to continue please confirm that you have done your own due diligence and accept the risks
+              described in our terms and conditions"
+              <div className="py-3 flex items-center ">
+                <div
+                  className="bg-black px-2 py-1 cursor-pointer hover:scale-[1.04] rounded transition-all"
+                  onClick={() => setConfirmed(true)}
+                >
+                  Confirm
+                </div>
+              </div>
+            </div>
+          </div>
+        </ShowWhenTrue>
         <ShowWhenTrue
           when={
             state.matches("confirmation") ||
