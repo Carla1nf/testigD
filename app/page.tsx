@@ -7,6 +7,7 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { dollars, percent } from "@/lib/display"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 // import styles from "./styles.module.css";
@@ -33,9 +34,11 @@ export default function Home() {
               </div>
               <p className="text-lg text-gray-400">P2P Oracle-less Lending Protocol</p>
               <div className="flex md:flex-row flex-col md:justify-start justify-center gap-3 md:gap-0 md:space-x-4">
-                <Button className="bg-black/30 text-white" variant="secondary">
-                  Launch app
-                </Button>
+                <Link href={"/borrow"}>
+                  <Button className="bg-black/30 text-white" variant="secondary">
+                    Launch app
+                  </Button>
+                </Link>
                 <Button className="bg-black/30 text-white" variant="secondary">
                   <span>Watch how Debita V2 works</span>
                 </Button>
