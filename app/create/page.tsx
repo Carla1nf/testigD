@@ -1030,7 +1030,7 @@ export default function Create() {
             <div className=" font-bold">High amount warning</div>
             <div className="text-gray-200 text-sm">
               If you wish to continue please confirm that you have done your own due diligence and accept the risks
-              described in our terms and conditions"
+              described in our terms and conditions
               <div className="py-3 flex items-center ">
                 <div
                   className="bg-black px-2 py-1 cursor-pointer hover:scale-[1.04] rounded transition-all"
