@@ -90,7 +90,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
     const newValue = principle ? (principle.amount * porcentage) / 100 : 0
     const amountCollateral =
       collateral && principle ? (collateral?.amount * Number(newValue.toFixed(2))) / principle?.amount : 0
-    setAmountToLend(Number(newValue.toFixed(2)))
+    setAmountToLend(isNft(collateralToken) ? principle?.amount ?? 0 : Number(newValue.toFixed(2)))
     setAmountCollateral(Number(amountCollateral.toFixed(2)))
   }
 
@@ -142,6 +142,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
   // STATE MACHINE CONTROL
   // Connect the machine to the current on-chain state
   useEffect(() => {
+    handleWantedBorrow(0)
     if (currentLendingTokenAllowance === undefined) {
       return
     }
