@@ -1,4 +1,4 @@
-import { LOAN_CREATED_ADDRESS, OWNERSHIP_ADDRESS } from "@/lib/contracts"
+import { OWNERSHIP_ADDRESS } from "@/lib/contracts"
 import { fromDecimals } from "@/lib/erc20"
 import {
   findInternalTokenByAddress,
