@@ -64,7 +64,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
             />
             <Stat
               value={dollars({ value: stats.waitingToBeLent })}
-              title={"Available to borrow"}
+              title={"Available liquidity"}
               titleSmall={"Available"}
               Icon={<HourGlassIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
             />

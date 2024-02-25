@@ -46,7 +46,7 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
         abi: createdLoanABI,
         args: [getPairs, getWeights],
         account: address,
-        gas: BigInt(830000),
+        gas: BigInt(900000),
       })
       const result = await writeContract(request)
     } catch (e) {

@@ -48,6 +48,26 @@ const Nav = () => {
         >
           Borrow
         </Link>
+
+        <Link
+          className={`px-3 text-center text-[14.5px] text-[#B6979C] hidden  h-12 items-center md:grid hover:bg-slate-400/5   ${
+            path == "/create" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
+          }`}
+          href="/create"
+        >
+          Create Offer
+        </Link>
+      </div>
+
+      <div className="flex gap-4 flex-row justify-between items-center p-4">
+        <Link
+          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
+            path == "/vote" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
+          }`}
+          href="/vote"
+        >
+          veNFTs
+        </Link>
         <Link
           className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
             path == "/leaderboard" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
@@ -57,25 +77,6 @@ const Nav = () => {
           Leaderboard
         </Link>
 
-        <Link
-          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
-            path == "/vote" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
-          }`}
-          href="/vote"
-        >
-          Vote
-        </Link>
-      </div>
-
-      <div className="flex gap-4 flex-row justify-between items-center p-4">
-        <Link
-          className={`px-3 text-center text-[14.5px] text-[#B6979C] hidden  h-12 items-center md:grid hover:bg-slate-400/5   ${
-            path == "/create" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
-          }`}
-          href="/create"
-        >
-          Create Offer
-        </Link>
         <Connect />
         {/* MOBILE */}
         <div className="flex md:hidden" onClick={() => setIsMobileNavbarOpen(true)}>

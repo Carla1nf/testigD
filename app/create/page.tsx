@@ -86,6 +86,7 @@ export default function Create() {
   const usdc = useMemo(() => findInternalTokenBySymbol(currentChain.slug, "axlUSDC"), [currentChain.slug])
   const [offerAddress, setAddress] = useState("")
   const [confirmed, setConfirmed] = useState(false)
+  const [perpetual, setPerpetual] = useState(false)
 
   // CREATE BORROW MACHINE
 
@@ -183,6 +184,7 @@ export default function Create() {
 
       return executed
     } catch (e) {
+      back()
       console.log(e)
     }
     // console.log("approveBorrowAllowance", executed)
@@ -231,7 +233,7 @@ export default function Create() {
           0 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
-          [isLendingMode, true], // [0] --> isLending, [1] --> isPerpetual
+          [isLendingMode, perpetual], // [0] --> isLending, [1] --> isPerpetual
           "0x3Fd3A0c85B70754eFc07aC9Ac0cbBDCe664865A6", // 0x0 for now --> address of the erc-20 token that will be used to pay the interest in case is lending an NFT
         ],
         account: address,
@@ -330,21 +332,24 @@ export default function Create() {
       // return Promise.resolve(executed)
     } else {
       const amountRequired = toDecimals(context.tokenAmount, context.token.decimals)
+      try {
+        const { request } = await config.publicClient.simulateContract({
+          address: context.token.address,
+          functionName: "approve",
+          abi: erc20Abi,
+          args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
+          account: address,
+        })
 
-      const { request } = await config.publicClient.simulateContract({
-        address: context.token.address,
-        functionName: "approve",
-        abi: erc20Abi,
-        args: [DEBITA_OFFER_FACTORY_ADDRESS, amountRequired],
-        account: address,
-      })
-
-      const executed = await writeContract(request)
-      // console.log("approveLendAllowance", executed)
-      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-      console.log("transaction", transaction)
-
-      return Promise.resolve(executed)
+        const executed = await writeContract(request)
+        // console.log("approveLendAllowance", executed)
+        const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+        console.log("transaction", transaction)
+        return Promise.resolve(executed)
+      } catch (e) {
+        back()
+        console.log(e)
+      }
     }
   }
 
@@ -511,7 +516,7 @@ export default function Create() {
               }
             }}
           >
-            <TabsList className="bg-[#252324] rounded-b-none gap-2">
+            <TabsList className="bg-black rounded-b-none gap-2">
               <TabsTrigger value="lend" className="px-12">
                 Lend
               </TabsTrigger>
@@ -718,8 +723,21 @@ export default function Create() {
 
             <div className="mt-4 flex items-center gap-5 justify-end">
               <ShowWhenTrue when={!state.can({ type: "next" })}>
-                <div className="text-red-300 font-light">Please complete all the inputs correctly</div>
+                <div className="text-red-300 font-light text-sm">Please complete all the inputs correctly</div>
               </ShowWhenTrue>
+              <div className="flex flex-col">
+                <label className="relative inline-flex items-center cursor-pointer ml-auto">
+                  <input
+                    type="checkbox"
+                    value=""
+                    checked={perpetual}
+                    onClick={() => setPerpetual(!perpetual)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-debitaPink"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Perpetual</span>
+                </label>
+              </div>
               <Button
                 variant="action"
                 className="px-12"
@@ -783,17 +801,27 @@ export default function Create() {
             </div>
 
             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-              <div className="border border-white/10 rounded-sm p-2 px-2 md:pr-32 col-span-2">
+              <div className="border border-white/10 rounded-sm p-2">
                 <Label variant="create">Payments</Label>
+                <div className="font-semibold text-sm text-[#D0D0D0]">
+                  <div className="flex gap-2">Total payments: {state.context.numberOfPayments}</div>
+                  <div className="flex gap-1  items-end ">
+                    Amount per payment: {state.context.tokenAmount ?? 0 / numberOfPayments}{" "}
+                    <span className="text-gray-500 text-xs">{state.context.token?.symbol}</span>
+                  </div>
+                  <div className="flex gap-1  items-end ">
+                    Total amount: {state.context.tokenAmount ?? 0}{" "}
+                    <span className="text-gray-500 text-xs">{state.context.token?.symbol}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-white/10 rounded-sm p-2">
+                <Label variant="create">Length</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
-                  <ShowWhenTrue when={numberOfPayments === 1}>
-                    There is a single payment due after {durationDays} {pluralize("day", durationDays)}.
-                  </ShowWhenTrue>
-                  <ShowWhenFalse when={numberOfPayments === 1}>
-                    There are {numberOfPayments} {pluralize("payment", numberOfPayments)} due every{" "}
-                    {!Number.isInteger(daysPerPayment) ? fixedDecimals(daysPerPayment, 2) : daysPerPayment}{" "}
-                    {pluralize("day", daysPerPayment)} over a {Number(durationDays)} day period.
-                  </ShowWhenFalse>
+                  <div className="flex gap-2">
+                    Total payments: {durationDays} {pluralize("day", durationDays)}.
+                  </div>
                 </div>
               </div>
 

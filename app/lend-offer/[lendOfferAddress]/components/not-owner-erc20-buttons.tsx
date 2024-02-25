@@ -4,6 +4,7 @@ import ActionButtons from "@/components/ux/action-buttons"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayToken from "@/components/ux/display-token"
 import useCurrentChain from "@/hooks/useCurrentChain"
+import { fromDecimals } from "@/lib/erc20"
 import { pointsBorrow } from "@/lib/getPoints"
 import { Token } from "@/lib/tokens"
 
@@ -15,6 +16,7 @@ const NotOwnerErc20Buttons = ({
   amountCollateral,
   principle,
   borrowAmount,
+  pointsToGet,
 }: {
   send: any
   state: any
@@ -23,6 +25,7 @@ const NotOwnerErc20Buttons = ({
   amountCollateral: number
   principle: any
   borrowAmount: number
+  pointsToGet: number
 }) => {
   const currentChain = useCurrentChain()
   if (!state.matches("isNotOwner.erc20")) {
@@ -85,25 +88,43 @@ const NotOwnerErc20Buttons = ({
           </div>
         </div>
       </ShowWhenTrue>
-
-      <ActionButtons.Group
-        when={state.matches("isNotOwner.erc20.notEnoughAllowance")}
-        right={
-          <ActionButtons.Action
-            title="Accept Offer"
-            when={true}
-            onClick={async () => {
-              send({ type: "user.allowance.increase" })
-            }}
+      <ShowWhenTrue when={state.matches("isNotOwner.erc20.notEnoughAllowance")}>
+        <div className="flex justify-between">
+          <div className="text-gray-400 text-sm py-2 px-7 text-center items-center h-full">
+            You will get{" "}
+            <span className="text-white font-bold">
+              {pointsBorrow({
+                totalPointsAvailable: Number(pointsToGet),
+                amountToBorrow: borrowAmount,
+                totalPrincipleAmount: principle?.amount ?? 1,
+              })}
+              DBT
+            </span>{" "}
+            Points
+          </div>
+          <ActionButtons.Group
+            when={state.matches("isNotOwner.erc20.notEnoughAllowance")}
+            right={
+              <ActionButtons.Action
+                title="Accept Offer"
+                when={true}
+                onClick={async () => {
+                  send({ type: "user.allowance.increase" })
+                }}
+              />
+            }
           />
-        }
-      />
+        </div>
+      </ShowWhenTrue>
 
-      <ActionButtons.Group
-        when={state.matches("isNotOwner.erc20.increaseCollateralAllowance")}
-        left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}
-        right={<ActionButtons.Spinner title="Increasing Allowance" when={true} />}
-      />
+      <div>
+        <ActionButtons.Group
+          when={state.matches("isNotOwner.erc20.increaseCollateralAllowance")}
+          left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}
+          right={<ActionButtons.Spinner title="Accepting Offer.." when={true} />}
+        />
+      </div>
+      {/* INCRESING ALLOWANCE */}
 
       <ActionButtons.Group
         left={<ActionButtons.Cancel when={true} onClick={() => send({ type: "user.cancel" })} />}

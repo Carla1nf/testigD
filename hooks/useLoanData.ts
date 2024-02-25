@@ -62,19 +62,6 @@ export const useLoanData = (loanAddress: Address) => {
         args: [borrowerId],
       })
 
-      try {
-        const lenderId = parsedData?.IDS[0] ?? 0
-        const lender = await readContract({
-          address: OWNERSHIP_ADDRESS,
-          abi: ownershipsAbi,
-          functionName: "ownerOf",
-          args: [lenderId],
-        })
-        setLenderAddress(lender as Address)
-      } catch (e) {
-        setLenderAddress(ZERO_ADDRESS as Address)
-        console.log(e)
-      }
       const lenderId = parsedData?.IDS[0] ?? 0
 
       // get the amount of debt that the user has already repaid (if any)
@@ -183,7 +170,7 @@ export const useLoanData = (loanAddress: Address) => {
         hasRepaidLoan,
         hasDefaulted,
         loanAddress,
-        lenderAddress,
+        lenderAddress: lenderAddress,
         lenderId,
         lending,
         ltv,
@@ -200,6 +187,7 @@ export const useLoanData = (loanAddress: Address) => {
         principleAmountChart: lending.amount, // should be principleAmount
         collateralAddressChart: valueAssetCollateral.address,
         collateralAmountChart: collateralAmount,
+        IDS: parsedData?.IDS,
       }
     },
   })

@@ -19,7 +19,6 @@ import useCurrentChain from "@/hooks/useCurrentChain"
 import useHistoricalTokenPrices from "@/hooks/useHistoricalTokenPrices"
 import { useLoanData } from "@/hooks/useLoanData"
 import { calcCollateralsPriceHistory, calcPriceHistory } from "@/lib/chart"
-import { DEBITA_ADDRESS } from "@/lib/contracts"
 import { LoanStatus, dollars, formatFullDate, loanStatus, shortAddress } from "@/lib/display"
 import { balanceOf } from "@/lib/erc20"
 import { cn } from "@/lib/utils"
@@ -33,10 +32,13 @@ import { Address, useConfig, useContractRead } from "wagmi"
 import { writeContract } from "wagmi/actions"
 import { fromPromise } from "xstate"
 import erc20Abi from "../../../abis/erc20.json"
+import ownershipsAbi from "../../../abis/v2/ownershipsV2.json"
+
 import { machine } from "./loan-machine"
 import { isNft } from "@/lib/tokens"
 import DisplayNftToken from "@/components/ux/display-nft-token"
 import useNftInfo from "@/hooks/useNftInfo"
+import { OWNERSHIP_ADDRESS } from "@/lib/contracts"
 
 /**
  * This page shows the suer the FULL details of the loan
@@ -67,6 +69,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   const principleNftInfos = useNftInfo({ address: loanAddress as Address, token: collateral0Token })
   const nftInfo = principleNftInfos?.[0]
 
+  const lenderId = loan?.IDS != undefined ? loan?.IDS[0] : 0
+  const { data: lender } = useContractRead({
+    address: OWNERSHIP_ADDRESS,
+    abi: ownershipsAbi,
+    functionName: "ownerOf",
+    args: [lenderId],
+  })
+
   // we need to know (if this is the borrower) how much they have approved the lending
   const { data: lendingTokenAllowance } = useContractRead({
     address: lendingToken?.address,
@@ -74,6 +84,21 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
     abi: erc20Abi,
     args: [address, LOAN_CREATED_ADDRESS],
   }) as { data: bigint }
+
+  const claimCollateralAsLender = async () => {
+    const { request } = await config.publicClient.simulateContract({
+      address: LOAN_CREATED_ADDRESS,
+      functionName: "claimCollateralasLender",
+      abi: createdLoanABI,
+      args: [],
+      account: address,
+      gas: BigInt(800000),
+    })
+
+    const result = await writeContract(request)
+    const transaction = await config.publicClient.waitForTransactionReceipt(result)
+    console.log("transaction", transaction)
+  }
 
   const [loanState, loanSend] = useMachine(
     machine.provide({
@@ -87,7 +112,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             } */
 
             const { request } = await config.publicClient.simulateContract({
-              address: DEBITA_ADDRESS,
+              address: LOAN_CREATED_ADDRESS,
               functionName: "claimDebt",
               abi: createdLoanABI,
               args: [loanAddress],
@@ -330,7 +355,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             </div>
 
             {/* Lender unclaimed payments available */}
-            <ShowWhenTrue when={loanState.matches("lender.claim.available")}>
+            <ShowWhenTrue when={loan?.claimableDebt > 0}>
               <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
                 <div>Unclaimed payments</div>
                 <div className="flex gap-2 items-center">
@@ -412,7 +437,9 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
 
             {/* Borrower Alerts */}
             <ShowWhenTrue when={loanState.matches("borrower")}>
-              <ShowWhenTrue when={displayLoanStatus.state === "defaulted" && !loan?.hasLoanCompleted}>
+              <ShowWhenTrue
+                when={displayLoanStatus.state === "defaulted" && !loan?.hasLoanCompleted && !loan?.hasRepaidLoan}
+              >
                 <Alert variant="warning" className="">
                   <AlertCircle className="w-5 h-5 mr-2" />
                   <AlertTitle>Please note</AlertTitle>
@@ -450,14 +477,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
           <div className="space-y-8 max-w-xl w-full md:ml-16 animate-enter-div">
             <div className="flex space-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center text-sm">
-                {loanState.matches("lender") ? (
+                {address == lender ? (
                   <>
                     You are the lender <PersonIcon className="w-6 h-6" />
                   </>
                 ) : (
                   <>
                     Lender <PersonIcon className="w-6 h-6" />
-                    {shortAddress(loan?.lender)}
+                    {shortAddress(lender as Address)}
                   </>
                 )}
               </div>
@@ -483,7 +510,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                 <div className="flex flex-col">
                   <div className="">Status</div>
                   <div className={cn(displayLoanStatus.className, "font-bold text-lg")}>
-                    {displayLoanStatus.displayText}
+                    {loan?.paymentCount == loan?.paymentsPaid ? "Paid" : displayLoanStatus.displayText}
                   </div>
                 </div>
 
@@ -633,17 +660,12 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                 </ShowWhenTrue>
 
                 {/* Lender - can claim collateral */}
-                <ShowWhenTrue
-                  when={
-                    loanState.matches("lender.defaulted.hasDefaulted") &&
-                    !loanState.matches("lender.claim.alreadyClaimed")
-                  }
-                >
+                <ShowWhenTrue when={loan?.hasDefaulted && !loan?.hasClaimedCollateral && address == lender}>
                   <Button
                     variant="action"
                     className="w-1/2"
                     onClick={() => {
-                      loanSend({ type: "lender.claim.collateral" })
+                      claimCollateralAsLender()
                     }}
                   >
                     Claim Collateral

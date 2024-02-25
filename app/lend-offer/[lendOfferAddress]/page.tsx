@@ -141,12 +141,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   }, [])
 
   // check if the viewer/user/borrower has the allowance to spend the collateral token
-  const { data: currentCollateralTokenAllowance } = useContractRead({
-    address: (collateral?.address ?? "") as Address,
-    functionName: "allowance",
-    abi: erc20Abi,
-    args: [address, OFFER_CREATED_ADDRESS],
-  })
 
   // check if the owner has the allowance to spend the principle token when the offer is updated
   const { data: currentPrincipleTokenAllowance } = useContractRead({
@@ -157,13 +151,19 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     // watch: true,
   })
 
+  const { data: currentCollateralTokenAllowance } = useContractRead({
+    address: (collateral?.address ?? "") as Address,
+    functionName: "allowance",
+    abi: erc20Abi,
+    args: [address, OFFER_CREATED_ADDRESS],
+  })
+
   const handleWantedBorrow = (porcentage: number) => {
     const newValue = principle ? (principle.amount * porcentage) / 100 : 0
     const amountCollateral =
       collateral && principle ? (collateral?.amount * Number(newValue.toFixed(2))) / principle?.amount : 0
     setAmountToBorrow(Number(newValue.toFixed(2)))
     setAmountCollateral(Number(amountCollateral.toFixed(2)))
-    checkCollateralAllowance()
   }
 
   const interactPerpetual = async () => {
@@ -276,15 +276,18 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
       const executed = await writeContract(request)
       console.log("increaseAllowance→executed", executed)
-      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
-      console.log("transaction", transaction)
 
+      const transaction = await config.publicClient.waitForTransactionReceipt(executed)
+      userAcceptOffer()
+
+      console.log("transaction", transaction)
       toast({
         variant: "success",
         title: "Allowance Increased",
         description: "You have increased the allowance and can now accept the offer.",
         // tx: executed,
       })
+
       return executed
     } catch (error: any) {
       toast({
@@ -294,6 +297,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         // tx: executed,
       })
       console.log("increaseAllowance→error", error)
+      send({ type: "user.cancel" })
       throw error
     }
   }
@@ -535,7 +539,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         }
       }
     }
-  }, [isOwnerConnected, currentCollateralTokenAllowance, state, send, collateral, collateralToken])
+  }, [isOwnerConnected, state, send, collateral, collateralToken])
 
   // initialise the state values whenever we enter the isOwner.editing state
   useEffect(() => {
@@ -960,6 +964,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   principle={principle}
                   amountCollateral={amountCollateral}
                   borrowAmount={amountToBorrow}
+                  pointsToGet={Number(pointsToGet)}
                 />
                 <ShowWhenTrue when={state.matches("isNotOwner.erc20.canAcceptOffer")}>
                   <div className="text-gray-400 text-sm py-2 px-7 text-center">
