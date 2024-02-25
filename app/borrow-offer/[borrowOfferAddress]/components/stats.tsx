@@ -8,12 +8,12 @@ const BorrowOfferStats = ({ principle, offer }: { principle: any; offer: any }) 
       <Stat value={ltv(Number(offer?.ltv))} title={"LTV"} Icon={null} />
       <Stat
         value={dollars({ value: Number(principle?.valueUsd) })}
-        title={"Lending"}
+        title={"Wanted lending"}
         Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
       />
       <Stat
         value={dollars({ value: Number(offer?.totalCollateralValue) })}
-        title={"Collateral"}
+        title={"Secured Collateral"}
         Icon={<PriceIcon className="w-6 h-6 md:w-10 md:h-10 fill-white" />}
       />
     </div>

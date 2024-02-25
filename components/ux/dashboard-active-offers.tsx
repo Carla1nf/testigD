@@ -56,7 +56,7 @@ const DashboardActiveOffersTable = ({
               )}
             >
               <th className="p-3 px-5">Collateral</th>
-              <th className="p-3 ">Lending</th>
+              <th className="p-3 ">{status == "Borrowed" ? "Borrow" : "Lending"}</th>
               <th className="p-3">Interest(%)</th>
               <th className="p-3">Pay.Am.</th>
             </tr>
