@@ -375,7 +375,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             </div>
 
             {/* Lender unclaimed payments available */}
-            <ShowWhenTrue when={loan?.claimableDebt > 0}>
+            <ShowWhenTrue when={loan?.claimableDebt > 0 && address == loan?.lenderAddress}>
               <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
                 <div>Unclaimed payments</div>
                 <div className="flex gap-2 items-center">
