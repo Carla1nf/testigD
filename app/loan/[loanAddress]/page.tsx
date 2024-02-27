@@ -106,7 +106,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
         abi: createdLoanABI,
         args: [],
         account: address,
-        gas: BigInt(300000),
+        gas: BigInt(500000),
       })
 
       const result = await writeContract(request)
