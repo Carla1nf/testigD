@@ -114,7 +114,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const collateralToken = collateral ? collateral?.token : undefined
   const principleToken = principle ? principle?.token : undefined
   const isOwnerConnected = address === offer?.owner
-
+  console.log(offer, "OFFER")
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, offer?.principleAddressChart as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, offer?.collateralAddressChart as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []

@@ -17,7 +17,7 @@ import useNftInfo, { UserNftInfo } from "@/hooks/useNftInfo"
 import { DEBITA_OFFER_FACTORY_ADDRESS } from "@/lib/contracts"
 import { dollars, percent } from "@/lib/display"
 import { toDecimals } from "@/lib/erc20"
-import { Token, findInternalTokenBySymbol, getAllTokens, isNft } from "@/lib/tokens"
+import { Token, findInternalTokenBySymbol, getAllTokens, isNft, nftInfoLensType } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { ZERO_ADDRESS } from "@/services/constants"
 import { useMachine } from "@xstate/react"
@@ -87,6 +87,7 @@ export default function Create() {
   const [offerAddress, setAddress] = useState("")
   const [confirmed, setConfirmed] = useState(false)
   const [perpetual, setPerpetual] = useState(false)
+  const [wantedVeEqual, setWantedVeEqual] = useState(0)
 
   // CREATE BORROW MACHINE
 
@@ -230,7 +231,9 @@ export default function Create() {
           [isTokenAssetNFT, isCollateralAssetNFT /*  if assets are NFTs --> false for now*/],
           _interest,
           nftArgs, // [collateralTokenNftId, 1 /*  NFT id & Interest rate for nfts --> 0 for now*/],
-          0 /*  value of wanted veNFTs --> 0 for now*/,
+          nftInfoLensType(context.collateralToken) == "VeToken"
+            ? collateralAmount
+            : 0 /*  value of wanted veNFTs --> 0 for now*/,
           _paymentCount,
           _timelap,
           [isLendingMode, perpetual], // [0] --> isLending, [1] --> isPerpetual
