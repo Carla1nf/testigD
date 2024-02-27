@@ -38,6 +38,8 @@ const LoanDataReceivedSchema = z.object({
 
 export const useLoanData = (loanAddress: Address) => {
   const [lenderAddress, setLenderAddress] = useState<Address>()
+  const [borrowerAddress, setBorrowerAddress] = useState<Address>()
+
   const currentChain = useCurrentChain()
   const useLoanDataQuery: any = useQuery({
     queryKey: ["loan-data", currentChain.slug, loanAddress],
@@ -55,15 +57,27 @@ export const useLoanData = (loanAddress: Address) => {
       console.log("borrower")
 
       const borrowerId = parsedData?.IDS[1] ?? undefined
-      const borrower = await readContract({
-        address: OWNERSHIP_ADDRESS,
-        abi: ownershipsAbi,
-        functionName: "ownerOf",
-        args: [borrowerId],
-      })
+      try {
+        const borrower = await readContract({
+          address: OWNERSHIP_ADDRESS,
+          abi: ownershipsAbi,
+          functionName: "ownerOf",
+          args: [borrowerId],
+        })
+        setBorrowerAddress(borrower as Address)
+      } catch (e) {}
 
       const lenderId = parsedData?.IDS[0] ?? 0
 
+      try {
+        const lender = await readContract({
+          address: OWNERSHIP_ADDRESS,
+          abi: ownershipsAbi,
+          functionName: "ownerOf",
+          args: [lenderId],
+        })
+        setLenderAddress(lender as Address)
+      } catch (e) {}
       // get the amount of debt that the user has already repaid (if any)
       const claimableDebtRaw = (await readContract({
         address: loanAddress,
@@ -154,7 +168,7 @@ export const useLoanData = (loanAddress: Address) => {
       return {
         // apr,
         // interest: Number(parsedData.interest) / 1000,
-        borrower,
+        borrower: borrowerAddress,
         borrowerId,
         collaterals: collateral,
         claimableDebt,

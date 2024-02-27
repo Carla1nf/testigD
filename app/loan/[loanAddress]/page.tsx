@@ -69,14 +69,6 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   const principleNftInfos = useNftInfo({ address: loanAddress as Address, token: collateral0Token })
   const nftInfo = principleNftInfos?.[0]
 
-  const lenderId = loan?.IDS != undefined ? loan?.IDS[0] : 0
-  const { data: lender } = useContractRead({
-    address: OWNERSHIP_ADDRESS,
-    abi: ownershipsAbi,
-    functionName: "ownerOf",
-    args: [lenderId],
-  })
-
   // we need to know (if this is the borrower) how much they have approved the lending
   const { data: lendingTokenAllowance } = useContractRead({
     address: lendingToken?.address,
@@ -98,6 +90,34 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
     const result = await writeContract(request)
     const transaction = await config.publicClient.waitForTransactionReceipt(result)
     console.log("transaction", transaction)
+  }
+
+  const claimDebt = async () => {
+    try {
+      /*
+       Got error by claiming the Debt thanks to this code -- 31/12/2023
+       if (loan?.hasClaimedCollateral) {
+        throw "Collateral already claimed"
+      } */
+
+      const { request } = await config.publicClient.simulateContract({
+        address: LOAN_CREATED_ADDRESS,
+        functionName: "claimDebt",
+        abi: createdLoanABI,
+        args: [],
+        account: address,
+        gas: BigInt(300000),
+      })
+
+      const result = await writeContract(request)
+      const transaction = await config.publicClient.waitForTransactionReceipt(result)
+      console.log("transaction", transaction)
+      await refetchLoan()
+      return Promise.resolve(result)
+    } catch (error) {
+      console.log(error)
+    }
+    return Promise.reject()
   }
 
   const [loanState, loanSend] = useMachine(
@@ -367,13 +387,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                     height={24}
                   />
                 </div>
-                <Button
-                  variant="action"
-                  className="px-8"
-                  onClick={() => {
-                    loanSend({ type: "lender.claim.lent.tokens" })
-                  }}
-                >
+                <Button variant="action" className="px-8" onClick={() => claimDebt()}>
                   Claim debt
                 </Button>
               </div>
@@ -477,14 +491,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
           <div className="space-y-8 max-w-xl w-full md:ml-16 animate-enter-div">
             <div className="flex space-between gap-8">
               <div className="bg-[#21232B] border-2 border-white/10 p-4 w-full rounded-md flex gap-2 items-center justify-center text-sm">
-                {address == lender ? (
+                {address == loan?.lenderAddress ? (
                   <>
                     You are the lender <PersonIcon className="w-6 h-6" />
                   </>
                 ) : (
                   <>
                     Lender <PersonIcon className="w-6 h-6" />
-                    {shortAddress(lender as Address)}
+                    {shortAddress(loan?.lenderAddress as Address)}
                   </>
                 )}
               </div>
@@ -517,16 +531,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                 <div>
                   <div className="text-sm">Next Payment</div>
 
-                  <ShowWhenTrue when={loanState.matches("borrower")}>
-                    <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
-                      <span className="font-bold text-lg text-amber-300">Expired</span>
-                    </ShowWhenTrue>
-                    <ShowWhenTrue when={displayLoanStatus.state === "live"}>
-                      <DaysHours
-                        deadline={loan?.deadline}
-                        className={cn(displayLoanStatus.className, "font-bold text-xl")}
-                      />
-                    </ShowWhenTrue>
+                  <ShowWhenTrue when={displayLoanStatus.state === "defaulted"}>
+                    <span className="font-bold text-lg text-amber-300">Expired</span>
+                  </ShowWhenTrue>
+                  <ShowWhenTrue when={displayLoanStatus.state === "live"}>
+                    <DaysHours
+                      deadline={loan?.deadline}
+                      className={cn(displayLoanStatus.className, "font-bold text-xl")}
+                    />
                   </ShowWhenTrue>
 
                   <ShowWhenTrue when={loanState.matches("lender")}>
@@ -660,7 +672,9 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
                 </ShowWhenTrue>
 
                 {/* Lender - can claim collateral */}
-                <ShowWhenTrue when={loan?.hasDefaulted && !loan?.hasClaimedCollateral && address == lender}>
+                <ShowWhenTrue
+                  when={loan?.hasDefaulted && !loan?.hasClaimedCollateral && address == loan?.lenderAddress}
+                >
                   <Button
                     variant="action"
                     className="w-1/2"
