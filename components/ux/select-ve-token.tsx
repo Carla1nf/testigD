@@ -162,5 +162,9 @@ export const calculateBorrow = (
   if (porcentage >= 100) {
     return totalPrincipleAmount
   }
-  return (porcentage * totalPrincipleAmount) / 100
+  function calc(num: any) {
+    var with2Decimals = num.toString().match(/^-?\d+(?:\.\d{0,4})?/)[0]
+    return with2Decimals
+  }
+  return Number(calc((porcentage * totalPrincipleAmount) / 100))
 }
