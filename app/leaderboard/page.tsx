@@ -1,5 +1,6 @@
 "use client"
 
+import CountdownTimer from "@/components/Countdown"
 import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayToken from "@/components/ux/display-token"
 import Stat from "@/components/ux/stat"
@@ -55,7 +56,7 @@ export default function LeaderBoardPage() {
           </div>
         </div>
         <div className=" w-full flex md:flex-row flex-col md:items-center gap-7 justify-end">
-          <Stat value={"30d 20h 13m"} title={"Time left"} Icon={null} />
+          <Stat value={<CountdownTimer />} title={"Time left"} Icon={null} />
           <Stat value={`${data?.pointsPerAddress.length}`} title={"Active wallets"} Icon={null} />
         </div>
       </div>
