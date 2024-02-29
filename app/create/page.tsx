@@ -87,7 +87,6 @@ export default function Create() {
   const [offerAddress, setAddress] = useState("")
   const [confirmed, setConfirmed] = useState(false)
   const [perpetual, setPerpetual] = useState(false)
-  const [wantedVeEqual, setWantedVeEqual] = useState(0)
 
   // CREATE BORROW MACHINE
 
@@ -200,11 +199,11 @@ export default function Create() {
     const _paymentCount = context.numberOfPayments
 
     try {
-      const collateralAmount = toDecimals(context.collateralAmount, context.collateralToken.decimals)
+      const collateralAmount = toDecimals(state.context.collateralAmount ?? 0, context.collateralToken.decimals)
 
       const lenderAddress = context.token.address
       const collateralAddress = context.collateralToken.address
-      const lenderAmount = toDecimals(context.tokenAmount, context.token.decimals)
+      const lenderAmount = toDecimals(state.context.tokenAmount ?? 0, context.token.decimals)
 
       // NFT info (if applicable)
       const isCollateralAssetNFT = isNft(context?.collateralToken)
@@ -440,7 +439,6 @@ export default function Create() {
     },
     [send]
   )
-
   const onSelectToken = useCallback(
     (token: Token | null) => {
       if (token) {
@@ -823,7 +821,7 @@ export default function Create() {
                 <Label variant="create">Length</Label>
                 <div className="font-bold text-base text-[#D0D0D0]">
                   <div className="flex gap-2">
-                    Total payments: {durationDays} {pluralize("day", durationDays)}.
+                    {durationDays} {pluralize("day", durationDays)}
                   </div>
                 </div>
               </div>

@@ -3,6 +3,7 @@
 import TotalLiquidityLent from "@/components/total-liquidity-lent"
 import { Button } from "@/components/ui/button"
 import DisplayToken from "@/components/ux/display-token"
+import { useBorrowMarket } from "@/hooks/useBorrowMarket"
 import useCurrentChain from "@/hooks/useCurrentChain"
 import { useLendingMarket } from "@/hooks/useLendingMarket"
 import { dollars, percent } from "@/lib/display"
@@ -13,7 +14,7 @@ import { useRouter } from "next/navigation"
 // import styles from "./styles.module.css";
 
 export default function Home() {
-  const { offers } = useLendingMarket()
+  const { offers } = useBorrowMarket()
   const router = useRouter()
   const currentChain = useCurrentChain()
 

@@ -912,7 +912,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                 </ShowWhenFalse>
               </div>
               <div className="border border-[#41353B] rounded-sm p-2 flex flex-col justify-between">
-                <div className="text-[#DCB5BC]">Each Payment Am.</div>
+                <div className="text-[#DCB5BC]">Total Payment Am.</div>
                 <div className="text-base">
                   <>
                     {amountDuePerPayment.toFixed(2)} {principleToken?.symbol}

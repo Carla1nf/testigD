@@ -1,4 +1,4 @@
-import { Address, formatUnits, getAddress } from "viem"
+import { Address, etherUnits, formatUnits, getAddress, parseEther } from "viem"
 
 import erc20Abi from "../abis/erc20.json"
 import { findInternalTokenByAddress } from "./tokens"
@@ -82,5 +82,8 @@ export const fromDecimals = (amount: bigint, decimals: number) => {
  * @returns
  */
 export const toDecimals = (amount: number, decimals: number) => {
+  if (decimals == 18) {
+    return parseEther(amount.toString())
+  }
   return BigInt((Number(amount) * 10 ** decimals).toFixed(0))
 }
