@@ -61,9 +61,9 @@ export default function Home() {
         <div className="  md:w-[600px] bg-gradient-to-t from-background to-gray-500/10 md:h-96 rounded-xl h-auto">
           <div className="p-8 font-bold text-2xl"> Time-based liquidiation </div>
           <div className="p-8 text-gray-400 -mt-10">
-            Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit,
-            nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class
-            orci augue convallis.
+            At Debita Finance v2, we strive to provide a secure and efficient lending platform. One crucial aspect of
+            this is ensuring loan repayments and mitigating potential losses. This is where time-based liquidation comes
+            into play
           </div>
           <div className=" justify-center gap-5 flex md:flex px-4">
             <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-debitaPink"></div>
@@ -75,9 +75,9 @@ export default function Home() {
         <div className=" md:w-[600px] bg-gradient-to-t from-background to-gray-500/10 md:h-96 h-auto rounded-xl">
           <div className="p-8 font-bold text-2xl"> Use any Token as Collateral </div>
           <div className="p-8 text-gray-400 -mt-10">
-            Lorem ipsum dolor sit amet consectetur adipiscing, elit dictum vulputate suscipit laoreet hendrerit,
-            nascetur donec porttitor in montes. Lacinia lacus torquent congue faucibus scelerisque arcu, hendrerit class
-            orci augue convallis.
+            At Debita Finance v2, we're committed to pushing the boundaries of DeFi lending. While the v1 platform
+            offered a curated selection of collateral tokens, v2 introduces a revolutionary feature - ERC-721, ERC-20 or
+            even veNFTS
           </div>
           <div className="flex justify-center gap-5 px-4">
             <div className="h-56 bg-slate-300 w-40 rounded-3xl bg-gradient-to-t from-background to-purple-500"></div>
