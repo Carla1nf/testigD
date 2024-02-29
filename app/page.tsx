@@ -75,7 +75,7 @@ export default function Home() {
         <div className=" md:w-[600px] bg-gradient-to-t from-background to-gray-500/10 md:h-96 h-auto rounded-xl">
           <div className="p-8 font-bold text-2xl"> Use any Token as Collateral </div>
           <div className="p-8 text-gray-400 -mt-10">
-            At Debita Finance v2, we're committed to pushing the boundaries of DeFi lending. While the v1 platform
+            At Debita Finance v2, we are committed to pushing the boundaries of DeFi lending. While the v1 platform
             offered a curated selection of collateral tokens, v2 introduces a revolutionary feature - ERC-721, ERC-20 or
             even veNFTS
           </div>
