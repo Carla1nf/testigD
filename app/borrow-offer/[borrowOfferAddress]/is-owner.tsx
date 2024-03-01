@@ -23,7 +23,7 @@ import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./owner-machine"
 import { useEffect, useRef, useState } from "react"
-import { isNft } from "@/lib/tokens"
+import { isNft, nftInfoLensType } from "@/lib/tokens"
 
 export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAddress: Address } }) {
   const borrowOfferAddress = params.borrowOfferAddress
@@ -98,6 +98,15 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
       },
     })
   )
+
+  const newLendingValue = newBorrowAmount * (offer?.principle?.price ?? 0)
+  const newCollateralValue =
+    nftInfoLensType(offer?.collateral.token) == "VeToken"
+      ? offer?.totalCollateralValue ?? 0
+      : newCollateralAmount * (offer?.collateral.price ?? 0)
+
+  const ratio = newLendingValue > 0 ? newCollateralValue / newLendingValue : 0
+  const ltv = ratio ? (1 / ratio) * 100 : 0
 
   const updateOffer = async () => {
     try {
@@ -426,6 +435,10 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
               <Button variant="action" className="h-full w-full mt-4 text-base" onClick={() => updateOffer()}>
                 Edit
               </Button>
+            </ShowWhenTrue>
+
+            <ShowWhenTrue when={editing}>
+              <div className=" font-bold mt-5">New LTV: {ltv.toFixed(2)}</div>
             </ShowWhenTrue>
           </div>
         </div>

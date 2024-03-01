@@ -19,7 +19,7 @@ import { dollars, percent, thresholdLow, yesNo } from "@/lib/display"
 import { balanceOf, fromDecimals, toDecimals } from "@/lib/erc20"
 import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
 import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
-import { getValuedAsset, isNft, nftInfoLens, nftUnderlying } from "@/lib/tokens"
+import { getValuedAsset, isNft, nftInfoLens, nftInfoLensType, nftUnderlying } from "@/lib/tokens"
 import { cn, fixedDecimals } from "@/lib/utils"
 import { DISCORD_INVITE_URL, ZERO_ADDRESS } from "@/services/constants"
 // import { createBrowserInspector } from "@statelyai/inspect"
@@ -115,6 +115,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const principleToken = principle ? principle?.token : undefined
   const isOwnerConnected = address === offer?.owner
   console.log(offer, "OFFER")
+
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, offer?.principleAddressChart as Address)
   const collateral0Prices = useHistoricalTokenPrices(currentChain.slug, offer?.collateralAddressChart as Address)
   const timestamps = borrowingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
@@ -180,6 +181,20 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     const transaction = await config.publicClient.waitForTransactionReceipt(executed)
     console.log("transaction", transaction)
   }
+
+  console.log(offer?.collateral.price, "PRICE")
+  console.log(offer?.wantedLockedVeNFT, "PRICE")
+
+  const newLendingValue = newBorrowAmount * (offer?.principle?.price ?? 0)
+  const newCollateralValue =
+    (nftInfoLensType(offer?.collateral.token) == "VeToken"
+      ? newWantedVe == 0
+        ? offer?.wantedLockedVeNFT ?? 0
+        : newWantedVe
+      : newCollateralAmount) * (offer?.collateral.price ?? 0)
+
+  const ratio = newLendingValue > 0 ? newCollateralValue / newLendingValue : 0
+  const ltv = ratio ? (1 / ratio) * 100 : 0
 
   const updateOffer = async () => {
     try {
@@ -678,6 +693,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   <div>{state.matches("isOwner.editing") ? "Cancel" : "Edit Offer"}</div>
                 </div>
               </ShowWhenTrue>
+
               <ShowWhenTrue when={state.matches("isOwner")}>
                 <label className="relative inline-flex items-center cursor-pointer ml-auto">
                   <input
@@ -995,6 +1011,9 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
 
               <ShowWhenTrue when={state.matches("isOwner.editing")}>
                 <OwnerEditingButtons state={state} send={send} />
+              </ShowWhenTrue>
+              <ShowWhenTrue when={state.matches("isOwner.editing")}>
+                <div className=" font-bold">New LTV: {ltv.toFixed(2)}</div>
               </ShowWhenTrue>
             </div>
           </div>
