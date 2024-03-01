@@ -168,9 +168,8 @@ export default function Home() {
                 />
                 <div className="p-4 font-bold text-xl -mt-3">{chain}</div>
                 <div className="p-4 font-semibold md:text-sm text-xs text-gray-400 -mt-3">
-                  Lorem ipsum dolor sit amet consectetur adipiscing elit, consequat potenti etiam at suspendisse blandit
-                  donec aptent, lectus venenatis bibendum facilisis accumsan euismod. Scelerisque penatibus potenti per
-                  mauris volutpat nam nullam
+                  Debita was first deployed on the Fantom network. Ethereum is one the largest & oldest blockchains on
+                  the ecosystem.
                 </div>
               </div>
             )
