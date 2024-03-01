@@ -192,7 +192,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
         args: [
           [newBorrow, newCollateral],
           [Number(newInterest) * 100, Number(newPaymentCount), Number(newTimelap) * 86400],
-          toDecimals(newWantedVe, valuedAssetCollateral.decimals),
+          toDecimals(newWantedVe == 0 ? offer?.wantedLockedVeNFT ?? 0 : newWantedVe, valuedAssetCollateral.decimals),
           newAmountInterestForNFT,
         ],
         account: address, // gas: BigInt(900000),
@@ -548,7 +548,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       setNewBorrowAmount(principle?.amount ?? 0)
       setNewPaymentCount(offer?.paymentCount ?? 0)
       setNewTimelap(offer?.numberOfLoanDays ?? 0)
-      setNewInterest(offer?.interest ?? 0)
+      setNewInterest((offer?.interest ?? 0) * 100)
     }
   }, [collateral?.amount, offer?.interest, offer?.numberOfLoanDays, offer?.paymentCount, principle?.amount, state])
 
@@ -673,7 +673,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                       ? send({ type: "owner.cancel.editing" })
                       : send({ type: "owner.editing" })
                   }}
-                  className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300"
+                  className="bg-debitaPink/50 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-100"
                 >
                   <div>{state.matches("isOwner.editing") ? "Cancel" : "Edit Offer"}</div>
                 </div>

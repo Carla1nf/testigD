@@ -58,7 +58,7 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
       setNewBorrowAmount(principle?.amount ?? 0)
       setNewPaymentCount(offer?.paymentCount ?? 0)
       setNewTimelap(offer?.numberOfLoanDays ?? 0)
-      setNewInterest(offer?.interest ?? 0)
+      setNewInterest((offer?.interest ?? 0) * 100)
     }
   }, [collateral?.amount, offer?.interest, offer?.numberOfLoanDays, offer?.paymentCount, principle?.amount, editing])
   const cancelOffer = async () => {
@@ -245,7 +245,7 @@ export default function BorrowOfferIsOwner({ params }: { params: { borrowOfferAd
             <div className="flex py-2">
               <div
                 onClick={() => setEditing(!editing)}
-                className="bg-debitaPink/10 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-300"
+                className="bg-debitaPink/50 px-4 text-sm py-2 rounded-xl cursor-pointer text-gray-100"
               >
                 <div>
                   <ShowWhenTrue when={editing}>Cancel</ShowWhenTrue>
