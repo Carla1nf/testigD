@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import Breadcrumbs from "@/components/ux/breadcrumbs"
-import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { ShowWhenFalse, ShowWhenTrue } from "@/components/ux/conditionals"
 import DaysHours from "@/components/ux/deadline-datetime"
 import DisplayNetwork from "@/components/ux/display-network"
 import DisplayToken from "@/components/ux/display-token"
@@ -39,6 +39,7 @@ import { isNft } from "@/lib/tokens"
 import DisplayNftToken from "@/components/ux/display-nft-token"
 import useNftInfo from "@/hooks/useNftInfo"
 import { OWNERSHIP_ADDRESS } from "@/lib/contracts"
+import { useLastVoted } from "@/hooks/useLastVoted"
 
 /**
  * This page shows the suer the FULL details of the loan
@@ -68,6 +69,13 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   const timestamps = lendingPrices?.map((item: any) => dayjs.unix(item.timestamp).format("DD/MM/YY")) ?? []
   const principleNftInfos = useNftInfo({ address: loanAddress as Address, token: collateral0Token })
   const nftInfo = principleNftInfos?.[0]
+  const now = Math.floor(new Date().getTime() / 1000)
+  const Duration = 604800
+  const { lastVoted } = useLastVoted({
+    veNFTID: nftInfo?.id,
+    voterAddress: loan?.collaterals.token.nft?.voter as Address,
+  })
+  const shouldVote = Math.floor(now / Duration) * Duration > Number(lastVoted)
 
   // we need to know (if this is the borrower) how much they have approved the lending
   const { data: lendingTokenAllowance } = useContractRead({
@@ -812,6 +820,10 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
 
                 {/* Borrower - can claim collateral */}
                 <ShowWhenTrue when={loanState.matches("borrower.notDefaulted.canClaimCollateral")}>
+                  <ShowWhenFalse when={shouldVote}>
+                    <div className="text-red-400">You need to wait for new epoch to claim collateral</div>
+                  </ShowWhenFalse>
+
                   <ShowWhenTrue when={!loan?.hasClaimedCollateral}>
                     <Button
                       variant="action"

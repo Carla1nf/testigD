@@ -10,6 +10,7 @@ export const useLastVoted = ({
   voterAddress: `0x${string}` | undefined
   veNFTID: number
 }) => {
+  console.log(voterAddress, "voter")
   const lastVotedTime = useContractRead({
     address: voterAddress as Address,
     abi: voterABI,
