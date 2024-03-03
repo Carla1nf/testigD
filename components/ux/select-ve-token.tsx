@@ -118,7 +118,7 @@ const SelectVeToken = ({
                   </div>
                   <ShowWhenTrue when={nftInfo?.voted}>
                     <div className="text-[11.4px] bg-red-400/20 py-1 px-2 rounded text-red-400 font-bold">
-                      Non transferable
+                      Non-Transferable
                     </div>
                   </ShowWhenTrue>
                   <ShowWhenFalse when={nftInfo?.voted}>
