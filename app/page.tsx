@@ -40,9 +40,14 @@ export default function Home() {
                     Launch app
                   </Button>
                 </Link>
-                <Button className="bg-black/30 text-white" variant="secondary">
-                  <span>Watch how Debita V2 works</span>
-                </Button>
+                <a
+                  href="https://debita-finance.gitbook.io/debita-finance/understanding-debita-v2/whats-new-on-debita-v2"
+                  target="_blank"
+                >
+                  <Button className="bg-black/30 text-white" variant="secondary">
+                    <span>News of Debita V2</span>
+                  </Button>
+                </a>
               </div>
             </div>
             <div className="flex space-x-4 md:ml-32 relative md:py-0 py-3">
