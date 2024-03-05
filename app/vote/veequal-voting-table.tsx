@@ -1,4 +1,5 @@
 import createdLoanABI from "@/abis/v2/createdLoan.json"
+import veTokenABI from "@/abis/v2/veToken.json"
 import { SpinnerIcon } from "@/components/icons"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayPair from "@/components/ux/display-pair"
@@ -9,8 +10,8 @@ import { LucideMinus, LucidePlus } from "lucide-react"
 import { InputNumber } from "primereact/inputnumber"
 import { useState } from "react"
 import { Address } from "viem"
-import { useConfig } from "wagmi"
-import { writeContract } from "wagmi/actions"
+import { useConfig, useContractRead } from "wagmi"
+import { readContract, writeContract } from "wagmi/actions"
 
 type Vote = {
   pair: string
@@ -55,21 +56,59 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
     }
     setLoading(false)
   }
-  console.log(totalVotes)
+
+  const maxLock = async () => {
+    const FinalLock = await readContract({
+      address: data?.loan.collaterals.address as Address,
+      functionName: "locked__end",
+      abi: veTokenABI,
+      args: [data?.ownerNftTokenId],
+    })
+    const dateNow = Date.now()
+    const difference = Number(((Number(FinalLock) - Number((dateNow / 1000).toFixed(0))) / 604800).toFixed(0))
+    const weeksToLock = 26 - difference
+    const weekDuration = 86400 * 7
+    console.log(weeksToLock)
+    try {
+      const { request } = await config.publicClient.simulateContract({
+        address: data?.loan.address as Address,
+        functionName: "increaseLock",
+        abi: createdLoanABI,
+        args: [weeksToLock * weekDuration],
+        account: address,
+        gas: BigInt(900000),
+      })
+      const result = await writeContract(request)
+    } catch (e) {
+      console.log(e)
+      setLoading(false)
+    }
+  }
 
   return (
     <>
       <div className="flex justify-between items-center mb-8">
-        <div
-          className={`${
-            selectedIndex == null ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-          } bg-debitaPink px-5 py-1 rounded text-white font-medium flex gap-2 items-center`}
-          onClick={() => voteWith()}
-        >
-          Vote
-          <ShowWhenTrue when={loading}>
-            <SpinnerIcon className=" w-4 animate-spin-slow" />
-          </ShowWhenTrue>
+        <div className="flex gap-2">
+          <div
+            className={`${
+              selectedIndex == null ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+            } bg-debitaPink px-5 py-1 rounded text-white font-medium flex gap-2 items-center`}
+            onClick={() => voteWith()}
+          >
+            Vote
+            <ShowWhenTrue when={loading}>
+              <SpinnerIcon className=" w-4 animate-spin-slow" />
+            </ShowWhenTrue>
+          </div>
+
+          <div
+            className={`${
+              selectedIndex == null ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+            } bg-debitaPink px-5 py-1 rounded text-white font-medium flex gap-2 items-center`}
+            onClick={() => maxLock()}
+          >
+            Max lock
+          </div>
         </div>
         <div
           className={`${
