@@ -148,7 +148,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
 
       const ratio = principle.valueUsd > 0 ? collateral.valueUsd / principle.valueUsd : 0
       const ltv = ratio ? (1 / ratio) * 100 : 0
-      const numberOfLoanDays = Number(parsedData._timelap) / 86400
+      const numberOfLoanDays = (Number(parsedData._timelap) * Number(parsedData.paymentCount)) / 86400
       const apr = ((Number(parsedData.interestRate) / Number(numberOfLoanDays)) * 365) / 10000 // percentages are 0.134 for 13.4%
       const foundNftInterestToken = findInternalTokenByAddress(currentChain.slug, parsedData.interest_address)
       const nftInterestToken = foundNftInterestToken
