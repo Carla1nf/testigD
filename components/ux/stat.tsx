@@ -17,7 +17,7 @@ const Stat = ({
   return (
     <>
       {/* desktop - left align design */}
-      <div className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-3 rounded-lg  flex-row items-center h-full hidden md:flex shadow-lg shadow-neutral-950/30">
+      <div className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-3 rounded-lg  flex-row items-center  hidden md:flex shadow-lg shadow-neutral-950/30">
         <div className="text-left grow">
           <div className="text-xs font-semibold text-gray-400 ">{title}</div>
           <div className="text-xs md:text-lg font-bold text-white">
@@ -29,7 +29,7 @@ const Stat = ({
       {/* mobile / tablets - centralised design */}
       <div
         key={title}
-        className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-3 rounded-lg  flex-row items-center h-full  shadow-lg shadow-neutral-950/30 md:hidden"
+        className="overflow-hidden gap-4 bg-[#21232B]/40 border-2 border-white/10  py-2 px-3 rounded-lg  flex-row items-center   shadow-lg shadow-neutral-950/30 md:hidden"
       >
         <div className="text-left">
           {titleSmall ? (

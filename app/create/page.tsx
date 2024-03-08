@@ -722,7 +722,7 @@ export default function Create() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-5 justify-end">
+            <div className="mt-4 flex md:flex-row flex-col md:text-start text-center items-center gap-5 justify-end">
               <ShowWhenTrue when={!state.can({ type: "next" })}>
                 <div className="text-red-300 font-light text-sm">Please complete all the inputs correctly</div>
               </ShowWhenTrue>
@@ -1040,7 +1040,7 @@ export default function Create() {
         </ShowWhenTrue>
       </div>
       <div className="flex flex-col md:w-1/2 w-full  gap-4 md:mt-36">
-        <div className="bg-[#21232B]/40 border-2 flex flex-col  w-full border-white/10  py-3 px-3 rounded-lg h-28 ">
+        <div className="bg-[#21232B]/40 border-2 flex flex-col md:py-3  w-full border-white/10  py-3 px-3 rounded-lg md:h-28 ">
           <div>Disclaimer</div>
           <div className="text-gray-400 text-sm">
             The $ value and LTV are based on off chain data, and may not be accurate at times. It is highly suggested to

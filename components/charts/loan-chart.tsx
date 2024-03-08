@@ -104,7 +104,7 @@ const LoanChartTooltip = ({ active, payload }: { active?: boolean; payload?: any
           background: "rgb(0,0,0,0.65)",
           padding: "10px",
           fontWeight: "800",
-          width: "120px",
+          width: "auto",
           borderRadius: "10px",
         }}
       >

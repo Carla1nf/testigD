@@ -61,7 +61,7 @@ const Nav = () => {
 
       <div className="flex gap-4 flex-row justify-between items-center p-4">
         <Link
-          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
+          className={`px-4 hidden md:grid  text-center text-[14.5px] text-[#B6979C] h-12 items-center  hover:bg-slate-400/5   ${
             path == "/vote" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
           }`}
           href="/vote"
@@ -69,7 +69,7 @@ const Nav = () => {
           veNFTs
         </Link>
         <Link
-          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5   ${
+          className={`px-4 text-center hidden md:grid  text-[14.5px] text-[#B6979C] h-12 items-center  hover:bg-slate-400/5   ${
             path == "/leaderboard" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
           }`}
           href="/leaderboard"

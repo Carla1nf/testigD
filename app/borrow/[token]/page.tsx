@@ -80,14 +80,14 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
 
       {/* Render token table (secondary level - specific token selected)  */}
       <ShowWhenTrue when={Array.isArray(marketOffers) && marketOffers.length > 0}>
-        <table className="w-full flex flex-row flex-no-wrap rounded-lg md:inline-table" suppressHydrationWarning>
+        <table className="w-full flex flex-col flex-no-wrap rounded-lg md:inline-table" suppressHydrationWarning>
           <thead className="text-white text-sm" suppressHydrationWarning>
             <tr
               className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left font-bold text-gray-500/80 border-b-2 border-neutral-500/20"
               suppressHydrationWarning
             >
-              <th className="p-3 text-left ">Borrow</th>
-              <th className="p-3 text-left ">Collateral</th>
+              <th className="p-3 md:text-left text-center ">Borrow</th>
+              <th className="p-3 md:text-left text-center">Collateral</th>
               <th className="p-3 text-center ">LTV</th>
               {/* <th className="p-3 text-center  ">Lending amt.</th>
               <th className="p-3 text-center  ">Collateral amt.</th> */}
@@ -97,7 +97,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
               <th className="p-3 text-center  ">Effective APR (%)</th>
             </tr>
           </thead>
-          <tbody className="flex-1 sm:flex-none">
+          <tbody className="flex-1 sm:flex-none overflow-hidden">
             {events?.map((event: any, index: number) => {
               return <TableRow event={event} token={token} key={event.address} index={index} />
             })}

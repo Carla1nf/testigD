@@ -58,7 +58,7 @@ export default function Lend() {
       {/* Render token table (top level)  */}
       <ShowWhenTrue when={Array.isArray(offers) && offers.length > 0}>
         <table
-          className="w-full flex flex-row flex-no-wrap rounded-lg overflow-hidden  md:inline-table animate-enter-div"
+          className="w-full flex flex-col flex-no-wrap rounded-lg overflow-hidden  md:inline-table animate-enter-div"
           suppressHydrationWarning
         >
           <thead className="text-white text-sm" suppressHydrationWarning>
@@ -66,7 +66,7 @@ export default function Lend() {
               className="flex flex-col flex-no wrap sm:table-row rounded-l-lg sm:rounded-none mb-2 sm:mb-0 text-left font-bold text-gray-500/80 border-b-2 border-neutral-500/20 "
               suppressHydrationWarning
             >
-              <th className="p-3 px-4 text-left">Lend</th>
+              <th className="p-3 px-4 md:text-left text-center">Lend</th>
               <th className="p-3 px-4 text-center">Offers</th>
               <th className="p-3 px-4 text-center">Liquidity Offers</th>
               <th className="p-3 px-4 text-center">Price</th>

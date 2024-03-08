@@ -20,7 +20,7 @@ const TableRow = ({ event, token, index }: { event: any; token?: Token; index: n
       key={`${offer?.principle?.token?.symbol}_${event.address}`}
       className={` ${
         index % 2 == 1 ? "" : "bg-stone-500/5"
-      } hover:bg-slate-500/10 hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5`}
+      } hover:bg-slate-500/10  hover:bg-[#383838] cursor-pointer animate-enter-token border-b-2 border-gray-500/5`}
     >
       <td className="p-4 text-left">
         {token ? (

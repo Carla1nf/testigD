@@ -110,13 +110,17 @@ export default function Home() {
             return (
               <div key={offer.tokenAddress} className="hover:bg-[#383838] rounded flex">
                 <div className="p-5"> {index + 1}. </div>
-                <td className="p-4 text-left px-4 items-center w-36">
+                <td className=" p-4 text-left px-4 items-center w-36">
                   {offer.token ? <DisplayToken size={28} token={offer.token} chainSlug={currentChain.slug} /> : null}
                 </td>
 
-                <td className="p-4 w-72 text-center font-semibold">{dollars({ value: offer.liquidityOffer })}</td>
-                <td className="p-4 w-72 text-center px-4 items-center font-semibold">{offer.events.length}</td>
-                <td className="p-4 w-72 text-center px-4 items-center font-semibold">
+                <td className="p-4 md:block hidden w-72 text-center font-semibold">
+                  {dollars({ value: offer.liquidityOffer })}
+                </td>
+                <td className="p-4 md:block hidden w-72 text-center px-4 items-center font-semibold">
+                  {offer.events.length}
+                </td>
+                <td className="p-4 md:block hidden w-72 text-center px-4 items-center font-semibold">
                   {percent({ value: offer.averageInterestRate, decimalsWhenGteOne: 2, decimalsWhenLessThanOne: 2 })}
                 </td>
 

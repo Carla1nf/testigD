@@ -662,7 +662,7 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
             <ChartWrapper>
               <LoanChart loanData={chartValues} />
             </ChartWrapper>
-            <div className="bg-[#21232B]/40 border-2 flex flex-col  w-full border-white/10  py-3 px-3 rounded-xl h-28 mt-5">
+            <div className="bg-[#21232B]/40 border-2 flex flex-col  w-full border-white/10  py-3 px-3 rounded-xl md:h-28 mt-5">
               <div className="font-bold">Disclaimer</div>
               <div className="text-gray-400 text-sm">
                 The $ value and LTV are based on off chain data, and may not be accurate at times. It is highly
