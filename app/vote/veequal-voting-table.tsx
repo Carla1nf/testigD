@@ -64,17 +64,13 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
       abi: veTokenABI,
       args: [data?.ownerNftTokenId],
     })
-    const dateNow = Date.now()
-    const difference = Number(((Number(FinalLock) - Number((dateNow / 1000).toFixed(0))) / 604800).toFixed(0))
-    const weeksToLock = 26 - difference
-    const weekDuration = 86400 * 7
-    console.log(weeksToLock)
+
     try {
       const { request } = await config.publicClient.simulateContract({
         address: data?.loan.address as Address,
         functionName: "increaseLock",
         abi: createdLoanABI,
-        args: [weeksToLock * weekDuration],
+        args: [86400 * 182],
         account: address,
         gas: BigInt(900000),
       })
