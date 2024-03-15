@@ -10,11 +10,12 @@ import { Token, isNft, nftUnderlyingToken } from "@/lib/tokens"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 import { useRef, useState } from "react"
-import { getAddress } from "viem"
+import { Address, getAddress } from "viem"
 import { Badge } from "../ui/badge"
 import { Input } from "../ui/input"
 import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayToken from "./display-token"
+import { useLastVoted } from "@/hooks/useLastVoted"
 
 const SelectToken = ({
   amount,
@@ -47,6 +48,13 @@ const SelectToken = ({
   const [wantedType, setWantedType] = useState("ERC-20")
   const selectedTokenIsNft = isNft(selectedToken)
   const underlying = selectedTokenIsNft ? nftUnderlyingToken(selectedToken, currentChain.slug) : undefined
+  const now = Math.floor(new Date().getTime() / 1000)
+  const Duration = 604800
+  const { lastVoted } = useLastVoted({
+    veNFTID: selectedUserNft?.id as number,
+    voterAddress: selectedToken?.nft?.voter as Address,
+  })
+  const shouldVote = Math.floor(now / Duration) * Duration > Number(lastVoted)
 
   return (
     <div className="grid grid-cols-[152px_1fr_24px] items-center justify-between bg-[#2F2F2F] px-4 py-1 gap-2 rounded-lg w-full">
@@ -166,80 +174,99 @@ const SelectToken = ({
       <div className="flex flex-row justify-between items-center">
         <ShowWhenTrue when={isSelectableNft}>
           <ShowWhenTrue when={selectedTokenIsNft}>
-            <Popover open={isNftPopupOpen} onOpenChange={setIsNftPopupOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="create"
-                  role="combobox"
-                  aria-expanded={isNftPopupOpen}
-                  className="pl-1 text-sm space-x-2"
-                >
-                  <div className="text-gray-300 font-bold">
-                    {selectedUserNft?.id ? `NFT #${selectedUserNft?.id}` : "Click to select NFT"}{" "}
+            <div className="flex">
+              <ShowWhenFalse when={shouldVote}>
+                <div className="group relative">
+                  <div className="px-2 py-2 w-[70px] bg-red-900/40 rounded font-bold text-red-400 flex gap-1 items-center">
+                    Vote
+                    <img src="Error.svg" width={16} />
                   </div>
-                  <ShowWhenTrue when={Boolean(selectedUserNft)}>
-                    <div>-</div>
-                    <div className="text-sm whitespace-nowrap">
-                      {selectedUserNft?.amount.toFixed(2)} Locked {underlying?.symbol ?? ""}
+                  <div className="group-hover:flex text-start hidden absolute bg-neutral-900 w-56 rounded py-2 px-2 h-auto flex-col border-neutral-800 border-2">
+                    <div className="font-bold w-52">Epoch flip</div>
+                    <div className="text-gray-500 text-sm">
+                      You will need to wait until the new Epoch flip to be able to vote. To avoid this, merge your veNFT
+                      into a new one
+                      <div className="font-bold text-red-400 text-xs mt-2">Claim rewards before you merge!</div>
                     </div>
-                  </ShowWhenTrue>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="min-w-[480px] p-0">
-                <Command>
-                  <CommandEmpty>No token found.</CommandEmpty>
-                  <CommandGroup>
-                    {userNftInfo?.map((nftInfo: UserNftInfo) => (
-                      <CommandItem
-                        key={nftInfo?.id}
-                        value={nftInfo?.id?.toString()}
-                        onSelect={(selected) => {
-                          console.log("userNftInfo->selected", selected)
+                  </div>
+                </div>
+              </ShowWhenFalse>
 
-                          // if we have a new nftInfo selected
-                          const found = userNftInfo?.find(
-                            (nftInfo: UserNftInfo) => nftInfo?.id?.toString() === selected
-                          )
+              <Popover open={isNftPopupOpen} onOpenChange={setIsNftPopupOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="create"
+                    role="combobox"
+                    aria-expanded={isNftPopupOpen}
+                    className="pl-1 text-sm space-x-2"
+                  >
+                    <div className="text-gray-300 font-bold ml-2">
+                      {selectedUserNft?.id ? `#${selectedUserNft?.id}` : "Click to select NFT"}{" "}
+                    </div>
+                    <ShowWhenTrue when={Boolean(selectedUserNft)}>
+                      <div>-</div>
+                      <div className="text-sm whitespace-nowrap">
+                        {selectedUserNft?.amount.toFixed(2)} Locked {underlying?.symbol ?? ""}
+                      </div>
+                    </ShowWhenTrue>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="min-w-[480px] p-0">
+                  <Command>
+                    <CommandEmpty>No token found.</CommandEmpty>
+                    <CommandGroup>
+                      {userNftInfo?.map((nftInfo: UserNftInfo, index: number) => (
+                        <CommandItem
+                          key={nftInfo?.id}
+                          value={nftInfo?.id?.toString()}
+                          onSelect={(selected) => {
+                            console.log("userNftInfo->selected", selected)
 
-                          // we have the same token selected, so, act like a
-                          // toggle and use the default token instead
-                          if (found && onSelectUserNft) {
-                            onSelectUserNft(found)
-                          }
+                            // if we have a new nftInfo selected
+                            const found = userNftInfo?.find(
+                              (nftInfo: UserNftInfo) => nftInfo?.id?.toString() === selected
+                            )
 
-                          setIsNftPopupOpen(false)
-                        }}
-                      >
-                        <div className="flex flex-row justify-between w-full items-center px-1 py-2">
-                          {selectedToken ? (
-                            <DisplayToken
-                              token={selectedToken}
-                              size={20}
-                              className="text-base"
-                              chainSlug={currentChain.slug}
-                            />
-                          ) : null}
-                          <div>#{Number(nftInfo?.id)}</div>
-                          <div>
-                            {Number(nftInfo?.amount).toFixed(4)} {underlying?.symbol ?? ""}
+                            // we have the same token selected, so, act like a
+                            // toggle and use the default token instead
+                            if (found && onSelectUserNft) {
+                              onSelectUserNft(found)
+                            }
+
+                            setIsNftPopupOpen(false)
+                          }}
+                        >
+                          <div className="flex flex-row justify-between w-full items-center px-1 py-2">
+                            {selectedToken ? (
+                              <DisplayToken
+                                token={selectedToken}
+                                size={20}
+                                className="text-base"
+                                chainSlug={currentChain.slug}
+                              />
+                            ) : null}
+                            <div>#{Number(nftInfo?.id)}</div>
+                            <div>
+                              {Number(nftInfo?.amount).toFixed(4)} {underlying?.symbol ?? ""}
+                            </div>
+                            <ShowWhenTrue when={nftInfo?.voted}>
+                              <div className="text-[11.4px] bg-red-400/20 py-1 px-2 rounded text-red-400 font-bold">
+                                Non-transferable
+                              </div>
+                            </ShowWhenTrue>
+                            <ShowWhenFalse when={nftInfo?.voted}>
+                              <div className="text-[11.4px] bg-green-400/20 py-1 px-2 rounded text-green-400 font-bold">
+                                Transferable
+                              </div>
+                            </ShowWhenFalse>
                           </div>
-                          <ShowWhenTrue when={nftInfo?.voted}>
-                            <div className="text-[11.4px] bg-red-400/20 py-1 px-2 rounded text-red-400 font-bold">
-                              Non transferable
-                            </div>
-                          </ShowWhenTrue>
-                          <ShowWhenFalse when={nftInfo?.voted}>
-                            <div className="text-[11.4px] bg-green-400/20 py-1 px-2 rounded text-green-400 font-bold">
-                              Transferable
-                            </div>
-                          </ShowWhenFalse>{" "}
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </ShowWhenTrue>
           <ShowWhenTrue when={!selectedTokenIsNft}>
             <InputAmount onAmountChange={onAmountChange} amount={amount} />

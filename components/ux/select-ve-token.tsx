@@ -14,6 +14,8 @@ import { ShowWhenFalse, ShowWhenTrue } from "./conditionals"
 import DisplayNftToken from "./display-nft-token"
 import DisplayToken from "./display-token"
 import TokenImage from "./token-image"
+import { useLastVoted } from "@/hooks/useLastVoted"
+import { Address } from "viem"
 
 const SelectVeToken = ({
   token,
@@ -36,43 +38,77 @@ const SelectVeToken = ({
   const [isTokenPopupOpen, setIsTokenPopupOpen] = useState(false)
   const [isNftPopupOpen, setIsNftPopupOpen] = useState(false)
   const underlying = token ? nftUnderlyingToken(token, currentChain.slug) : undefined
-
+  const now = Math.floor(new Date().getTime() / 1000)
+  const Duration = 604800
+  const { lastVoted } = useLastVoted({
+    veNFTID: selectedUserNft?.id as number,
+    voterAddress: token?.nft?.voter as Address,
+  })
+  const shouldVote = Math.floor(now / Duration) * Duration > Number(lastVoted)
   return (
     <Popover open={isNftPopupOpen} onOpenChange={setIsNftPopupOpen}>
       <PopoverTrigger asChild>
         <div className="grid grid-cols-[1fr_24px] items-center justify-between bg-[#2F2F2F] px-4 py-1 gap-2 rounded-lg w-full">
           {/* Token / NFT selection column */}
           <div className="flex flex-row justify-between items-center">
-            <Button variant="create" role="combobox" aria-expanded={isNftPopupOpen} className="pl-1 text-sm space-x-2">
-              <ShowWhenFalse when={Boolean(selectedUserNft)}>
-                <DisplayNftToken token={token as Token} size={20} className="text-sm" chainSlug={currentChain.slug} />
-              </ShowWhenFalse>
-              <ShowWhenTrue when={Boolean(selectedUserNft)}>
-                <div className="flex flex-row gap-2 items-center">
-                  <DisplayNftToken token={token as Token} size={20} className="text-sm" chainSlug={currentChain.slug} />
-                  <div className="text-sm whitespace-nowrap">#{selectedUserNft?.id}</div>
-                  <div>-</div>
-                  <div className="text-sm whitespace-nowrap">
-                    {selectedUserNft?.amount.toFixed(2)} Locked {underlying?.symbol ?? ""}
+            <div className="flex items-center gap-1">
+              <ShowWhenFalse when={shouldVote}>
+                <div className="group relative ">
+                  <div className="px-2 py-1 w-[70px] bg-red-900/40 rounded font-bold text-red-400 flex gap-1 items-center">
+                    Vote
+                    <img src="/Error.svg" width={16} />
+                  </div>
+                  <div className="group-hover:flex text-start hidden absolute bg-neutral-900 w-56 rounded py-2 px-2 h-auto flex-col border-neutral-800 border-2">
+                    <div className="font-bold w-52">Epoch flip</div>
+                    <div className="text-gray-500 text-sm">
+                      You will need to wait until the new Epoch flip to be able to vote. To avoid this, merge your veNFT
+                      into a new one
+                      <div className="font-bold text-red-400 text-xs mt-2">Claim rewards before you merge!</div>
+                    </div>
                   </div>
                 </div>
+              </ShowWhenFalse>
+              <Button
+                variant="create"
+                role="combobox"
+                aria-expanded={isNftPopupOpen}
+                className="pl-1 text-sm space-x-2"
+              >
+                <ShowWhenFalse when={Boolean(selectedUserNft)}>
+                  <DisplayNftToken token={token as Token} size={20} className="text-sm" chainSlug={currentChain.slug} />
+                </ShowWhenFalse>
+                <ShowWhenTrue when={Boolean(selectedUserNft)}>
+                  <div className="flex flex-row gap-2 items-center">
+                    <DisplayNftToken
+                      token={token as Token}
+                      size={20}
+                      className="text-sm"
+                      chainSlug={currentChain.slug}
+                    />
+                    <div className="text-sm whitespace-nowrap">#{selectedUserNft?.id}</div>
+                    <div>-</div>
+                    <div className="text-sm whitespace-nowrap">
+                      {selectedUserNft?.amount.toFixed(2)} Locked {underlying?.symbol ?? ""}
+                    </div>
+                  </div>
+                </ShowWhenTrue>
+              </Button>
+            </div>
+            {/* Arrow indicator column */}
+            <div>
+              <ShowWhenTrue when={isTokenPopupOpen}>
+                <ChevronUp
+                  className="h-6 w-6 shrink-0 opacity-50 text-[#D75071] cursor-pointer"
+                  onClick={() => setIsTokenPopupOpen(false)}
+                />
               </ShowWhenTrue>
-            </Button>
-          </div>
-          {/* Arrow indicator column */}
-          <div>
-            <ShowWhenTrue when={isTokenPopupOpen}>
-              <ChevronUp
-                className="h-6 w-6 shrink-0 opacity-50 text-[#D75071] cursor-pointer"
-                onClick={() => setIsTokenPopupOpen(false)}
-              />
-            </ShowWhenTrue>
-            <ShowWhenFalse when={isTokenPopupOpen}>
-              <ChevronDown
-                className="h-6 w-6 shrink-0 opacity-50 stroke-[#D75071] cursor-pointer"
-                onClick={() => setIsTokenPopupOpen(true)}
-              />
-            </ShowWhenFalse>
+              <ShowWhenFalse when={isTokenPopupOpen}>
+                <ChevronDown
+                  className="h-6 w-6 shrink-0 opacity-50 stroke-[#D75071] cursor-pointer"
+                  onClick={() => setIsTokenPopupOpen(true)}
+                />
+              </ShowWhenFalse>
+            </div>
           </div>
         </div>
       </PopoverTrigger>

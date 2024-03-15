@@ -378,6 +378,7 @@ export default function Create() {
     loanValue: state.context.tokenValue as number,
     isBorrowMode: isBorrowingMode,
   })
+
   const collateralNfts = useNftInfo({ address, token: state?.context?.collateralToken })
   const tokenNfts = useNftInfo({ address, token: state?.context?.token })
   const [ltvCustomInputValue, setLtvCustomInputValue] = useState("")
