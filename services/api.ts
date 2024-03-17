@@ -6,6 +6,17 @@ const GetDataElementSchema = z.tuple([z.string(), z.number(), z.number(), z.stri
 const GetDataNestedArraySchema = z.array(GetDataElementSchema)
 const GetDataSchema = z.tuple([GetDataNestedArraySchema, GetDataNestedArraySchema, z.number(), z.any(), z.any()])
 
+const GetMarketDataSchema = z.array(
+  z.object({
+    loanAddress: z.string(),
+    principleAddress: z.string()?.nullable(),
+    collateralAddress: z.string()?.nullable(),
+    principleAmount: z.number()?.nullable(),
+    collateralAmount: z.number()?.nullable(),
+    days: z.number()?.nullable(),
+    interest: z.number()?.nullable(),
+  })
+)
 /**
  * event LenderOfferCreated(
  *   uint256 indexed id,
@@ -114,7 +125,7 @@ const GetDataResponse = z.object({
 })
 
 export type GetDataResponse = z.infer<typeof GetDataResponse>
-
+//rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData/
 /**
  * Other Events:
  * ============
@@ -130,9 +141,13 @@ const getData = async () => {
     // V2 API
     // [collaterals, lending, totalLiquidityLent]
     // todo: move URL into a config file in prep for x-chain app
-    const response = await axios.get("https://rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData")
+    const prodAPI = "https://rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData"
+    const response = await axios.get(prodAPI)
+    console.log(response, "RESPONSE")
 
     // Important, once parsed we MUST only reference the parsed version (sanitized and confirmed to be correct)
+    console.log("response.data", response.data)
+
     const parsedResponse = GetDataSchema.parse(response.data)
 
     return parsedResponse
@@ -143,6 +158,20 @@ const getData = async () => {
       borrow: [],
       totalLiquidityLent: 0,
     }
+  }
+}
+
+export const getMarketData = async () => {
+  try {
+    // ! @todo: move URL into a config file in prep for x-chain app
+    const marketAPI = "https://rbn3bwlfb1.execute-api.us-east-1.amazonaws.com/getData/Loans"
+    const response = await axios.get(marketAPI)
+
+    const parsedResponse = GetMarketDataSchema.parse(response.data)
+    return parsedResponse
+  } catch (error) {
+    console.error("Api→getMarketData", error)
+    return []
   }
 }
 
@@ -161,7 +190,8 @@ const transformGetDataResponse = (response: GetData): GetDataResponse => {
         owner: event[3],
         lendingToken: event[4],
         apr: event[2] / 1000, // better to use 0-1 range for representing percentages, 0% = 0, 100% = 1, 1% = 0.01, 24.57% = 0.2457
-        lendingAmount: event[1] / 100, // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
+        lendingAmount: event[1] / 100,
+        // we use decimals to represent the amount, so we need to divide by 100 to get the actual amount
       })
     }),
     borrow: response[0].map((event) => {
