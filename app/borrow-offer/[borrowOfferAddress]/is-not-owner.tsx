@@ -355,17 +355,17 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                           ""
                         )}
                       </div>
-                      <div>
+                      <div className={` ${isNft(collateralToken) ? "opacity-50  cursor-not-allowed" : ""}  `}>
                         <label
                           htmlFor="customRange1"
-                          className="mb-2 inline-block text-neutral-700 dark:text-neutral-200"
+                          className={`mb-2 inline-block text-neutral-700 dark:text-neutral-200`}
                         ></label>
                         <input
                           type="range"
                           min={isNft(collateralToken) ? 100 : 1}
                           max={100}
                           defaultValue={isNft(collateralToken) ? 100 : 0}
-                          className="transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
+                          className={` transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600`}
                           id="customRange1"
                           onChange={(e) => {
                             handleWantedBorrow(Number(e.currentTarget.value))

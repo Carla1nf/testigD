@@ -1,11 +1,13 @@
 import createdLoanABI from "@/abis/v2/createdLoan.json"
 import veTokenABI from "@/abis/v2/veToken.json"
 import { SpinnerIcon } from "@/components/icons"
+import { toast } from "@/components/ui/use-toast"
 import { ShowWhenTrue } from "@/components/ux/conditionals"
 import DisplayPair from "@/components/ux/display-pair"
 import { useLoanValues } from "@/hooks/useLoanValues"
 import useVeEqualPairs from "@/hooks/useVeEqualPairs"
 import { dollars, formatNumber, percent } from "@/lib/display"
+import { prettifyRpcError } from "@/lib/prettify-rpc-errors"
 import { LucideMinus, LucidePlus } from "lucide-react"
 import { InputNumber } from "primereact/inputnumber"
 import { useState } from "react"
@@ -58,13 +60,6 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
   }
 
   const maxLock = async () => {
-    const FinalLock = await readContract({
-      address: data?.loan.collaterals.address as Address,
-      functionName: "locked__end",
-      abi: veTokenABI,
-      args: [data?.ownerNftTokenId],
-    })
-
     try {
       const { request } = await config.publicClient.simulateContract({
         address: data?.loan.address as Address,
@@ -75,8 +70,14 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
         gas: BigInt(900000),
       })
       const result = await writeContract(request)
-    } catch (e) {
-      console.log(e)
+    } catch (e: any) {
+      toast({
+        variant: "error",
+        title: "Error Updating Offer",
+        description: `${e.message}`,
+        // tx: executed,
+      })
+      console.log(e.message, "ERROR")
       setLoading(false)
     }
   }

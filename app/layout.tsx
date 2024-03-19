@@ -10,6 +10,7 @@ import { Inter as FontSans } from "next/font/google"
 import { Toaster } from "@/components/ui/toaster"
 import axios from "axios"
 import TermsAndConditions from "@/components/ux/terms-and-conditions"
+import Link from "next/link"
 
 /**
  * These are the google fonts imported in the V1 website. find out if they are still used and import as necessary
@@ -51,47 +52,64 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <div className="flex md:flex-row flex-col w-full justify-between md:gap-0 gap-10">
                       <div className="flex flex-col text-center">
                         <div className=" font-semibold text-xl text-gray-400">Start now</div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all ">
-                          Lend
-                        </div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          Borrow
-                        </div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          Create offer
-                        </div>
+                        <Link href="/lend">
+                          <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all ">
+                            Lend
+                          </div>
+                        </Link>
 
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          Leaderboard
-                        </div>
+                        <Link href="/borrow">
+                          <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                            Borrow
+                          </div>
+                        </Link>
+
+                        <Link href={"/create"}>
+                          <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                            Create offer
+                          </div>
+                        </Link>
+                        <Link href={"/leaderboard"}>
+                          <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                            Leaderboard
+                          </div>
+                        </Link>
                       </div>
 
                       <div className="flex flex-col text-center">
                         <div className=" font-semibold text-xl text-gray-400">Information</div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          Docs
-                        </div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          Contracts
-                        </div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          How does Debita V2 work?
-                        </div>
-                        <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                        <a
+                          href="https://debita-finance.gitbook.io/debita-finance/understanding-debita-v2/borrowers-use-cases"
+                          target="_blank"
+                        >
+                          <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                            Docs
+                          </div>
+                        </a>
+                        <a
+                          href="https://debita-finance.gitbook.io/debita-finance/understanding-debita-v2/whats-new-on-debita-v2"
+                          target="_blank"
+                        >
+                          <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
+                            How does Debita V2 work?
+                          </div>
+                        </a>
+
+                        {/*<div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
                           Points
-                        </div>
+                        </div> */}
                       </div>
 
                       <div className="flex flex-col text-center">
                         <div className=" font-semibold text-xl text-gray-400">Contact</div>
                         <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          team@debita.fi
+                          team@debita.fi | Email
                         </div>
                         <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          @DebitaFinance{" "}
+                          @DebitaFinance | Twitter
                         </div>
                         <div className="text-gray-400 font-light cursor-pointer hover:text-gray-300 hover:scale-[1.01] transition-all">
-                          @MoraDebita | Debita BD
+                          @MoraDebita | Telegram
                         </div>
                       </div>
                     </div>
