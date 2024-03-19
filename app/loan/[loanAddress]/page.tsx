@@ -86,18 +86,28 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   }) as { data: bigint }
 
   const claimCollateralAsLender = async () => {
-    const { request } = await config.publicClient.simulateContract({
-      address: LOAN_CREATED_ADDRESS,
-      functionName: "claimCollateralasLender",
-      abi: createdLoanABI,
-      args: [],
-      account: address,
-      gas: BigInt(800000),
-    })
+    try {
+      const { request } = await config.publicClient.simulateContract({
+        address: LOAN_CREATED_ADDRESS,
+        functionName: "claimCollateralasLender",
+        abi: createdLoanABI,
+        args: [],
+        account: address,
+        gas: BigInt(800000),
+      })
 
-    const result = await writeContract(request)
-    const transaction = await config.publicClient.waitForTransactionReceipt(result)
-    console.log("transaction", transaction)
+      const result = await writeContract(request)
+      const transaction = await config.publicClient.waitForTransactionReceipt(result)
+      console.log("transaction", transaction)
+    } catch (error: any) {
+      console.log(error)
+      toast({
+        variant: "error",
+        title: "Error Updating Offer",
+        description: `${error.message}`,
+        // tx: executed,
+      })
+    }
   }
 
   const claimDebt = async () => {
@@ -394,7 +404,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
               <div className="rounded-md border-[#58353D] border bg-[#2C2B2B] p-4 px-6 flex gap-4 justify-between items-center">
                 <div>Unclaimed payments</div>
                 <div className="flex gap-2 items-center">
-                  <div>{dollars({ value: loan?.claimableDebt })}</div>
+                  <div>{Number(loan?.claimableDebt).toFixed(2)}</div>
                   <TokenImage
                     symbol={loan?.lending?.token?.symbol}
                     chainSlug={currentChain?.slug}
