@@ -52,8 +52,14 @@ const VeEqualVotingTable = ({ selectedIndex, address }: { selectedIndex: number 
         gas: BigInt(900000),
       })
       const result = await writeContract(request)
-    } catch (e) {
-      console.log(e)
+    } catch (error: any) {
+      console.log(error)
+      toast({
+        variant: "error",
+        title: "Error Updating Offer",
+        description: `${error.message}`,
+        // tx: executed,
+      })
       setLoading(false)
     }
     setLoading(false)

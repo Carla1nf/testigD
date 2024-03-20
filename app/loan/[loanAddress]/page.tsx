@@ -218,7 +218,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             console.log("transaction", transaction)
             await refetchLoan()
             return Promise.resolve(result)
-          } catch (error) {}
+          } catch (error: any) {
+            toast({
+              variant: "error",
+              title: "Error Updating Offer",
+              description: `${error.message}`,
+              // tx: executed,
+            })
+          }
           return Promise.reject()
         }),
         checkBorrowerHasPaymentAllowance: fromPromise(() => {
@@ -741,6 +748,10 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
 
                 {/* Lender - claimed collateral */}
                 <ShowWhenTrue when={loanState.matches("lender.defaulted.completed")}>
+                  <ShowWhenFalse when={shouldVote}>
+                    <div className="text-red-400">You need to wait for new epoch to claim collateral</div>
+                  </ShowWhenFalse>
+
                   <Button variant="success" className="w-1/2">
                     <CheckCircle className="w-5 h-5 mr-2" /> Claimed Collateral
                   </Button>
