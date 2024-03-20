@@ -35,7 +35,7 @@ const NotOwnerErc20Buttons = ({
   return (
     <>
       <ShowWhenTrue when={state.matches("isNotOwner.erc20.idle")}>
-        <div className="flex gap-10 items-center justify-center">
+        <div className="flex gap-10 items-center">
           <div className="flex flex-col gap-1">
             <div className="flex gap-1 items-center italic opacity-80">
               <div className=" text-sm"> Collateral required:</div>
@@ -52,10 +52,7 @@ const NotOwnerErc20Buttons = ({
               )}
             </div>
             <div>
-              <label
-                htmlFor="customRange1"
-                className="mb-2 inline-block text-neutral-700 dark:text-neutral-200"
-              ></label>
+              <label htmlFor="customRange1" className="inline-block text-neutral-700 dark:text-neutral-200"></label>
               <input
                 type="range"
                 min={1}
@@ -75,7 +72,6 @@ const NotOwnerErc20Buttons = ({
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="opacity-0">holaa</div>
             <Button
               variant={"action"}
               className="px-16"

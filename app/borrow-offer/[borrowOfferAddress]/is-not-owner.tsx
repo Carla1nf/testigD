@@ -25,7 +25,9 @@ import BorrowOfferChart from "./components/chart"
 import BorrowOfferStats from "./components/stats"
 import { machine } from "./not-owner-machine"
 import { cn } from "@/lib/utils"
-import { findInternalTokenByAddress, isNft } from "@/lib/tokens"
+import { findInternalTokenByAddress, isNft, nftInfoLensType } from "@/lib/tokens"
+import { ShowWhenTrue } from "@/components/ux/conditionals"
+import { useBalanceUser } from "@/hooks/useBalanceUser"
 
 export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOfferAddress: Address } }) {
   const borrowOfferAddress = params.borrowOfferAddress
@@ -41,7 +43,10 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
   const collateral = offer?.collateral
   const principleToken = principle ? principle?.token : undefined
   const collateralToken = collateral ? collateral?.token : undefined
-
+  const lendingToken_Balance = useBalanceUser({
+    tokenAddress: principleToken?.address,
+    userAddress: address,
+  })
   // check if we have the allowance to spend the lender token
   const { data: currentLendingTokenAllowance } = useContractRead({
     address: principle?.address as Address,
@@ -233,7 +238,7 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                     {dollars({ value: offer?.totalCollateralValue ?? 0 })}
                   </span>
                 </div>
-                <div className="-ml-[2px]">
+                <div className="-ml-[2px] flex items-center gap-2">
                   {collateral && collateralToken ? (
                     <DisplayToken
                       size={32}
@@ -243,6 +248,9 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                       className="text-xl"
                     />
                   ) : null}
+                  <ShowWhenTrue when={nftInfoLensType(collateralToken) == "VeToken"}>
+                    <div className="text-gray-400 text-sm">{offer?.wantedLockedVeNFT} Equal</div>
+                  </ShowWhenTrue>
                 </div>
               </div>
               <div className="flex flex-col gap-3">
@@ -421,6 +429,9 @@ export default function BorrowOfferIsNotOwner({ params }: { params: { borrowOffe
                   right={<ActionButtons.Success title="Offer Accepted" when={true} />}
                 />
               </>
+            </div>
+            <div className="mt-4 text-sm text-gray-500">
+              Your balance: {lendingToken_Balance} {principle?.token?.symbol}
             </div>
           </div>
         </div>

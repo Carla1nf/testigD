@@ -36,6 +36,7 @@ import { LendingMode, machine } from "./create-offer-machine"
 import { approveVeToken, isVeTokenApprovedOrOwner } from "@/lib/nft"
 import { useGetPoints } from "@/lib/getPoints"
 import DisplayToken from "@/components/ux/display-token"
+import { useBalanceUser } from "@/hooks/useBalanceUser"
 // import { createBrowserInspector } from "@statelyai/inspect"
 
 // function convertBigIntToString(obj: any): any {
@@ -491,6 +492,11 @@ export default function Create() {
   const loanFee = totalLoanInterest * 0.06
   const actualInterest = totalLoanInterest - loanFee
   const interestPerDay = actualInterest / durationDays / 100
+  const lendingToken_Balance = useBalanceUser({ tokenAddress: state.context.token?.address, userAddress: address })
+  const borrowToken_Balance = useBalanceUser({
+    tokenAddress: state.context.collateralToken?.address,
+    userAddress: address,
+  })
 
   const breadcrumbs = useMemo(() => {
     const result = [<DisplayNetwork currentChain={currentChain} size={18} key="network" />]
@@ -528,7 +534,6 @@ export default function Create() {
             </TabsList>
           </Tabs>
         </ShowWhenTrue>
-
         {/* Form */}
         <ShowWhenTrue when={state.matches("form")}>
           <div className="bg-[#252324] p-8 pt-8 max-w-[570px] flex flex-col gap-8 rounded-b-lg">
@@ -542,6 +547,7 @@ export default function Create() {
                   <ShowWhenTrue when={isLendingMode}>
                     <Label variant="create">Wanted Collateral Token</Label>
                   </ShowWhenTrue>
+
                   <TokenValuation
                     token={state.context.collateralToken}
                     price={state.context.collateralPrice}
@@ -549,6 +555,12 @@ export default function Create() {
                     value={state.context.collateralValue}
                     className="mb-2 italic"
                   />
+                  <ShowWhenFalse when={isNft(state.context.collateralToken)}>
+                    <div className="flex  gap-1 text-xs items-center text-gray-400">
+                      Your Balance
+                      <div className="text-white">{borrowToken_Balance}</div>
+                    </div>
+                  </ShowWhenFalse>
                 </div>
                 <SelectToken
                   tokens={tokens}
@@ -580,6 +592,10 @@ export default function Create() {
                     value={Number(state.context.tokenValue)}
                     className="mb-2 italic"
                   />
+                  <div className="flex  gap-1 text-xs items-center text-gray-400">
+                    Your Balance
+                    <div className="text-white">{lendingToken_Balance}</div>
+                  </div>
                 </div>
                 <SelectToken
                   tokens={tokens}

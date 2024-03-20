@@ -42,6 +42,7 @@ import OwnerEditingButtons from "./components/owner-editing-buttons"
 import LendOfferStats from "./components/stats"
 import { machine } from "./lend-offer-machine"
 import { useGetPoints, pointsBorrow } from "@/lib/getPoints"
+import { useBalanceUser } from "@/hooks/useBalanceUser"
 
 const LoanChart = dynamic(() => import("@/components/charts/loan-chart"), { ssr: false })
 const ChartWrapper = dynamic(() => import("@/components/charts/chart-wrapper"), { ssr: false })
@@ -114,6 +115,10 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
   const collateralToken = collateral ? collateral?.token : undefined
   const principleToken = principle ? principle?.token : undefined
   const isOwnerConnected = address === offer?.owner
+  const collateralBalance = useBalanceUser({
+    tokenAddress: collateralToken?.address,
+    userAddress: address,
+  })
   console.log(offer, "OFFER")
 
   const borrowingPrices = useHistoricalTokenPrices(currentChain.slug, offer?.principleAddressChart as Address)
@@ -982,6 +987,11 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
                   borrowAmount={amountToBorrow}
                   pointsToGet={Number(pointsToGet)}
                 />
+                <ShowWhenFalse when={isNft(collateralToken)}>
+                  <div className="mt-7 text-gray-400">
+                    Your balance: {collateralBalance} {collateral?.token?.symbol}{" "}
+                  </div>
+                </ShowWhenFalse>
                 <ShowWhenTrue when={state.matches("isNotOwner.erc20.canAcceptOffer")}>
                   <div className="text-gray-400 text-sm py-2 px-7 text-center">
                     You will get{" "}
