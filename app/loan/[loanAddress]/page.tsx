@@ -188,7 +188,14 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
             console.log("transaction", transaction)
             await refetchLoan()
             return Promise.resolve(result)
-          } catch (error) {}
+          } catch (error: any) {
+            toast({
+              variant: "error",
+              title: "Error Updating Offer",
+              description: `${error.message}`,
+              // tx: executed,
+            })
+          }
           return Promise.reject()
         }),
         claimCollateralAsBorrower: fromPromise(async () => {
