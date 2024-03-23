@@ -32,14 +32,40 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
 
   // Fetch from API if not in cache or cache is stale
   try {
+    console.log("NO PRICESSS")
     const response = await axios.get(`https://coins.llama.fi/prices/current/${uuid}`)
     const tokenData: TokenPriceData = response.data.coins[uuid]
     tokenPriceCache.set(uuid, { data: tokenData, fetchedAt: currentTime })
+
     if (!tokenData.price) {
       return {} as TokenPriceData
     }
     return tokenData
   } catch (error) {
+    /* ONLY FOR SGOAT, UNTIL DEFILLAMA STARTS PROVIDING THE PRICE
+    
+    ## QUICK FIX TO LAUNCH QUICK ##
+    
+    */
+    if (uuid === "fantom:0x43F9a13675e352154f745d6402E853FECC388aA5") {
+      console.log("CHECKING PRICE", uuid)
+
+      const response = await axios.get(
+        `https://api.dexscreener.com/latest/dex/pairs/fantom/0xacb5b7a37310854a6e74dd9889f6a98da0ef9975`
+      )
+
+      const ResponseData = response.data.pair
+
+      const tokenData: TokenPriceData = {
+        decimals: 18,
+        symbol: "sGOAT",
+        price: ResponseData.priceUsd,
+        timestamp: 0,
+        confidence: 1,
+      }
+      console.log(response.data.pair, "TOKEN DATA")
+      return tokenData
+    }
     console.error(`Failed to fetch token price for ${uuid}:`, error)
     return {} as TokenPriceData
   }

@@ -91,7 +91,11 @@ const LoanChart = ({ loanData }: { loanData: LoanData }) => {
     )
   } catch (error) {
     console.error("Unable to render chart", error)
-    return null
+    return (
+      <div>
+        <p className="text-gray-400">A Token doesn't have historical data</p>
+      </div>
+    )
   }
 }
 
