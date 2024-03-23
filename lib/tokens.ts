@@ -221,6 +221,17 @@ export const INTERNAL_TOKENS: Tokens = {
         voter: "0xe3d1a117df7dcac2eb0ac8219341bad92f18dac1",
       },
     },
+    {
+      name: "sGOAT",
+      symbol: "sGOAT",
+      decimals: 18,
+      address: "0x43F9a13675e352154f745d6402E853FECC388aA5",
+      chainId: fantom.id,
+      isNative: false,
+      isLp: false,
+      icon: "/files/tokens/fantom/sGoat.png",
+      nft: undefined,
+    },
   ],
 }
 
