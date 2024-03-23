@@ -197,7 +197,7 @@ export const INTERNAL_TOKENS: Tokens = {
       name: "sFTMX",
       symbol: "sFTMX",
       decimals: 18,
-      address: "0xd7028092c830b5c8fce061af2e593413ebbc1fc1",
+      address: "0xd7028092c830b5C8FcE061Af2E593413EbbC1fc1",
       chainId: fantom.id,
       isNative: false,
       isLp: false,
@@ -267,9 +267,16 @@ export const getDepositedToken = (primitive: Token | undefined, collateral: Toke
 }
 export const getValuedAsset = (token: Token | undefined, chainSlug: string) => {
   const valueAsset = (
-    nftInfoLensType(token) ? findInternalTokenBySymbol(chainSlug, nftUnderlying(token) ?? "") : token
+    nftInfoLensType(token) ? findInternalTokenBySymbol(chainSlug, nftUnderlying(token) ?? "") : tokenUnderlying(token)
   ) as Token
   return valueAsset
+}
+
+const tokenUnderlying = (token: Token | undefined) => {
+  if (token?.address == "0xd7028092c830b5c8fce061af2e593413ebbc1fc1") {
+    return findTokenByAddress("fantom", "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83")
+  }
+  return token
 }
 export const nftUnderlyingToken = (token: Token | undefined, chainSlug?: string) => {
   if (!chainSlug) return undefined

@@ -113,6 +113,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         valueUsd: 0,
       }
       const depositedToken = getDepositedToken(principleToken, collateralToken, lenderData.isLending)
+      console.log("W111")
 
       const valueFromUnderlying = nftInfoLensType(depositedToken)
         ? ((await readContract({
@@ -123,9 +124,13 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
           })) as VeTokenInfoIncoming[])
         : null
 
+      console.log(parsedData.assetAddresses[0], "W222")
+
       const valueAssetPrinciple = getValuedAsset(principleToken, currentChain.slug)
+      console.log(principleToken, "PRINCIPLE")
       const price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address))
       principle.price = price.price ?? 0
+      console.log(principle.price, "PRICE PRINCIPLE")
 
       const principleAmount = getValuedAmountPrinciple(
         principleToken,
@@ -142,6 +147,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         valueFromUnderlying,
         lenderData.valueOfVeNFT
       )
+      console.log("W333")
 
       principle.valueUsd = principleAmount * principle.price
       collateral.valueUsd = collateralAmount * collateral.price
