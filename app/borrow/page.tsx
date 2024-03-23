@@ -19,6 +19,7 @@ export default function Borrow() {
   const currentChain = useCurrentChain()
   const { offers } = useBorrowMarket()
   const router = useRouter()
+  console.log("events", offers)
 
   const breadcrumbs = useMemo(
     () => [<DisplayNetwork currentChain={currentChain} size={18} key="network" />],

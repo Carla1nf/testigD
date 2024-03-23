@@ -24,7 +24,7 @@ export default function SpecificLend({ params }: { params: { token: string } }) 
   const { offers } = useBorrowMarket()
   const marketOffers = token ? filterOffersByToken(offers, token) : []
   const events = Array.isArray(marketOffers) && marketOffers.length > 0 ? marketOffers[0].events : []
-
+  console.log("events", events)
   const breadcrumbs = useMemo(
     () => [
       <DisplayNetwork currentChain={currentChain} size={18} key="network" />,

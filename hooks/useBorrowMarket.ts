@@ -26,41 +26,45 @@ export const useBorrowMarket = () => {
       const dividedOffers = processLenderOfferCreated(data?.lend ?? [])
       const offers: LenderOfferTokenData[] = Array.from(dividedOffers.values())
 
-      for (let i = 0; i < offers.length; i++) {
-        const offer = offers[i]
-        offer.token = findTokenByAddress(currentChain.slug, offer.tokenAddress)
+      try {
+        for (let i = 0; i < offers.length; i++) {
+          const offer = offers[i]
+          offer.token = findTokenByAddress(currentChain.slug, offer.tokenAddress)
 
-        const valueFromUnderlying = nftInfoLensType(offer.token)
-          ? ((await readContract({
-              address: (offer.token?.nft?.infoLens ?? "") as Address,
-              abi: veTokenInfoLensAbi,
-              functionName: "getDataFrom",
-              args: [offer.events[0].address],
-            })) as VeTokenInfoIncoming[])
-          : null
+          const valueFromUnderlying = nftInfoLensType(offer.token)
+            ? ((await readContract({
+                address: (offer.token?.nft?.infoLens ?? "") as Address,
+                abi: veTokenInfoLensAbi,
+                functionName: "getDataFrom",
+                args: [offer.events[0].address],
+              })) as VeTokenInfoIncoming[])
+            : null
 
-        const valueAssetPrinciple = getValuedAsset(offer.token, currentChain.slug)
-        const principleAmount = getValuedAmountPrinciple(
-          offer.token,
-          true,
-          offer.amount,
-          valueFromUnderlying,
-          toDecimals(0, 18)
-        )
+          const valueAssetPrinciple = getValuedAsset(offer.token, currentChain.slug)
+          const principleAmount = getValuedAmountPrinciple(
+            offer.token,
+            true,
+            offer.amount,
+            valueFromUnderlying,
+            toDecimals(0, 18)
+          )
 
-        const tokenLlamaUuid = makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address)
-        const tokenPrice = await fetchTokenPrice(tokenLlamaUuid)
-        const token = findInternalTokenByAddress(currentChain.slug, offer.tokenAddress as Address)
-        offer.price = tokenPrice?.price ?? 0
-        offer.token = token
-        console.log(token, i)
-        console.log(offer.tokenAddress, i)
-        /**
-         * This is the calc from V1
-         * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
-         */
+          const tokenLlamaUuid = makeLlamaUuid(currentChain.slug, valueAssetPrinciple.address as Address)
+          const tokenPrice = await fetchTokenPrice(tokenLlamaUuid)
+          const token = findInternalTokenByAddress(currentChain.slug, offer.tokenAddress as Address)
+          offer.price = tokenPrice?.price ?? 0
+          offer.token = token
+          console.log(token, i)
+          console.log(offer.tokenAddress, i)
+          /**
+           * This is the calc from V1
+           * <>${params.amounts * price <= 1 * 10 ** 18 ? " <1.00" : ((params.amounts / 10 ** 18) * price).toFixed(2)}</>
+           */
 
-        offer.liquidityOffer = principleAmount * offer.price
+          offer.liquidityOffer = principleAmount * offer.price
+        }
+      } catch (e) {
+        console.error(e)
       }
 
       return { dividedOffers, offers }
