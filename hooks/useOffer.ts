@@ -87,6 +87,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
       // we should process the data here, collateral tokens should be an array of grouped data, not as multiple arrays
       // lets go one step further and bring token info and pricing in as well. This will make the data much more useful
       // and simplify rendering.
+      console.log("ME")
       const collateralToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[1])
       const collateral = {
         address: parsedData.assetAddresses[1],
@@ -96,11 +97,13 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
         price: 0,
         valueUsd: 0,
       }
+      console.log("ME1")
 
       // cant use async map - hate them but need to use a for loop for that
       const valueAssetCollateral = getValuedAsset(collateralToken, currentChain.slug)
       const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetCollateral.address as Address))
       collateral.price = _price.price ?? 0
+      console.log("ME2")
 
       // lets do the same for the lender token
       const principleToken = findInternalTokenByAddress(currentChain.slug, parsedData.assetAddresses[0])

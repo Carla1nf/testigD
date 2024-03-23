@@ -28,15 +28,20 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
     return cacheEntry.data
   }
 
+  console.log("Fetching token price for", uuid)
+
   // Fetch from API if not in cache or cache is stale
   try {
     const response = await axios.get(`https://coins.llama.fi/prices/current/${uuid}`)
     const tokenData: TokenPriceData = response.data.coins[uuid]
     tokenPriceCache.set(uuid, { data: tokenData, fetchedAt: currentTime })
+    if (!tokenData.price) {
+      return {} as TokenPriceData
+    }
     return tokenData
   } catch (error) {
     console.error(`Failed to fetch token price for ${uuid}:`, error)
-    throw error
+    return {} as TokenPriceData
   }
 }
 
