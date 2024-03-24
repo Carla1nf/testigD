@@ -205,7 +205,6 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
     try {
       const newBorrow = principleToken ? Number(newBorrowAmount) * 10 ** principleToken?.decimals : 0
       const newCollateral = collateralToken ? Number(newCollateralAmount) * 10 ** collateralToken?.decimals : 0
-      console.log(newInterest, "NEW INTEREST")
       const { request } = await config.publicClient.simulateContract({
         address: OFFER_CREATED_ADDRESS,
         functionName: "editOffer",
@@ -571,7 +570,14 @@ export default function LendOffer({ params }: { params: { lendOfferAddress: Addr
       setNewTimelap(offer?.numberOfLoanDays ?? 0)
       setNewInterest((offer?.interest ?? 0) * 100)
     }
-  }, [collateral?.amount, offer?.interest, offer?.numberOfLoanDays, offer?.paymentCount, principle?.amount])
+  }, [
+    collateral?.amount,
+    offer?.interest,
+    offer?.numberOfLoanDays,
+    offer?.paymentCount,
+    principle?.amount,
+    state.matches("isOwner.editing"),
+  ])
 
   // BREADCRUMBS
   // CONFIG
