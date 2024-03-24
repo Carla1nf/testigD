@@ -38,6 +38,25 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
     tokenPriceCache.set(uuid, { data: tokenData, fetchedAt: currentTime })
 
     if (!tokenData.price) {
+      if (uuid === "fantom:0x43F9a13675e352154f745d6402E853FECC388aA5") {
+        console.log("CHECKING PRICE", uuid)
+
+        const response = await axios.get(
+          `https://api.dexscreener.com/latest/dex/pairs/fantom/0xacb5b7a37310854a6e74dd9889f6a98da0ef9975`
+        )
+
+        const ResponseData = response.data.pair
+
+        const tokenData: TokenPriceData = {
+          decimals: 18,
+          symbol: "sGOAT",
+          price: ResponseData.priceUsd,
+          timestamp: 0,
+          confidence: 1,
+        }
+        console.log(response.data.pair, "TOKEN DATA")
+        return tokenData
+      }
       return {} as TokenPriceData
     }
     return tokenData
