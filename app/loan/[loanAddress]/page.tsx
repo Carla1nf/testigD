@@ -62,7 +62,7 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
     console.log(loan?.lenderAddress, "loan interval")
     console.log("Refetch .....")
     await refetchLoan()
-  }, 6000)
+  }, 2000)
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
   const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.principleAddressChart)
