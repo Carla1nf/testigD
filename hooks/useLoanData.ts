@@ -56,7 +56,7 @@ export const useLoanData = (loanAddress: Address) => {
       const parsedData = LoanDataReceivedSchema.parse(loanData)
       console.log("borrower")
 
-      const borrowerId = parsedData?.IDS[1] ?? undefined
+      const borrowerId = parsedData?.IDS[1] ?? 0
       try {
         const borrower = await readContract({
           address: OWNERSHIP_ADDRESS,
