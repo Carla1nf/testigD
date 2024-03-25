@@ -289,12 +289,10 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   console.log("loanState.value", loanState.value)
   console.log("loan", loan)
 
-  useEffect(() => {
-    setTimeout(async () => {
-      console.log("Refetch .....")
-      await refetchLoan()
-    }, 1000)
-  }, [])
+  setTimeout(async () => {
+    console.log("Refetch .....")
+    await refetchLoan()
+  }, 1000)
 
   const displayLoanStatus = useMemo(() => {
     return loanStatus(Number(loan?.deadlineNext))
