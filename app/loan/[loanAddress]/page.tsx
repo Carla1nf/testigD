@@ -56,14 +56,13 @@ export default function Loan({ params }: { params: { loanAddress: string } }) {
   const currentChain = useCurrentChain()
   const { address } = useControlledAddress()
   const { data: loan, useLoanDataQuery, refetch: refetchLoan } = useLoanData(loanAddress as Address)
-  useEffect(() => {
-    setInterval(async () => {
-      console.log("Refetch .....")
-      await refetchLoan()
-    }, 4000)
-  }, [])
-  console.log("loan", loan)
 
+  console.log("loan", loan)
+  setTimeout(async () => {
+    console.log(loan?.lenderAddress, "loan interval")
+    console.log("Refetch .....")
+    await refetchLoan()
+  }, 6000)
   const lending = loan?.lending
   const lendingToken = lending ? lending?.token : undefined
   const lendingPrices = useHistoricalTokenPrices(currentChain.slug, loan?.principleAddressChart)
