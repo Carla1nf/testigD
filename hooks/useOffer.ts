@@ -101,6 +101,7 @@ export const useOffer = (address: Address | undefined, lendOfferAddress: Address
 
       // cant use async map - hate them but need to use a for loop for that
       const valueAssetCollateral = getValuedAsset(collateralToken, currentChain.slug)
+      console.log(valueAssetCollateral, "VALUE ASSET COLLATERAL")
       const _price = await fetchTokenPrice(makeLlamaUuid(currentChain.slug, valueAssetCollateral.address as Address))
       collateral.price = _price.price ?? 0
       console.log("ME2")

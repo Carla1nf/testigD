@@ -24,7 +24,11 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
   const cacheEntry = tokenPriceCache.get(uuid)
 
   // Use cached data if valid
-  if (cacheEntry && currentTime - cacheEntry.fetchedAt < 300000) {
+  if (
+    cacheEntry &&
+    currentTime - cacheEntry.fetchedAt < 300000 &&
+    uuid != "fantom:0x43F9a13675e352154f745d6402E853FECC388aA5"
+  ) {
     return cacheEntry.data
   }
 
@@ -42,7 +46,7 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
         console.log("CHECKING PRICE", uuid)
 
         const response = await axios.get(
-          `https://api.dexscreener.com/latest/dex/pairs/fantom/0xacb5b7a37310854a6e74dd9889f6a98da0ef9975`
+          `https://api.dexscreener.com/latest/dex/pairs/fantom/0x6f60e79e3be2009f1c8b6786b761f8d3ee67d18f`
         )
 
         const ResponseData = response.data.pair
@@ -55,7 +59,7 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
           confidence: 1,
         }
         console.log(response.data.pair, "TOKEN DATA")
-        return tokenData
+        return tokenData as TokenPriceData
       }
       return {} as TokenPriceData
     }
@@ -70,7 +74,7 @@ export async function fetchTokenPrice(uuid: string): Promise<TokenPriceData> {
       console.log("CHECKING PRICE", uuid)
 
       const response = await axios.get(
-        `https://api.dexscreener.com/latest/dex/pairs/fantom/0xacb5b7a37310854a6e74dd9889f6a98da0ef9975`
+        `https://api.dexscreener.com/latest/dex/pairs/fantom/0x6f60e79e3be2009f1c8b6786b761f8d3ee67d18f`
       )
 
       const ResponseData = response.data.pair
