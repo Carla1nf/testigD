@@ -11,10 +11,13 @@ const GetMarketDataSchema = z.array(
     loanAddress: z.string(),
     principleAddress: z.string()?.nullable(),
     collateralAddress: z.string()?.nullable(),
-    principleAmount: z.number()?.nullable(),
-    collateralAmount: z.number()?.nullable(),
-    days: z.number()?.nullable(),
+    principleAmount: z.string()?.nullable(),
+    collateralAmount: z.string()?.nullable(),
+    duration: z.number()?.nullable(),
     interest: z.number()?.nullable(),
+    effectiveApr: z.number()?.nullable(),
+    status: z.string()?.nullable(),
+    ltv: z.string()?.nullable(),
   })
 )
 /**
