@@ -57,6 +57,15 @@ const Nav = () => {
         >
           Create Offer
         </Link>
+
+        <Link
+          className={`px-4 text-center text-[14.5px] text-[#B6979C] h-12 items-center grid hover:bg-slate-400/5  ${
+            path == "/market" ? "border-b-2 border-debitaPink/50  rounded-t-xl" : "rounded-xl"
+          }`}
+          href="/market"
+        >
+          Market
+        </Link>
       </div>
 
       <div className="flex gap-4 flex-row justify-between items-center p-4">
@@ -111,6 +120,14 @@ const Nav = () => {
                   href="/lend"
                 >
                   Lend
+                </a>
+
+                <a
+                  onClick={() => setIsMobileNavbarOpen(false)}
+                  className="rounded-xl  bg-slate-500/20   px-4 text-center animate-enter-token text-[14.5px] h-12 items-center grid hover:bg-slate-400/10 font-semibold opacity-0 fill-mode-forwards delay"
+                  href="/market"
+                >
+                  Market
                 </a>
 
                 <Link

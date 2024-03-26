@@ -38,13 +38,15 @@ export default function MarketPage() {
           </div>
 
           <div className="bg-black rounded w-auto px-3 py-2 flex gap-2 relative">
-            <span
-              className="text-gray-400 font-medium cursor-pointer"
-              onClick={() => setCollateralActive(!isCollateralActive)}
-            >
-              Collateral tokens:{" "}
-            </span>{" "}
-            {collateral == "" ? "All" : collateral?.symbol}
+            <div className="flex gap-2 cursor-pointer" onClick={() => setCollateralActive(!isCollateralActive)}>
+              <span className="text-gray-400 font-medium">Collateral tokens: </span>{" "}
+              {collateral == "" ? "All" : collateral?.symbol}
+              <img
+                src="/files/icon/Down.svg"
+                className={`${isCollateralActive ? "rotate-180" : ""} transition-all`}
+                width={20}
+              />
+            </div>
             <ShowWhenTrue when={isCollateralActive}>
               <div className="absolute flex flex-col gap-2 bg-black left-0 right-0 top-8 py-2 z-10">
                 <div
@@ -75,13 +77,15 @@ export default function MarketPage() {
           </div>
 
           <div className="bg-black rounded relative w-auto px-3 py-2 flex gap-2">
-            <span
-              className="text-gray-400 font-medium cursor-pointer"
-              onClick={() => setPrincipleActive(!isPrincipleActive)}
-            >
-              Principle tokens:{" "}
-            </span>{" "}
-            {principle == "" ? "All" : principle?.symbol}
+            <div className="flex gap-2  cursor-pointer" onClick={() => setPrincipleActive(!isPrincipleActive)}>
+              <span className="text-gray-400 font-medium">Principle tokens: </span>{" "}
+              {principle == "" ? "All" : principle?.symbol}
+              <img
+                src="/files/icon/Down.svg"
+                className={`${isPrincipleActive ? "rotate-180" : ""} transition-all`}
+                width={20}
+              />
+            </div>
             <ShowWhenTrue when={isPrincipleActive}>
               <div className="absolute flex flex-col gap-2 bg-black left-0 right-0 top-8 py-2 z-10">
                 <div
