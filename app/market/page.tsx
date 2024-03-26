@@ -59,6 +59,7 @@ export default function MarketPage() {
                 {tokens.map((everyToken) => {
                   return (
                     <div
+                      key={everyToken.address}
                       className="cursor-pointer hover:bg-white/10 py-1 px-2"
                       onClick={() => {
                         setCollateral(everyToken), setCollateralActive(false)
@@ -95,6 +96,7 @@ export default function MarketPage() {
                 {tokens.map((everyToken) => {
                   return (
                     <div
+                      key={everyToken.address}
                       className="cursor-pointer hover:bg-white/10 py-1 px-2"
                       onClick={() => {
                         setPrinciple(everyToken), setPrincipleActive(false)
@@ -151,6 +153,7 @@ export default function MarketPage() {
 
               return (
                 <ShowWhenTrue
+                  key={loan.loanAddress}
                   when={
                     (phase == 0 ||
                       (phase == 1 && loan.status == "Active") ||
@@ -160,7 +163,6 @@ export default function MarketPage() {
                   }
                 >
                   <tr
-                    key={loan.loanAddress}
                     className={` ${"bg-stone-200/10"} hover:bg-slate-300/10 rounded cursor-pointer animate-enter-token border-b-4 border-black`}
                   >
                     <td className="p-4 flex px-4 justify-start">
